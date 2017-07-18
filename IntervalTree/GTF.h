@@ -21,9 +21,16 @@ struct Feature {
     coord start, end;
     unsigned short chromosome;
     short strand;
-    std::string type, gene_id, transcript_id, exon_id, transcript_type;
+    std::string type, feature_id, transcript_type;
 };
 
+bool operator==(const Feature &a, const Feature &b);
+bool compIntervalStart(const Feature&, const Feature&);
+bool compIntervalEnd(const Feature&, const Feature&);
+bool intersectPoint(const Feature&, const coord);
+bool intersectInterval(const Feature&, const Feature&);
+
+//
 //template<> struct std::hash<Feature>
 //{
 //    size_t operator()(const Feature &obj)

@@ -25,13 +25,12 @@ ifstream& extractBED(ifstream &input, Feature &out)
             std::istringstream tokenizer(line);
             string buffer;
             tokenizer >> buffer; //chromosome name
-            //add a standardizing function for chr# -> # and [XYM/etc] -> <unmodified>
-            out.chromosome = chromosomeMap(buffer.substr(3));
+            out.chromosome = chromosomeMap(buffer);
             tokenizer >> buffer; //start
             out.start = std::stoull(buffer) + 1;
             tokenizer >> buffer; //stop
             out.end = std::stoull(buffer) + 1;
-            out.exon_id = line; // add a dummy exon_id for mapping interval intersections later
+            out.feature_id = line; // add a dummy exon_id for mapping interval intersections later
             out.type = "exon";
             break;
         }

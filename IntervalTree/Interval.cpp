@@ -31,10 +31,10 @@ bool intersectInterval(const Interval &a, const Interval &b)
 	return intersectPoint(a, b.start) || intersectPoint(a, b.end) || intersectPoint(b, a.start);
 }
 
-bool operator==(const Interval &a, const Interval &b)
-{
-	return (a.start == b.start) && (a.end == b.end);
-}
+//bool operator==(const Interval &a, const Interval &b)
+//{
+//	return (a.start == b.start) && (a.end == b.end);
+//}
 
 IntervalTree::IntervalTree(vector<Interval> &intervals) : starts(vector<Interval>()), ends(vector<Interval>()), center(0ll), left(nullptr), right(nullptr)
 {

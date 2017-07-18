@@ -7,24 +7,42 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9F6E357D1F03F9A500358867 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F6E357C1F03F9A500358867 /* main.cpp */; };
+		9F92C3B21F1D076C007C2022 /* libbamtools.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F92C3B11F1D076C007C2022 /* libbamtools.a */; };
+		9FE98D471F16BDAC00174BC9 /* IntervalTree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F6E35851F03FA0400358867 /* IntervalTree.cpp */; };
+		9FE98D481F16BDAC00174BC9 /* Metrics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F41812A1F0D6175006528FC /* Metrics.cpp */; };
+		9FE98D491F16BDAC00174BC9 /* GTF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F6E35901F043B6900358867 /* GTF.cpp */; };
+		9FE98D4A1F16BDAC00174BC9 /* BED.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FC80EE51F1564A1002E3482 /* BED.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		9F6E35771F03F9A500358867 /* CopyFiles */ = {
+		9F6E35771F03F9A500358867 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9F41812A1F0D6175006528FC /* Metrics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Metrics.cpp; sourceTree = "<group>"; };
+		9F41812B1F0D6175006528FC /* Metrics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Metrics.h; sourceTree = "<group>"; };
 		9F6E35791F03F9A500358867 /* IntervalTree */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = IntervalTree; sourceTree = BUILT_PRODUCTS_DIR; };
-		9F6E357C1F03F9A500358867 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		9F6E35831F03FA0400358867 /* Interval.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Interval.cpp; sourceTree = "<group>"; };
+		9F6E35841F03FA0400358867 /* Interval.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Interval.h; sourceTree = "<group>"; };
+		9F6E35851F03FA0400358867 /* IntervalTree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntervalTree.cpp; sourceTree = "<group>"; };
+		9F6E35901F043B6900358867 /* GTF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = GTF.cpp; sourceTree = "<group>"; };
+		9F6E35911F043B6900358867 /* GTF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GTF.h; sourceTree = "<group>"; };
+		9F92C3B11F1D076C007C2022 /* libbamtools.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbamtools.a; path = /usr/local/lib/libbamtools.a; sourceTree = "<absolute>"; };
+		9FC80EE51F1564A1002E3482 /* BED.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BED.cpp; sourceTree = "<group>"; };
+		9FC80EE61F1564A1002E3482 /* BED.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BED.h; sourceTree = "<group>"; };
+		9FD1A31B1F1688080017C5EB /* IntervalTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntervalTable.cpp; sourceTree = "<group>"; };
+		9FD1A31C1F1688080017C5EB /* IntervalTable.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; path = IntervalTable.h; sourceTree = "<group>"; };
+		9FDA1A2C1F0ED2850074EB0E /* RefSeqReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RefSeqReader.cpp; sourceTree = "<group>"; };
+		9FDA1A2D1F0ED2850074EB0E /* RefSeqReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RefSeqReader.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F92C3B21F1D076C007C2022 /* libbamtools.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +62,7 @@
 			children = (
 				9F6E357B1F03F9A500358867 /* IntervalTree */,
 				9F6E357A1F03F9A500358867 /* Products */,
+				9F6E35881F03FA4800358867 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -57,9 +77,29 @@
 		9F6E357B1F03F9A500358867 /* IntervalTree */ = {
 			isa = PBXGroup;
 			children = (
-				9F6E357C1F03F9A500358867 /* main.cpp */,
+				9F6E35831F03FA0400358867 /* Interval.cpp */,
+				9F6E35841F03FA0400358867 /* Interval.h */,
+				9F6E35851F03FA0400358867 /* IntervalTree.cpp */,
+				9FD1A31B1F1688080017C5EB /* IntervalTable.cpp */,
+				9FD1A31C1F1688080017C5EB /* IntervalTable.h */,
+				9FDA1A2C1F0ED2850074EB0E /* RefSeqReader.cpp */,
+				9FDA1A2D1F0ED2850074EB0E /* RefSeqReader.h */,
+				9F41812A1F0D6175006528FC /* Metrics.cpp */,
+				9F41812B1F0D6175006528FC /* Metrics.h */,
+				9F6E35901F043B6900358867 /* GTF.cpp */,
+				9F6E35911F043B6900358867 /* GTF.h */,
+				9FC80EE51F1564A1002E3482 /* BED.cpp */,
+				9FC80EE61F1564A1002E3482 /* BED.h */,
 			);
 			path = IntervalTree;
+			sourceTree = "<group>";
+		};
+		9F6E35881F03FA4800358867 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9F92C3B11F1D076C007C2022 /* libbamtools.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -71,7 +111,7 @@
 			buildPhases = (
 				9F6E35751F03F9A500358867 /* Sources */,
 				9F6E35761F03F9A500358867 /* Frameworks */,
-				9F6E35771F03F9A500358867 /* CopyFiles */,
+				9F6E35771F03F9A500358867 /* Copy Files */,
 			);
 			buildRules = (
 			);
@@ -119,7 +159,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9F6E357D1F03F9A500358867 /* main.cpp in Sources */,
+				9FE98D471F16BDAC00174BC9 /* IntervalTree.cpp in Sources */,
+				9FE98D481F16BDAC00174BC9 /* Metrics.cpp in Sources */,
+				9FE98D491F16BDAC00174BC9 /* GTF.cpp in Sources */,
+				9FE98D4A1F16BDAC00174BC9 /* BED.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -218,6 +261,23 @@
 		9F6E35811F03F9A500358867 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/usr/lib,
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-g",
+					"-v",
+				);
+				OTHER_LDFLAGS = (
+					"-lbamtools",
+					"-lz",
+					"-lboost_filesystem",
+					"-lboost_system",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -225,6 +285,23 @@
 		9F6E35821F03F9A500358867 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib,
+					/usr/lib,
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-g",
+					"-v",
+				);
+				OTHER_LDFLAGS = (
+					"-lbamtools",
+					"-lz",
+					"-lboost_filesystem",
+					"-lboost_system",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -248,6 +325,7 @@
 				9F6E35821F03F9A500358867 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

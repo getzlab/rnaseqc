@@ -32,11 +32,6 @@ ifstream& operator>>(ifstream &in, Feature &out)
             //get chr#
             string buffer;
             if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
-            /*if(buffer.size() >=3 && buffer[0] == 'c' && buffer[1] == 'h')
-            {
-                out.chromosome = chromosomeMap(buffer.substr(3));
-            }
-            else out.chromosome = chromosomeMap(buffer);*/
             out.chromosome = chromosomeMap(buffer);
             //get track name
             if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
@@ -70,9 +65,9 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
             std::map<string, string> attributes;
             parseAttributes(buffer, attributes);
-            if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
-            if (attributes.find("transcript_id") != attributes.end()) out.transcript_id = attributes["transcript_id"];
-            if (attributes.find("exon_id") != attributes.end()) out.exon_id = attributes["exon_id"];
+            if (out.type == "gene" && attributes.find("gene_id") != attributes.end()) out.feature_id = attributes["gene_id"];
+            if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
+            if (out.type == "exon" && attributes.find("exon_id") != attributes.end()) out.feature_id = attributes["exon_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
             break;
         }
@@ -111,4 +106,35 @@ std::map<std::string,std::string>& parseAttributes(std::string &intake, std::map
         attributes[key] = current;
     }
     return attributes;
+}
+
+bool operator==(const Feature &a, const Feature &b)
+{
+    if (a.start != b.start) return false;
+    if (a.end != b.end) return false;
+    if (a.chromosome != b.chromosome) return false;
+    if (a.strand != b.strand) return false;
+    if (a.type != b.type) return false;
+    if (a.feature_id != b.feature_id) return false;
+    return a.transcript_type == b.transcript_type;
+}
+
+bool compIntervalStart(const Feature &a, const Feature &b)
+{
+    return a.start < b.start;
+}
+
+bool compIntervalEnd(const Feature &a, const Feature &b)
+{
+    return a.end < b.end;
+}
+
+bool intersectPoint(const Feature &a, const coord x)
+{
+    return (x >= a.start) && (x <= a.end);
+}
+
+bool intersectInterval(const Feature &a, const Feature &b)
+{
+    return intersectPoint(a, b.start) || intersectPoint(a, b.end) || intersectPoint(b, a.start);
 }

@@ -1,7 +1,7 @@
 #ifndef INTERVAL_H
 #define INTERVAL_H
 
-#include "GTF.h"
+#include "BED.h"
 #include <vector>
 #include <utility>
 #include <set>
@@ -20,7 +20,7 @@ bool compIntervalStart(const Interval&, const Interval&);
 bool compIntervalEnd(const Interval&, const Interval&);
 bool intersectPoint(const Interval&, const coord);
 bool intersectInterval(const Interval&, const Interval&);
-bool operator==(const Interval&, const Interval&);
+//bool operator==(const Interval&, const Interval&);
 
 class IntervalTree {
 	std::vector<Interval> starts;
