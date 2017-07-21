@@ -12,6 +12,8 @@
 #include <map>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <utility>
 
 class Metrics {
     std::map<std::string, unsigned long> counter;
@@ -22,6 +24,20 @@ public:
     unsigned long get(std::string);
     double frac(std::string, std::string);
     friend std::ofstream& operator<<(std::ofstream&, const Metrics&);
+};
+
+class Collector {
+    std::map<std::string, std::vector<std::pair<std::string, double> > > data;
+    std::map<std::string, double> *target;
+    bool dirty;
+public:
+    Collector(std::map<std::string, double> *dataTarget) : data(), target(dataTarget), dirty(false)
+    {
+        
+    }
+    void add(const std::string&, const std::string&, const double);
+    void collect(const std::string&);
+    bool isDirty();
 };
 
 std::ofstream& operator<<(std::ofstream&, const Metrics&);

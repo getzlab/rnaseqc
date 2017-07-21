@@ -21,7 +21,7 @@ struct Feature {
     coord start, end;
     unsigned short chromosome;
     short strand;
-    std::string type, feature_id, transcript_type;
+    std::string type, feature_id, gene_id, transcript_type;
 };
 
 bool operator==(const Feature &a, const Feature &b);

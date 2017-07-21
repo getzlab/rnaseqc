@@ -48,3 +48,22 @@ std::ofstream& operator<<(std::ofstream &stream, const Metrics &counter)
     }
     return stream;
 }
+
+void Collector::add(const std::string &gene_id, const std::string &exon_id, const double coverage)
+{
+    this->data[gene_id].push_back(std::pair<std::string, double>(exon_id, coverage));
+    this->dirty = true;
+}
+
+void Collector::collect(const std::string &gene_id)
+{
+    for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
+    {
+        (*this->target)[entry->first] += entry->second;
+    }
+}
+
+bool Collector::isDirty()
+{
+    return this->dirty;
+}

@@ -68,6 +68,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (out.type == "gene" && attributes.find("gene_id") != attributes.end()) out.feature_id = attributes["gene_id"];
             if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
             if (out.type == "exon" && attributes.find("exon_id") != attributes.end()) out.feature_id = attributes["exon_id"];
+            if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
             break;
         }
