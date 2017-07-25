@@ -8,6 +8,7 @@
 
 #include "RefSeqReader.h"
 #include <sstream>
+#include <string>
 using std::string;
 
 RefSeqReader::RefSeqReader(string filename) : reader(filename), index()
@@ -81,7 +82,30 @@ string RefSeqReader::read(string featureName, long length)
     return output;
 }
 
-char invert(char input);
+char invert(char input)
+{
+    switch(input)
+    {
+        case 'a':
+        case 'A':
+            return 'T';
+        case 'c':
+        case 'C':
+            return 'G';
+        case 'g':
+        case 'G':
+            return 'C';
+        case 't':
+        case 'T':
+            return 'A';
+    }
+    return '';
+}
 
-std::string invert(std::string);
+std::string invert(std::string input)
+{
+    string output;
+    for (int i = 0; i < input.size(); ++i) output += invert(input[i]);
+    return output;
+}
 

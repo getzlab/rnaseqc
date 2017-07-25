@@ -7,6 +7,7 @@
 //
 
 #include "Metrics.h"
+#include <iostream>
 
 
 /*void increment(std::string);
@@ -60,6 +61,7 @@ void Collector::collect(const std::string &gene_id)
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
     {
         (*this->target)[entry->first] += entry->second;
+//        std::cout << entry->first << " " << entry->second << std::endl;
     }
 }
 
