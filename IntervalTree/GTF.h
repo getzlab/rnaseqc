@@ -29,6 +29,7 @@ bool compIntervalStart(const Feature&, const Feature&);
 bool compIntervalEnd(const Feature&, const Feature&);
 bool intersectPoint(const Feature&, const coord);
 bool intersectInterval(const Feature&, const Feature&);
+int partialIntersect(const Feature&, const Feature&);
 
 //
 //template<> struct std::hash<Feature>

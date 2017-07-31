@@ -87,7 +87,7 @@ unsigned short chromosomeMap(std::string chr)
     if (entry == chromosomes.end())
     {
         chromosomes[chr] = chromosomes.size() + 1u;
-        std::cout << chr << " -> " << chromosomes.size() << std::endl;
+        //std::cout << chr << " -> " << chromosomes.size() << std::endl;
     }
     return chromosomes[chr];
 }
@@ -138,4 +138,11 @@ bool intersectPoint(const Feature &a, const coord x)
 bool intersectInterval(const Feature &a, const Feature &b)
 {
     return intersectPoint(a, b.start) || intersectPoint(a, b.end) || intersectPoint(b, a.start);
+}
+
+int partialIntersect(const Feature &target, const Feature &query)
+{
+    return intersectInterval(target, query) ? (
+                                               1+std::min(target.end, query.end-1) - std::max(target.start, query.start)
+                                               ) : 0;
 }

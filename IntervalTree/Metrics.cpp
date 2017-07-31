@@ -52,8 +52,11 @@ std::ofstream& operator<<(std::ofstream &stream, const Metrics &counter)
 
 void Collector::add(const std::string &gene_id, const std::string &exon_id, const double coverage)
 {
-    this->data[gene_id].push_back(std::pair<std::string, double>(exon_id, coverage));
-    this->dirty = true;
+    if (coverage > 0)
+    {
+        this->data[gene_id].push_back(std::pair<std::string, double>(exon_id, coverage));
+        this->dirty = true;
+    }
 }
 
 void Collector::collect(const std::string &gene_id)
@@ -61,8 +64,22 @@ void Collector::collect(const std::string &gene_id)
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
     {
         (*this->target)[entry->first] += entry->second;
-//        std::cout << entry->first << " " << entry->second << std::endl;
+        //std::cout << entry->first << " " << entry->second << std::endl;
     }
+}
+
+void Collector::collectSingle(const std::string &gene_id)
+{
+    for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
+    {
+        (*this->target)[entry->first] += 1.0;
+        //std::cout << entry->first << "  <1>"  << std::endl;
+    }
+}
+
+bool Collector::queryGene(const std::string &gene_id)
+{
+    return (bool) this->data[gene_id].size();
 }
 
 bool Collector::isDirty()
