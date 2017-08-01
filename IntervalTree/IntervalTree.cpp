@@ -32,6 +32,7 @@ bool isIn(set<T> &s, T member)
 
 const string NM = "NM";
 bool debugging = false;
+bool dumbMode = false;
 
 //Utility functions
 unsigned int extractBlocks(BamAlignment&, vector<Feature>&, unsigned short);
@@ -62,6 +63,7 @@ int main(int argc, char* argv[])
     ValueFlag<int> splitDistance(parser, "dist", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS", {"split-distance"});
     Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy exon metrics.  Matches output of RNA-SeQC 1.1.6", {"legacy"});
+    Flag dumbModeQ(parser, "dumb", "Use dumb mode", {"dumb"});
     Positional<string> outputDir(parser, "output", "Output directory");
 	try
 	{
@@ -79,6 +81,7 @@ int main(int argc, char* argv[])
         const unsigned int EXON_QUALITY_THRESHOLD = exonQualityThreshold ? exonQualityThreshold.Get() : 0u;
         const int SPLIT_DISTANCE = 100;
         debugging = debugMode.Get();
+        dumbMode = dumbModeQ.Get();
         
         //Define variables
         Metrics counter; //main tracker for various metrics
@@ -189,8 +192,9 @@ int main(int argc, char* argv[])
                         if (alignment.IsDuplicate()) counter.increment("Mapped Duplicate Reads");
                         else counter.increment("Mapped Unique Reads");
                         //check length against max read length
-                        if (alignment.Length > MAX_READ_LENGTH) continue;
-                        if (alignment.Length > readLength) readLength = alignment.Length;
+                        unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
+                        if (alignmentSize > MAX_READ_LENGTH) continue;
+                        if (alignmentSize > readLength) readLength = alignment.Length;
                         if (alignment.IsPaired() && alignment.IsMateMapped() && alignment.IsProperPair())
                         {
                             if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
@@ -247,6 +251,7 @@ int main(int argc, char* argv[])
         
         unsigned int genesDetected = 0;
         ofstream geneReport(outputDir.Get()+"/geneReport.tsv");
+        geneReport << fixed;
         //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
         for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
         {
@@ -256,6 +261,7 @@ int main(int argc, char* argv[])
         geneReport.close();
         
         ofstream exonReport(outputDir.Get()+"/exonReport.tsv");
+        exonReport << fixed;
         //iterate over every exon with coverage reported
         for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
         {
@@ -475,6 +481,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false; //various booleans for keeping track of the alignment
+    
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
         bool blockWasIntragenic = false; //legacy
@@ -486,6 +493,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
             else if (result->strand == -1) transcriptMinus = true;
             if (result->type == "exon")
             {
+ 
                 int intersectionSize = partialIntersect(*result, *block);
                 //check that this block fully overlaps the feature
                 //(if any bases of the block don't overlap, then the read is discarded)
@@ -585,8 +593,9 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         {
             geneCoverage[*gene]++;
             //cout << "+" << endl;
+            //cout << "Dumb: " << alignment.Name << " " << *gene << endl;
         }
-        exonCoverageCollector.collectSingle(*gene);
+        exonCoverageCollector.collectSingle(alignment.Name, *gene);
         //cout << endl;
         doExonMetrics = true;
     }

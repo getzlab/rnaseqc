@@ -70,6 +70,12 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (out.type == "exon" && attributes.find("exon_id") != attributes.end()) out.feature_id = attributes["exon_id"];
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
+            
+            if(out.end == out.start)
+            {
+                std::cout<<"Legacy dumb skip: " << out.feature_id << std::endl;
+                continue; //legacy as fuck
+            }
             break;
         }
 

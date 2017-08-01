@@ -68,12 +68,12 @@ void Collector::collect(const std::string &gene_id)
     }
 }
 
-void Collector::collectSingle(const std::string &gene_id)
+void Collector::collectSingle(const std::string &read_name, const std::string &gene_id)
 {
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
     {
         (*this->target)[entry->first] += 1.0;
-        //std::cout << entry->first << "  <1>"  << std::endl;
+        //std::cout << "Dumb: " << read_name << " " << entry->first << " " << 1 << std::endl;
     }
 }
 

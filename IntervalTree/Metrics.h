@@ -37,7 +37,7 @@ public:
     }
     void add(const std::string&, const std::string&, const double);
     void collect(const std::string&);
-    void collectSingle(const std::string&); //for shitty legacy code
+    void collectSingle(const std::string&, const std::string&); //for shitty legacy code
     bool queryGene(const std::string&);
     bool isDirty();
 };
