@@ -30,16 +30,18 @@ class Collector {
     std::map<std::string, std::vector<std::pair<std::string, double> > > data;
     std::map<std::string, double> *target;
     bool dirty;
+    double total;
 public:
-    Collector(std::map<std::string, double> *dataTarget) : data(), target(dataTarget), dirty(false)
+    Collector(std::map<std::string, double> *dataTarget) : data(), target(dataTarget), dirty(false), total(0.0)
     {
         
     }
     void add(const std::string&, const std::string&, const double);
     void collect(const std::string&);
-    void collectSingle(const std::string&, const std::string&); //for shitty legacy code
+    void collectSingle(const std::string&); //for legacy exon detection
     bool queryGene(const std::string&);
     bool isDirty();
+    double sum();
 };
 
 std::ofstream& operator<<(std::ofstream&, const Metrics&);

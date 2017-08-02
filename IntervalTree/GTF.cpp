@@ -19,7 +19,6 @@ const string EXON_NAME = "exon";
 const int U_SHORT_MAX = 65535u;
 map<string, unsigned short> chromosomes;
 
-//std::map<unsigned short, int> chromosomeMap = std::map<unsigned short, int>();
 
 ifstream& operator>>(ifstream &in, Feature &out)
 {
@@ -71,11 +70,6 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
             
-            if(out.end == out.start)
-            {
-                std::cout<<"Legacy dumb skip: " << out.feature_id << std::endl;
-                continue; //legacy as fuck
-            }
             break;
         }
 

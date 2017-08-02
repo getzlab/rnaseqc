@@ -31,22 +31,6 @@ bool intersectPoint(const Feature&, const coord);
 bool intersectInterval(const Feature&, const Feature&);
 int partialIntersect(const Feature&, const Feature&);
 
-//
-//template<> struct std::hash<Feature>
-//{
-//    size_t operator()(const Feature &obj)
-//    {
-//        long result = 1, prime = 97;
-//        result = result * prime + obj.start;
-//        result = result * prime + obj.end;
-//        result = result * prime + obj.chromosome;
-//        result = result * prime + obj.strand;
-//        result = result * prime + std::hash<std::string>()(obj.type);
-//        result = result * prime + std::hash<std::string>()(obj.gene_id);
-//        return result;
-//    }
-//};
-
 extern std::map<std::string, unsigned short> chromosomes;
 
 unsigned short chromosomeMap(std::string);

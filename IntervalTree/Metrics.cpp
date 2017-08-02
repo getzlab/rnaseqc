@@ -10,14 +10,6 @@
 #include <iostream>
 
 
-/*void increment(std::string);
- 
- friend std::ofstream& operator<<(std::ofstream&, Metrics&);
- };
- 
- 
-*/
-
 void Metrics::increment(std::string key)
 {
     this->counter[key]++;
@@ -64,16 +56,15 @@ void Collector::collect(const std::string &gene_id)
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
     {
         (*this->target)[entry->first] += entry->second;
-        //std::cout << entry->first << " " << entry->second << std::endl;
+        this->total += entry->second;
     }
 }
 
-void Collector::collectSingle(const std::string &read_name, const std::string &gene_id)
+void Collector::collectSingle(const std::string &gene_id)
 {
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
     {
         (*this->target)[entry->first] += 1.0;
-        //std::cout << "Dumb: " << read_name << " " << entry->first << " " << 1 << std::endl;
     }
 }
 
@@ -85,4 +76,9 @@ bool Collector::queryGene(const std::string &gene_id)
 bool Collector::isDirty()
 {
     return this->dirty;
+}
+
+double Collector::sum()
+{
+    return this->total;
 }
