@@ -22,6 +22,7 @@ struct Feature {
     unsigned short chromosome;
     short strand;
     std::string type, feature_id, gene_id, transcript_type;
+    bool ribosomal;
 };
 
 bool operator==(const Feature &a, const Feature &b);
@@ -32,6 +33,8 @@ bool intersectInterval(const Feature&, const Feature&);
 int partialIntersect(const Feature&, const Feature&);
 
 extern std::map<std::string, unsigned short> chromosomes;
+extern std::map<std::string, std::string> geneNames;
+extern std::map<std::string, coord> geneLengths;
 
 unsigned short chromosomeMap(std::string);
 std::ifstream& operator>>(std::ifstream&, Feature&);

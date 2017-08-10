@@ -37,7 +37,7 @@
 		9F6E35911F043B6900358867 /* GTF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GTF.h; sourceTree = "<group>"; };
 		9F92C3B11F1D076C007C2022 /* libbamtools.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbamtools.a; path = /usr/local/lib/libbamtools.a; sourceTree = "<absolute>"; };
 		9FB84E851F321E1E003142F8 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		9FB84E871F3221F5003142F8 /* Expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Expression.cpp; sourceTree = "<group>"; };
+		9FB84E871F3221F5003142F8 /* Expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Expression.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		9FB84E881F3221F5003142F8 /* Expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Expression.h; sourceTree = "<group>"; };
 		9FC80EE51F1564A1002E3482 /* BED.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BED.cpp; sourceTree = "<group>"; };
 		9FC80EE61F1564A1002E3482 /* BED.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BED.h; sourceTree = "<group>"; };
@@ -258,6 +258,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = /usr/local/include;
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
@@ -273,6 +275,7 @@
 					"-lz",
 					"-lboost_filesystem",
 					"-lboost_system",
+					"-lboost_regex",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -282,6 +285,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				HEADER_SEARCH_PATHS = /usr/local/include;
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
@@ -297,6 +302,7 @@
 					"-lz",
 					"-lboost_filesystem",
 					"-lboost_system",
+					"-lboost_regex",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

@@ -13,17 +13,23 @@
 #include <regex>
 #include <list>
 #include <ctime>
+#include <limits.h>
 #include <math.h>
 #include <bamtools/api/BamReader.h>
 #include <bamtools/api/BamAlignment.h>
+#include <bamtools/api/BamConstants.h>
 #include <args.hxx>
 #include <boost/filesystem.hpp>
 using namespace std;
 using namespace args;
 using namespace BamTools;
 
+//TEST: count reads with start/end within 100b of the start/end of each gene
+//      On that note, possibly cheat by adding gene counts of +{gene_id}/-{gene_id} for start stop windows
+//      Francois only wants median and mean of the 3':5' ratio for genes (don't worry about outputting the raw counts)
+//TEST: Generate std-dev for the 3'/5' ratio
+
 const string NM = "NM";
-bool debugging = false;
 
 int main(int argc, char* argv[])
 {
@@ -32,18 +38,20 @@ int main(int argc, char* argv[])
     HelpFlag help(parser, "help", "Display this message and quit", {'h', "help"});
     Positional<string> gtfFile(parser, "gtf", "The input GTF file containing features to check the bam against");
     Positional<string> bamFile(parser, "bam", "The input SAM/BAM file containing reads to process");
+    Positional<string> outputDir(parser, "output", "Output directory");
+    ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2Mb", {"chimeric-distance"});
     ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100Kb", {"read-length"});
-    ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1,000,000", {"samples"});
-    ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --exon-quality to discard reads based on quality. Default: 255", {"low-quality"});
-    ValueFlag<unsigned int> exonQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"exon-quality"});
-    ValueFlag<unsigned int> exonMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"exon-mismatch"});
+    ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1,000,000", {"fragment-samples"});
+    ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
+    ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
+    ValueFlag<unsigned int> baseMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"base-mismatch"});
     ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS. Default: 100bp", {"split-distance"});
     Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
-    Positional<string> outputDir(parser, "output", "Output directory");
+    ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag", {'t', "tag"});
 	try
 	{
         //parse and validate the command line arguments
@@ -56,34 +64,25 @@ int main(int argc, char* argv[])
         const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 100000u;
         const unsigned int FRAGMENT_SIZE_SAMPLES = fragmentSamples ? fragmentSamples.Get() : 1000000u;
         const unsigned int LOW_QUALITY_READS_THRESHOLD = lowQualityThreshold ? lowQualityThreshold.Get() : 255u;
-        const unsigned int EXON_MISMATCH_THRESHOLD = exonMismatchThreshold ? exonMismatchThreshold.Get() : 6u;
-        const unsigned int EXON_QUALITY_THRESHOLD = exonQualityThreshold ? exonQualityThreshold.Get() : 255u;
+        const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
+        const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : 255u;
         const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
-        debugging = debugMode.Get();
+        const vector<string> tags = filterTags ? filterTags.Get() : vector<string>{"mC"}; //STAR chimeric pair tag
+        const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
         
-        //Define variables
-        Metrics counter; //main tracker for various metrics
-        int readLength = 0; //longest read encountered so far
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
-        BamReader bam;
-        const string bamFilename = bamFile.Get();
-        SamSequenceDictionary sequences; //for chromosome lookup
-        map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
-        unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
-        
-        //fragment size variables
-        unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
         map<unsigned short, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
-        map<unsigned short, list<Feature> > *bedFeatures; //similar map, but parsed from BED for fragment sizes only
-        map<string, string> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
-        list<long long> fragmentSizes; //list of fragment size samples taken so far
-        
         //Parse the GTF and extract features
         {
             Feature line; //current feature being read from the gtf
             ifstream reader(gtfFile.Get());
+            if (!reader.is_open())
+            {
+                cout << "Unable to open GTF file: " << gtfFile.Get() << endl;
+                return 10;
+            }
             
             if (VERBOSITY) cout<<"Reading GTF Features..."<<endl;
             time(&t0);
@@ -107,6 +106,12 @@ int main(int argc, char* argv[])
         time(&t1); //record the time taken to parse the GTF
         if (VERBOSITY) cout << "Finished processing GTF in " << difftime(t1, t0) << " seconds" << endl;
         
+        
+        //fragment size variables
+        unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
+        map<unsigned short, list<Feature> > *bedFeatures; //similar map, but parsed from BED for fragment sizes only
+        map<string, string> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
+        list<long long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
         {
              Feature line; //current feature being read from the bed
@@ -114,23 +119,39 @@ int main(int argc, char* argv[])
             doFragmentSize = FRAGMENT_SIZE_SAMPLES;
             bedFeatures = new map<unsigned short, list<Feature> >();
             ifstream bedReader(bedFile.Get());
+            if (!bedReader.is_open())
+            {
+                cout << "Unable to open BED file: " << bedFile.Get() << endl;
+                return 10;
+            }
             //extract each line of the bed and insert it into the bedFeatures map
             while (extractBED(bedReader, line)) (*bedFeatures)[line.chromosome].push_back(line);
             bedReader.close();
         }
         
+        BamReader bam;
+        const string bamFilename = bamFile.Get();
+        SamSequenceDictionary sequences; //for chromosome lookup
+        Metrics counter; //main tracker for various metrics
+        int readLength = 0; //longest read encountered so far
+        map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
+        unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
             BamAlignment alignment; //current bam alignment
-            
             time_t report_time; //used to ensure that stdout isn't spammed if the program runs super fast
             bam.Open(bamFilename);
+            if (!bam.IsOpen())
+            {
+                cout << "Unable to open BAM file: " << bamFilename << endl;
+                return 10;
+            }
             bam.LocateIndex(); //load in the index, if found.  Slightly improves IO perf
             sequences = bam.GetHeader().Sequences; //read the sequence dictionary from the header
             if (VERBOSITY) cout<<"Parsing bam..."<<endl;
             time(&report_time);
             time(&t2);
-            while (bam.GetNextAlignment(alignment))
+            while (bam.GetNextAlignmentCore(alignment))
             {
                 //try to print an update to stdout every 250,000 reads, but no more than once every 10 seconds
                 ++alignmentCount;
@@ -152,8 +173,65 @@ int main(int argc, char* argv[])
                     if (alignment.IsMapped())
                     {
                         counter.increment("Mapped Reads");
+                        
+                        if (alignment.IsDuplicate())counter.increment("Mapped Duplicate Reads");
+                        else counter.increment("Mapped Unique Reads");
+                        //check length against max read length
+                        unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
+                        if (alignmentSize > MAX_READ_LENGTH) continue;
+                        if (alignmentSize > readLength) readLength = alignment.Length;
+                        if (alignment.IsPaired() && alignment.IsMateMapped() && alignment.IsProperPair())
+                        {
+                            if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
+                            if (LegacyMode.Get() && (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE))
+                            {
+                                counter.increment("Chimeric Pairs");
+                                continue;
+                            }
+                        }
+                        //Get tag data
+                        char nmType;
                         unsigned int mismatches;
-                        alignment.GetTag(NM, mismatches);
+                        alignment.BuildCharData(); //Load read name and tags
+                        alignment.GetTagType(NM, nmType);
+                        //The data type can vary based on the bam, but bamtools is strict about matching data types
+                        //It is often platform-dependent whether or not a tag's data will fit properly into a different type
+                        switch(nmType)
+                        {
+                            case Constants::BAM_TAG_TYPE_INT8:
+                                int8_t tmpi8;
+                                alignment.GetTag(NM, tmpi8);
+                                mismatches = (unsigned int) tmpi8;
+                                break;
+                            case Constants::BAM_TAG_TYPE_UINT8:
+                                uint8_t tmpu8;
+                                alignment.GetTag(NM, tmpu8);
+                                mismatches = (unsigned int) tmpu8;
+                                break;
+                            case Constants::BAM_TAG_TYPE_INT16:
+                                int16_t tmpi16;
+                                alignment.GetTag(NM, tmpi16);
+                                mismatches = (unsigned int) tmpi16;
+                                break;
+                            case Constants::BAM_TAG_TYPE_UINT16:
+                                uint16_t tmpu16;
+                                alignment.GetTag(NM, tmpu16);
+                                mismatches = (unsigned int) tmpu16;
+                                break;
+                            case Constants::BAM_TAG_TYPE_INT32:
+                                int32_t tmpi32;
+                                alignment.GetTag(NM, tmpi32);
+                                mismatches = (unsigned int) tmpi32;
+                                break;
+                            case Constants::BAM_TAG_TYPE_UINT32:
+                                uint32_t tmpu32;
+                                alignment.GetTag(NM, tmpu32);
+                                mismatches = (unsigned int) tmpu32;
+                                break;
+                            default:
+                                throw std::invalid_argument("Unrecognized bam format");
+                        }
+                        
                         if (alignment.IsPaired())
                         {
                             if (alignment.IsFirstMate())
@@ -174,22 +252,17 @@ int main(int argc, char* argv[])
                         }
                         counter.increment("Mismatches", mismatches);
                         counter.increment("Total Bases", alignment.Length);
-                        if (alignment.IsDuplicate())counter.increment("Mapped Duplicate Reads");
-                        else counter.increment("Mapped Unique Reads");
-                        //check length against max read length
-                        unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
-                        if (alignmentSize > MAX_READ_LENGTH) continue;
-                        if (alignmentSize > readLength) readLength = alignment.Length;
-                        if (alignment.IsPaired() && alignment.IsMateMapped() && alignment.IsProperPair())
+                        //generic filter tags:
+                        bool discard = false;
+                        for (auto tag = tags.begin(); tag != tags.end(); ++tag)
                         {
-                            if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
-                            if (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE)
+                            if (alignment.HasTag(tag->c_str()))
                             {
-                                counter.increment("Chimeric Pairs");
-                                if (VERBOSITY > 1) cout << "Chimeric pair: " << (sequences.Begin()+alignment.RefID)->Name << "\t" << (sequences.Begin()+alignment.MateRefID)->Name << ":\t" << (alignment.RefID == alignment.MateRefID) << endl;
-                                continue;
+                                discard = true;
+                                counter.increment("Filtered by tag: "+*tag);
                             }
                         }
+                        if (discard) continue;
                         
                         //now record intron/exon metrics by intersecting filtered reads with the list of features
                         if (alignment.RefID < 0 || alignment.RefID >= sequences.Size())
@@ -197,7 +270,7 @@ int main(int argc, char* argv[])
                             //The read had an unrecognized RefID (one not defined in the bam's header)
                             if (VERBOSITY) cout << "Unrecognized RefID on alignment: " << alignment.Name<<endl;
                         }
-                        else if(mismatches <= EXON_MISMATCH_THRESHOLD && alignment.IsProperPair() && alignment.MapQuality >= EXON_QUALITY_THRESHOLD)
+                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && alignment.IsProperPair() && alignment.MapQuality >= MAPPING_QUALITY_THRESHOLD)
                         {
                             vector<Feature> blocks;
                             string chrName = (sequences.Begin()+alignment.RefID)->Name;
@@ -207,15 +280,14 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr]); //drop features that appear before this read
                             
                             //run the read through exon metrics
-                            //exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length);
                             if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length);
                             else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length);
                             
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
-                            if (alignment.IsPaired() && doFragmentSize && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
+                            if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
                                 doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, sequences, blocks, alignment);
-                                if (VERBOSITY > 1 && !doFragmentSize) cout << "Completed taking fragment size samples" << endl;
+                                if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
                         else counter.increment("Reads excluded from exon counts");
@@ -259,29 +331,85 @@ int main(int argc, char* argv[])
 
         if (VERBOSITY) cout << "Generating report" << endl;
         
+        //gene coverage report generation
         unsigned int genesDetected = 0;
-        ofstream geneReport(outputDir.Get()+"/geneReport.tsv");
-        geneReport << fixed;
-        //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
-        for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
+        vector<double> ratios;
         {
-            geneReport << gene->first << "\t" << gene->second << endl;
-            if (gene->second >= 5.0) ++genesDetected;
+            unsigned long geneCount = 0ul;
+            //not a super efficient approach, but I'm not too concerned about efficiency during report generation
+            //this is really where I pay for the downside of putting end coverage in the same DS as regular gene coverage
+            for (auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
+            {
+                const char first = gene->first.at(0);
+                if (first != '+' && first != '-') ++geneCount;
+            }
+            ofstream geneReport(outputDir.Get()+"/geneReport.gct");
+            ofstream geneRPKM(outputDir.Get()+"/geneRPKM.gct");
+            geneReport << "#1.2" << endl;
+            geneRPKM << "#1.2" << endl;
+            geneReport << geneCount << "\t1" << endl;
+            geneRPKM << geneCount << "\t1" << endl;
+            geneReport << "Name\tDescription\tRNA-SeQC" << endl;
+            geneRPKM << "Name\tDescription\tSAMPLE" << endl;
+            geneRPKM << fixed;
+            const double scaleRPKM = (double) alignmentCount / 1000000.0;
+            //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
+            for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
+            {
+                const char first = gene->first.at(0);
+                //This is not gene coverage per se, but coverage for the end of a gene.  skip for now
+                if (first == '+' || first == '-') continue;
+                geneReport << gene->first << "\t" << geneNames[gene->first] << "\t" << (long) gene->second << endl;
+                geneRPKM << gene->first << "\t" << geneNames[gene->first] << "\t" << (1000.0 * gene->second / scaleRPKM) / (double) geneLengths[gene->first] << endl;
+                if (gene->second >= 5.0) ++genesDetected;
+                if (geneCoverage["-"+gene->first] > 0) //because NaN really throws a wrench in calculations
+                {
+                    ratios.push_back(ceil(geneCoverage["+"+gene->first]) / ceil(geneCoverage["-"+gene->first]));
+                }
+            }
+            geneReport.close();
         }
-        geneReport.close();
         
-        ofstream exonReport(outputDir.Get()+"/exonReport.tsv");
-        exonReport << fixed;
-        //iterate over every exon with coverage reported
-        for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
+        //3'/5' coverage ratio calculations
+        double ratioAvg = 0.0, ratioMedDev, ratioMedian, ratioStd = 0.0;
         {
-            exonReport << exon->first << "\t" << exon->second << endl;
+            vector<double> ratioDeviations;
+            sort(ratios.begin(), ratios.end());
+            auto median = ratios.begin();
+            for (unsigned long midpoint = ratios.size() / 2; midpoint > 0; --midpoint) ++median;
+            ratioMedian = *median;
+            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+            {
+                ratioAvg += (*ratio)/(double) ratios.size();
+                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
+            }
+            sort(ratioDeviations.begin(), ratioDeviations.end());
+            ratioMedDev = ratioDeviations[ratioDeviations.size() /2] * 1.4826;
+            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+            {
+                ratioStd += pow((*ratio) - ratioAvg, 2.0) / (double) ratios.size();
+            }
+            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
         }
-        exonReport.close();
+    
+        //exon coverage report generation
+        {
+            ofstream exonReport(outputDir.Get()+"/exonReport.gct");
+            exonReport << "#1.2" << endl;
+            exonReport << exonCoverage.size() << "\t1" << endl;
+            exonReport << "Name\tDescription\tRNA-SeQC" << endl;
+            exonReport << fixed;
+            //iterate over every exon with coverage reported
+            for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
+            {
+                exonReport << exon->first << "\t" << geneNames[exon->first] << "\t" << exon->second << endl;
+            }
+            exonReport.close();
+        }
         
         ofstream output(outputDir.Get()+"/report.tsv");
         //output rates and other fractions to the report
-        output << "Sample\t" << gtfFile.Get() << endl;
+        output << "Sample\t" << SAMPLENAME << endl;
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
@@ -296,6 +424,7 @@ int main(int argc, char* argv[])
         output << "Intergenic Rate\t" << counter.frac("Intergenic Reads", "Mapped Reads") << endl;
         output << "Intragenic Rate\t" << counter.frac("Intragenic Reads", "Mapped Reads") << endl;
         output << "Disqualification Rate\t" << counter.frac("Intron/Exon disqualified reads", "Mapped Reads") << endl;
+        output << "Discard Rate\t" << (double)(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
         output << "rRNA Rate\t" << counter.frac("rRNA", "Mapped Reads") << endl;
         output << "End 1 Sense Rate\t" << (double) counter.get("End 1 Sense") / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;
         output << "End 2 Sense Rate\t" << (double) counter.get("End 2 Sense") / (counter.get("End 2 Sense") + counter.get("End 2 Antisense")) << endl;
@@ -306,6 +435,10 @@ int main(int argc, char* argv[])
         output << "Read Length\t" << readLength << endl;
         output << "Genes Detected\t" << genesDetected << endl;
         output << "Estimated Library Complexity\t" << minReads << endl;
+        output << "Average 5'/3' coverage ratio\t" << ratioAvg << endl;
+        output << "5'/3' median coverage ratio\t" << ratioMedian << endl;
+        output << "5'/3' coverage ratio Std\t" << ratioStd << endl;
+        output << "5'/3' coverage ratio MAD_Std\t" << ratioMedDev << endl;
         output << "Total Reads (incl. supplemental and failed reads)\t" << alignmentCount << endl;
         
         if (fragmentSizes.size())
@@ -316,11 +449,12 @@ int main(int argc, char* argv[])
             
             
             double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMed = 0.0, fragmentMedDev = 0.0;
-            //I can't believe I have to do this, but G++98's list.size() has to WALK THE ENTIRE LIST FOR SOME REASON
+            //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
+            //using the old implimentation of list which has to walk the entire sequence to determine size
             double size = (double) fragmentSizes.size();
             vector<double> deviations; //list of recorded deviations from the median
             auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
-            for (int midpoint = fragmentSizes.size() / 2; midpoint > 0; --midpoint) ++median;
+            for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
             fragmentMed = (double) *median; //save the median value
             ofstream fragmentList(outputDir.Get()+"/fragmentSizes.txt"); //raw list of each fragment size recorded
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
@@ -341,6 +475,7 @@ int main(int argc, char* argv[])
             fragmentStd = pow(fragmentStd, 0.5); //compute the standard deviation
             
             output << "Average Fragment Length\t" << fragmentAvg << endl;
+            output << "Fragment Length Median\t" << fragmentMed << endl;
             output << "Fragment Length Std\t" << fragmentStd << endl;
             output << "Fragment Length MAD_Std\t" << fragmentMedDev << endl;
         }
@@ -352,8 +487,8 @@ int main(int argc, char* argv[])
             output << "[DEBUG]MAX_READ_LENGTH\t" << MAX_READ_LENGTH << endl;
             output << "[DEBUG]FRAGMENT_SIZE_SAMPLES\t" << FRAGMENT_SIZE_SAMPLES << endl;
             output << "[DEBUG]LOW_QUALITY_READS_THRESHOLD\t" << LOW_QUALITY_READS_THRESHOLD << endl;
-            output << "[DEBUG]EXON_MISMATCH_THRESHOLD\t" << EXON_MISMATCH_THRESHOLD << endl;
-            output << "[DEBUG]EXON_QUALITY_THRESHOLD\t" << EXON_QUALITY_THRESHOLD << endl;
+            output << "[DEBUG]EXON_MISMATCH_THRESHOLD\t" << BASE_MISMATCH_THRESHOLD << endl;
+            output << "[DEBUG]EXON_QUALITY_THRESHOLD\t" << MAPPING_QUALITY_THRESHOLD << endl;
             output << "[DEBUG]SPLIT_DISTANCE\t" << SPLIT_DISTANCE << endl;
             
         }
@@ -382,6 +517,11 @@ int main(int argc, char* argv[])
     {
         cout << "Invalid argument type provided: " << e.what() << endl;
         return 7;
+    }
+    catch (boost::filesystem::filesystem_error &e)
+    {
+        cout << "Filesystem error:  " << e.what() << endl;
+        return 8;
     }
     catch (std::length_error &e)
     {

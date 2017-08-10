@@ -8,6 +8,7 @@
 
 #include "Expression.h"
 #include <algorithm>
+
 using namespace BamTools;
 using std::vector;
 using std::list;
@@ -16,6 +17,8 @@ using std::string;
 using std::set;
 using std::cout;
 using std::endl;
+using std::pair;
+
 
 //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
 unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr)
@@ -60,7 +63,7 @@ void trimFeatures(BamAlignment &alignment, list<Feature> &features)
 {
     //trim intervals upstream of this block
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
-    while (features.size() && features.front().end < alignment.Position) features.pop_front();
+    while (!features.empty() && features.front().end < alignment.Position) features.pop_front();
 }
 
 list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
@@ -99,7 +102,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
-    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false; //various booleans for keeping track of the alignment
+    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
     
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
@@ -110,9 +113,10 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         {
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
+            //if (result->ribosomal) ribosomal = true; else
             if (result->type == "exon")
             {
-                
+                exonic = true;
                 int intersectionSize = partialIntersect(*result, *block);
                 //check that this block fully overlaps the feature
                 //(if any bases of the block don't overlap, then the read is discarded)
@@ -129,9 +133,22 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
             else if (result->type == "gene")
             {
                 intragenic = true;
-                //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons (apparently not)
+                //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
+                
+                //We do count coverage in the 3'/5' regions of the gene, however.
+                //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
+                //crowded argument list
+                //first check if the read maps to either the start or end areas of a gene
+                bool intersectsStart = block->start <= result->start + 100l && block->start >= result->start;
+                if (intersectsStart || (block->end >= result->end - 100l && block->end <= result->end))
+                {
+                    //Key: + if read maps to gene's 5'
+                    //     - if read maps to gene's 3'
+                    string key = (result->strand == 1)^intersectsStart ? "+" : "-";
+                    geneCoverage[key+result->gene_id] += (double) (block->end - block->start + 1) / length;
+                }
             }
-            if (result->transcript_type == "rRNA" || result->transcript_type == "Mt_rRNA") ribosomal = true;
+            if (result->ribosomal) ribosomal = true;
         }
         delete results; //clean up dynamic allocation
         //legacy split read handling:
@@ -153,7 +170,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         doExonMetrics = true;
     }
     
-    if (!exonCoverageCollector.isDirty()) //a.k.a: No exons were detected at all on any block of the read
+    if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
         {
@@ -215,7 +232,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
     
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
-    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false; //various booleans for keeping track of the alignment
+    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
     
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
@@ -225,8 +242,10 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         {
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
+            //if (result->ribosomal) ribosomal = true; else
             if (result->type == "exon")
             {
+                exonic = true;
                 int intersectionSize = partialIntersect(*result, *block);
                 //check that this block fully overlaps the feature
                 //(if any bases of the block don't overlap, then the read is discarded)
@@ -243,12 +262,26 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
             else if (result->type == "gene")
             {
                 intragenic = true;
-                //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons (apparently not)
+                //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
+                
+                //We do count coverage in the 3'/5' regions of the gene, however.
+                //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
+                //crowded argument list
+                //first check if the read maps to either the start or end areas of a gene
+                bool intersectsStart = block->start <= result->start + 100l && block->start >= result->start;
+                if (intersectsStart || (block->end >= result->end - 100l && block->end <= result->end))
+                {
+                    //Key: + if read maps to gene's 5'
+                    //     - if read maps to gene's 3'
+                    string key = (result->strand == 1)^intersectsStart ? "+" : "-";
+                    geneCoverage[key+result->gene_id] += (double) (block->end - block->start + 1) / length;
+                }
             }
-            if (result->transcript_type == "rRNA" || result->transcript_type == "Mt_rRNA") ribosomal = true;
+            if (result->ribosomal) ribosomal = true;
         }
         delete results; //clean up dynamic allocation
     }
+    
     if (genes.size() >= 1)
     {
         //if there was more than one block, iterate through each block's set of genes and intersect them
@@ -269,19 +302,8 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
             doExonMetrics = true;
         }
     }
-    //if there was only one block, we just do the same coverage recording as above
-    /*else if (genes.size() == 1) for (auto gene = genes[0].begin(); gene != genes[0].end(); ++gene)
-     {
-     if (exonCoverageCollector.queryGene(*gene)) geneCoverage[*gene]++;
-     exonCoverageCollector.collect(*gene);
-     doExonMetrics = true;
-     }*/
     
-    /*if (exonCoverageCollector.sum() > 1.0)
-    {
-        cout << alignment.Name << " had excess exon coverage: " << exonCoverageCollector.sum() << endl;
-    }*/
-    if (!exonCoverageCollector.isDirty()) //a.k.a: No exons were detected at all on any block of the read
+    if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
         {

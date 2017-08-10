@@ -18,6 +18,9 @@ Version 2.0.0
 
       output                            Output directory
 
+      -s[sample], --sample=[sample]     The name of the current sample. Default:
+                                        The bam's filename
+
       --bed=[BEDFILE]                   Optional input BED file containing
                                         non-overlapping exons used for fragment
                                         size calculations
@@ -31,22 +34,22 @@ Version 2.0.0
                                         longer than this threshold are
                                         discarded. Default: 100Kb
 
-      --samples=[SAMPLES]               Set the number of samples to take when
+      --fragment-samples=[SAMPLES]      Set the number of samples to take when
                                         computing fragment sizes. Requires the
                                         --bed argument. Default: 1,000,000
 
       --low-quality=[QUALITY]           Set the lower bound on read quality.
                                         Reads below this number are counted as
                                         low quality BUT ARE STILL USED IN
-                                        COUNTS. See --exon-quality to discard
+                                        COUNTS. See --mapping-quality to discard
                                         reads based on quality. Default: 255
 
-      --exon-quality=[QUALITY]          Set the lower bound on read quality for
+      --mapping-quality=[QUALITY]       Set the lower bound on read quality for
                                         exon coverage counting. Reads below this
                                         number are excluded from coverage
                                         metrics. Default: 255
 
-      --exon-mismatch=[MISMATCHES]      Set the maximum number of allowed
+      --base-mismatch=[MISMATCHES]      Set the maximum number of allowed
                                         mismatches between a read and the
                                         reference sequence. Reads with more than
                                         this number of mismatches are excluded
@@ -68,14 +71,16 @@ Version 2.0.0
                                         on. Supply this argument twice for
                                         progress updates while parsing the bam
 
+      -t[TAG...], --tag=[TAG...]        Filter out reads with the specified tag.
+
       "--" can be used to terminate flag options and force all following
       arguments to be treated as positional options
 
 ### Output files:
 The following output files are generated in the output directory you provide:
 * report.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
-* exonReport.tsv : A tab-delimited list of (Exon ID, coverage) pairs for all exons which had at least part of one read mapped
-* geneReport.tsv : A tab-delimited list of (Gene ID, coverage) pairs for all exons which had at least one read map to at least one of its exons
+* exonReport.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
+* geneReport.tsv : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all exons which had at least one read map to at least one of its exons
 * fragmentSizes.txt : A list of fragment sizes recorded, if a BED file was provided
       
 ### Code Documentation:
@@ -136,6 +141,10 @@ The following output files are generated in the output directory you provide:
 * `int partialIntersect(const Feature&, const Feature&)` : returns the exact size of the overlap between two features
 
 * `std::map<std::string, unsigned short> chromosomes` (external variable) : Externally available map of chromosomes to their internal ID.  IDs are arbitrarily assigned (and are used in place of strings for performance reasons)
+
+* `std::map<std::string, std::string> geneNames` (external variable) : Externally available map of gene IDs to their canonical names.  Used for generating gct output files
+
+* `std::map<std::string, coord>` (external variable) : Externally available map of gene IDs to their reference length.  Used for generating RPKM values
 
 * `unsigned short chromosomeMap(std::string)` : returns the internal ID for the provided chromosome name
 

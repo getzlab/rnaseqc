@@ -10,14 +10,19 @@
 #include <sstream>
 #include <exception>
 #include <stdexcept>
+#include <boost/regex.hpp>
 
 using std::ifstream;
 using std::string;
 using std::map;
 
 const string EXON_NAME = "exon";
-const int U_SHORT_MAX = 65535u;
+//const int U_SHORT_MAX = 65535u;
+const boost::regex ribosomalPattern("(Mt_)?rRNA");
 map<string, unsigned short> chromosomes;
+map<string, string> geneNames;
+map<string, coord> geneLengths;
+
 
 
 ifstream& operator>>(ifstream &in, Feature &out)
@@ -64,12 +69,17 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
             std::map<string, string> attributes;
             parseAttributes(buffer, attributes);
-            if (out.type == "gene" && attributes.find("gene_id") != attributes.end()) out.feature_id = attributes["gene_id"];
+            if (out.type == "gene" && attributes.find("gene_id") != attributes.end())
+            {
+                out.feature_id = attributes["gene_id"];
+                geneLengths[out.feature_id] = out.end - out.start + 1;
+            }
             if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
             if (out.type == "exon" && attributes.find("exon_id") != attributes.end()) out.feature_id = attributes["exon_id"];
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
-            
+            if (attributes.find("gene_name") != attributes.end()) geneNames[out.feature_id] = attributes["gene_name"];
+            out.ribosomal = boost::regex_match(out.transcript_type, ribosomalPattern);
             break;
         }
 
