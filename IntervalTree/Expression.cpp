@@ -113,7 +113,6 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         {
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
-            //if (result->ribosomal) ribosomal = true; else
             if (result->type == "exon")
             {
                 exonic = true;
@@ -242,7 +241,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         {
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
-            //if (result->ribosomal) ribosomal = true; else
+            //else...what, exactly?
             if (result->type == "exon")
             {
                 exonic = true;

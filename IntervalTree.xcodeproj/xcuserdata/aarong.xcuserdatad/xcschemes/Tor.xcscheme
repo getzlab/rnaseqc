@@ -67,22 +67,6 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sample"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "Foo"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tag"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "NH"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-vv"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -95,16 +79,24 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Volumes/xchip_gtex/aarong/interval/GTEX-111CU-0126-SM-5GZWZ.Downsampled.bam"
+            argument = "/Volumes/xchip_gtex/francois/tmp/test_data/TOR102741-M308-SM-EZKAJ.Aligned.sortedByCoord.out.patched.md.bam"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/xchip_gtex/aarong/interval/TOR.downsampled.bam"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/xchip_gtex/aarong/interval/tmp.bam"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--bed"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Volumes/xchip_gtex/francois/resources/gencode.v19.hg19.insert_size_intervals_geq1000bp.bed"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-d"

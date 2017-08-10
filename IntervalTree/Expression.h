@@ -15,8 +15,8 @@
 #include <list>
 #include <set>
 #include <iostream>
-#include <bamtools/api/BamReader.h>
-#include <bamtools/api/BamAlignment.h>
+#include <api/BamReader.h>
+#include <api/BamAlignment.h>
 
 //Utility functions
 template <typename T>

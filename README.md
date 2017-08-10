@@ -28,11 +28,11 @@ Version 2.0.0
       --chimeric-distance=[DISTANCE]    Set the maximum accepted distance
                                         between read mates. Mates beyond this
                                         distance will be counted as chimeric
-                                        pairs. Default: 2Mb
+                                        pairs. Default: 2000000bp
 
       --read-length=[LENGTH]            Set the maximum accepted length. Reads
                                         longer than this threshold are
-                                        discarded. Default: 100Kb
+                                        discarded. Default: 100000bp
 
       --fragment-samples=[SAMPLES]      Set the number of samples to take when
                                         computing fragment sizes. Requires the

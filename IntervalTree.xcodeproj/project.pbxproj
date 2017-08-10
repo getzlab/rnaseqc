@@ -41,6 +41,7 @@
 		9FB84E881F3221F5003142F8 /* Expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Expression.h; sourceTree = "<group>"; };
 		9FC80EE51F1564A1002E3482 /* BED.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BED.cpp; sourceTree = "<group>"; };
 		9FC80EE61F1564A1002E3482 /* BED.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BED.h; sourceTree = "<group>"; };
+		9FEF28F11F3CF97D00900453 /* IntervalTree.profdata */ = {isa = PBXFileReference; lastKnownFileType = file; path = IntervalTree.profdata; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +63,7 @@
 				9F6E357B1F03F9A500358867 /* IntervalTree */,
 				9F6E357A1F03F9A500358867 /* Products */,
 				9F6E35881F03FA4800358867 /* Frameworks */,
+				9FEF28F01F3CF97D00900453 /* OptimizationProfiles */,
 			);
 			sourceTree = "<group>";
 		};
@@ -95,6 +97,14 @@
 				9F92C3B11F1D076C007C2022 /* libbamtools.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9FEF28F01F3CF97D00900453 /* OptimizationProfiles */ = {
+			isa = PBXGroup;
+			children = (
+				9FEF28F11F3CF97D00900453 /* IntervalTree.profdata */,
+			);
+			path = OptimizationProfiles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -258,9 +268,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CLANG_USE_OPTIMIZATION_PROFILE = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				HEADER_SEARCH_PATHS = /usr/local/include;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					/usr/local/include/bamtools,
+				);
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					/usr/lib,
@@ -285,9 +298,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CLANG_USE_OPTIMIZATION_PROFILE = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
-				HEADER_SEARCH_PATHS = /usr/local/include;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					/usr/local/include/bamtools,
+				);
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					/usr/lib,

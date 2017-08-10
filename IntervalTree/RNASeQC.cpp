@@ -15,19 +15,14 @@
 #include <ctime>
 #include <limits.h>
 #include <math.h>
-#include <bamtools/api/BamReader.h>
-#include <bamtools/api/BamAlignment.h>
-#include <bamtools/api/BamConstants.h>
+#include <api/BamReader.h>
+#include <api/BamAlignment.h>
+#include <api/BamConstants.h>
 #include <args.hxx>
 #include <boost/filesystem.hpp>
 using namespace std;
 using namespace args;
 using namespace BamTools;
-
-//TEST: count reads with start/end within 100b of the start/end of each gene
-//      On that note, possibly cheat by adding gene counts of +{gene_id}/-{gene_id} for start stop windows
-//      Francois only wants median and mean of the 3':5' ratio for genes (don't worry about outputting the raw counts)
-//TEST: Generate std-dev for the 3'/5' ratio
 
 const string NM = "NM";
 
@@ -41,8 +36,8 @@ int main(int argc, char* argv[])
     Positional<string> outputDir(parser, "output", "Output directory");
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
-    ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2Mb", {"chimeric-distance"});
-    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100Kb", {"read-length"});
+    ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000bp", {"chimeric-distance"});
+    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100000bp", {"read-length"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1,000,000", {"fragment-samples"});
     ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});

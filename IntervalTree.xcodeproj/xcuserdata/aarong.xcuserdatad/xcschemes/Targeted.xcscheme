@@ -67,23 +67,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sample"
+            argument = "--exon-quality"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Foo"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--tag"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "NH"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-vv"
+            argument = "254"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -91,27 +79,31 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "/Users/aarong/testing/target.gtf"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--bam"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Volumes/xchip_gtex/aarong/interval/GTEX-111CU-0126-SM-5GZWZ.Downsampled.bam"
+            argument = "/Users/aarong/testing/target.bam"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--bed"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Volumes/xchip_gtex/francois/resources/gencode.v19.hg19.insert_size_intervals_geq1000bp.bed"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "."
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-d"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "."
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
