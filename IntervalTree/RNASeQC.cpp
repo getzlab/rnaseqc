@@ -185,67 +185,73 @@ int main(int argc, char* argv[])
                             }
                         }
                         //Get tag data
-                        char nmType;
-                        unsigned int mismatches;
-                        alignment.BuildCharData(); //Load read name and tags
-                        alignment.GetTagType(NM, nmType);
-                        //The data type can vary based on the bam, but bamtools is strict about matching data types
-                        //It is often platform-dependent whether or not a tag's data will fit properly into a different type
-                        switch(nmType)
+                        unsigned int mismatches = 0;
+                        if (alignment.HasTag(NM))
                         {
-                            case Constants::BAM_TAG_TYPE_INT8:
-                                int8_t tmpi8;
-                                alignment.GetTag(NM, tmpi8);
-                                mismatches = (unsigned int) tmpi8;
-                                break;
-                            case Constants::BAM_TAG_TYPE_UINT8:
-                                uint8_t tmpu8;
-                                alignment.GetTag(NM, tmpu8);
-                                mismatches = (unsigned int) tmpu8;
-                                break;
-                            case Constants::BAM_TAG_TYPE_INT16:
-                                int16_t tmpi16;
-                                alignment.GetTag(NM, tmpi16);
-                                mismatches = (unsigned int) tmpi16;
-                                break;
-                            case Constants::BAM_TAG_TYPE_UINT16:
-                                uint16_t tmpu16;
-                                alignment.GetTag(NM, tmpu16);
-                                mismatches = (unsigned int) tmpu16;
-                                break;
-                            case Constants::BAM_TAG_TYPE_INT32:
-                                int32_t tmpi32;
-                                alignment.GetTag(NM, tmpi32);
-                                mismatches = (unsigned int) tmpi32;
-                                break;
-                            case Constants::BAM_TAG_TYPE_UINT32:
-                                uint32_t tmpu32;
-                                alignment.GetTag(NM, tmpu32);
-                                mismatches = (unsigned int) tmpu32;
-                                break;
-                            default:
-                                throw std::invalid_argument("Unrecognized bam format");
-                        }
-                        
-                        if (alignment.IsPaired())
-                        {
-                            if (alignment.IsFirstMate())
+                            char nmType;
+                            
+                            alignment.BuildCharData(); //Load read name and tags
+                            alignment.GetTagType(NM, nmType);
+                            //The data type can vary based on the bam, but bamtools is strict about matching data types
+                            //It is often platform-dependent whether or not a tag's data will fit properly into a different type
+                            switch(nmType)
                             {
-                                counter.increment("End 1 Mapped Reads");
-                                counter.increment("End 1 Mismatches", mismatches);
-                                counter.increment("End 1 Bases", alignment.Length);
-                                if (alignment.IsDuplicate())counter.increment("Duplicate Fragments");
-                                else counter.increment("Unique Fragments");
-                            }
-                            else
-                            {
-                                counter.increment("End 2 Mapped Reads");
-                                counter.increment("End 2 Mismatches", mismatches);
-                                counter.increment("End 2 Bases", alignment.Length);
+                                case Constants::BAM_TAG_TYPE_INT8:
+                                    int8_t tmpi8;
+                                    alignment.GetTag(NM, tmpi8);
+                                    mismatches = (unsigned int) tmpi8;
+                                    break;
+                                case Constants::BAM_TAG_TYPE_UINT8:
+                                    uint8_t tmpu8;
+                                    alignment.GetTag(NM, tmpu8);
+                                    mismatches = (unsigned int) tmpu8;
+                                    break;
+                                case Constants::BAM_TAG_TYPE_INT16:
+                                    int16_t tmpi16;
+                                    alignment.GetTag(NM, tmpi16);
+                                    mismatches = (unsigned int) tmpi16;
+                                    break;
+                                case Constants::BAM_TAG_TYPE_UINT16:
+                                    uint16_t tmpu16;
+                                    alignment.GetTag(NM, tmpu16);
+                                    mismatches = (unsigned int) tmpu16;
+                                    break;
+                                case Constants::BAM_TAG_TYPE_INT32:
+                                    int32_t tmpi32;
+                                    alignment.GetTag(NM, tmpi32);
+                                    mismatches = (unsigned int) tmpi32;
+                                    break;
+                                case Constants::BAM_TAG_TYPE_UINT32:
+                                    uint32_t tmpu32;
+                                    alignment.GetTag(NM, tmpu32);
+                                    mismatches = (unsigned int) tmpu32;
+                                    break;
+                                default:
+                                    string msg = "";
+                                    msg += nmType;
+                                    throw std::invalid_argument("Unrecognized bam format: "+msg);
                             }
                             
+                            if (alignment.IsPaired())
+                            {
+                                if (alignment.IsFirstMate())
+                                {
+                                    counter.increment("End 1 Mapped Reads");
+                                    counter.increment("End 1 Mismatches", mismatches);
+                                    counter.increment("End 1 Bases", alignment.Length);
+                                    if (alignment.IsDuplicate())counter.increment("Duplicate Fragments");
+                                    else counter.increment("Unique Fragments");
+                                }
+                                else
+                                {
+                                    counter.increment("End 2 Mapped Reads");
+                                    counter.increment("End 2 Mismatches", mismatches);
+                                    counter.increment("End 2 Bases", alignment.Length);
+                                }
+                                
+                            }
+                            counter.increment("Mismatches", mismatches);
                         }
-                        counter.increment("Mismatches", mismatches);
                         counter.increment("Total Bases", alignment.Length);
                         //generic filter tags:
                         bool discard = false;
