@@ -25,6 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
+//TODO: add strand-mode option (--strand-specific)
 
 int main(int argc, char* argv[])
 {
@@ -45,6 +46,7 @@ int main(int argc, char* argv[])
     ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS. Default: 100bp", {"split-distance"});
     Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
+    ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics.  Reads on a gene's antisense strand are not counted.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag", {'t', "tag"});
 	try
@@ -54,6 +56,15 @@ int main(int argc, char* argv[])
         if (!gtfFile) throw ValidationError("No GTF file provided");
         if (!bamFile) throw ValidationError("No BAM file provided");
         if (!outputDir) throw ValidationError("No output directory provided");
+        
+        unsigned short STRAND_SPECIFIC = 0;
+        if (strandSpecific)
+        {
+            string tmp_strand = strandSpecific.Get();
+            if (tmp_strand == "RF" || tmp_strand == "rf") STRAND_SPECIFIC = 1;
+            else if(tmp_strand == "FR" || tmp_strand == "fr") STRAND_SPECIFIC = -1;
+            else throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr'}");
+        }
         
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
         const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 100000u;
@@ -186,11 +197,10 @@ int main(int argc, char* argv[])
                         }
                         //Get tag data
                         unsigned int mismatches = 0;
+                        alignment.BuildCharData(); //Load read name and tags
                         if (alignment.HasTag(NM))
                         {
                             char nmType;
-                            
-                            alignment.BuildCharData(); //Load read name and tags
                             alignment.GetTagType(NM, nmType);
                             //The data type can vary based on the bam, but bamtools is strict about matching data types
                             //It is often platform-dependent whether or not a tag's data will fit properly into a different type
@@ -281,8 +291,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr]); //drop features that appear before this read
                             
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC);
                             
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -344,8 +354,8 @@ int main(int argc, char* argv[])
                 const char first = gene->first.at(0);
                 if (first != '+' && first != '-') ++geneCount;
             }
-            ofstream geneReport(outputDir.Get()+"/geneReport.gct");
-            ofstream geneRPKM(outputDir.Get()+"/geneRPKM.gct");
+            ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".geneReport.gct");
+            ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".geneRPKM.gct");
             geneReport << "#1.2" << endl;
             geneRPKM << "#1.2" << endl;
             geneReport << geneCount << "\t1" << endl;
@@ -363,9 +373,11 @@ int main(int argc, char* argv[])
                 geneReport << gene->first << "\t" << geneNames[gene->first] << "\t" << (long) gene->second << endl;
                 geneRPKM << gene->first << "\t" << geneNames[gene->first] << "\t" << (1000.0 * gene->second / scaleRPKM) / (double) geneLengths[gene->first] << endl;
                 if (gene->second >= 5.0) ++genesDetected;
-                if (geneCoverage["-"+gene->first] > 0) //because NaN really throws a wrench in calculations
+                double cov5 = ceil(geneCoverage["+"+gene->first]);
+                double cov3 = ceil(geneCoverage["-"+gene->first]);
+                if (cov5 + cov3 > 0) //because NaN really throws a wrench in calculations
                 {
-                    ratios.push_back(ceil(geneCoverage["+"+gene->first]) / ceil(geneCoverage["-"+gene->first]));
+                    ratios.push_back(cov5 / (cov5 + cov3));
                 }
             }
             geneReport.close();
@@ -373,6 +385,7 @@ int main(int argc, char* argv[])
         
         //3'/5' coverage ratio calculations
         double ratioAvg = 0.0, ratioMedDev, ratioMedian, ratioStd = 0.0;
+        if (ratios.size())
         {
             vector<double> ratioDeviations;
             sort(ratios.begin(), ratios.end());
@@ -395,7 +408,7 @@ int main(int argc, char* argv[])
     
         //exon coverage report generation
         {
-            ofstream exonReport(outputDir.Get()+"/exonReport.gct");
+            ofstream exonReport(outputDir.Get()+"/"+SAMPLENAME+".exonReport.gct");
             exonReport << "#1.2" << endl;
             exonReport << exonCoverage.size() << "\t1" << endl;
             exonReport << "Name\tDescription\tRNA-SeQC" << endl;
@@ -408,7 +421,8 @@ int main(int argc, char* argv[])
             exonReport.close();
         }
         
-        ofstream output(outputDir.Get()+"/report.tsv");
+        //append SAMPLENAME
+        ofstream output(outputDir.Get()+"/"+SAMPLENAME+".report.tsv");
         //output rates and other fractions to the report
         output << "Sample\t" << SAMPLENAME << endl;
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
@@ -436,10 +450,10 @@ int main(int argc, char* argv[])
         output << "Read Length\t" << readLength << endl;
         output << "Genes Detected\t" << genesDetected << endl;
         output << "Estimated Library Complexity\t" << minReads << endl;
-        output << "Average 5'/3' coverage ratio\t" << ratioAvg << endl;
-        output << "5'/3' median coverage ratio\t" << ratioMedian << endl;
-        output << "5'/3' coverage ratio Std\t" << ratioStd << endl;
-        output << "5'/3' coverage ratio MAD_Std\t" << ratioMedDev << endl;
+        output << "Mean 5' bias\t" << ratioAvg << endl;
+        output << "Median 5' bias\t" << ratioMedian << endl;
+        output << "5' bias Std\t" << ratioStd << endl;
+        output << "5' bias MAD_Std\t" << ratioMedDev << endl;
         output << "Total Reads (incl. supplemental and failed reads)\t" << alignmentCount << endl;
         
         if (fragmentSizes.size())
@@ -457,7 +471,7 @@ int main(int argc, char* argv[])
             auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
             for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
             fragmentMed = (double) *median; //save the median value
-            ofstream fragmentList(outputDir.Get()+"/fragmentSizes.txt"); //raw list of each fragment size recorded
+            ofstream fragmentList(outputDir.Get()+"/"+SAMPLENAME+".fragmentSizes.txt"); //raw list of each fragment size recorded
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
                 fragmentList << abs(*fragment) << endl; //record the fragment size into the output list

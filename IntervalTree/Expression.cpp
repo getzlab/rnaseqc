@@ -41,6 +41,7 @@ unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, uns
                 block.start = start;
                 block.chromosome = chr;
                 block.end = start + current.Length; //1-based, closed
+                block.strand = alignment.IsReverseStrand() ? -1 : 1;
                 blocks.push_back(block);
                 alignedSize += current.Length;
             case 'N':
@@ -79,7 +80,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -111,6 +112,19 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         list<Feature> *results = intersectBlock(*block, features[chr]); //grab the list of intersecting features
         for (auto result = results->begin(); result != results->end(); ++result)
         {
+            if (stranded)
+            {
+                bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
+                if (stranded == 1) target = !target;
+                if (result->strand != (target ? 1 : -1))
+                {
+                    //cout << alignment.Name << endl;
+                    //cout << alignment.IsFirstMate() << " " << alignment.IsReverseStrand() << endl;
+                    //cout << target << " " << result->strand << endl;
+                    continue;
+                }
+            }
+            //if (stranded && result->strand != (alignment.IsReverseStrand() ^ (stranded == 1 ? alignment.IsFirstMate() : alignment.IsSecondMate()) ? -1 : 1)) continue;
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
             if (result->type == "exon")
@@ -208,7 +222,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     }
 }
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -239,6 +253,19 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         list<Feature> *results = intersectBlock(*block, features[chr]); //grab the list of intersecting features
         for (auto result = results->begin(); result != results->end(); ++result)
         {
+            if (stranded)
+            {
+                bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
+                if (stranded == 1) target = !target;
+                if (result->strand != (target ? 1 : -1))
+                {
+                    //cout << alignment.Name << endl;
+                    //cout << alignment.IsFirstMate() << " " << alignment.IsReverseStrand() << endl;
+                    //cout << target << " " << result->strand << endl;
+                    continue;
+                }
+            }
+            //if (stranded && result->strand != (alignment.IsReverseStrand() ^ (stranded == 1 ? alignment.IsFirstMate() : alignment.IsSecondMate()) ? -1 : 1)) continue;
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
             //else...what, exactly?
@@ -272,8 +299,12 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                 {
                     //Key: + if read maps to gene's 5'
                     //     - if read maps to gene's 3'
+                    Feature tmp;
+                    tmp.start = intersectsStart ? result->start : result->end - 100l;
+                    tmp.end = intersectsStart ? result->start + 100l : result->end;
                     string key = (result->strand == 1)^intersectsStart ? "+" : "-";
                     geneCoverage[key+result->gene_id] += (double) (block->end - block->start + 1) / length;
+                    //geneCoverage[key+result->gene_id] += (double) partialIntersect(tmp, *block) / 100;
                 }
             }
             if (result->ribosomal) ribosomal = true;

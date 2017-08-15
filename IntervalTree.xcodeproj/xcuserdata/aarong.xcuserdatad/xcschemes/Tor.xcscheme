@@ -67,6 +67,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--stranded"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "RF"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-vv"
             isEnabled = "YES">
          </CommandLineArgument>
@@ -84,6 +92,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Volumes/xchip_gtex/aarong/interval/TOR.downsampled.bam"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/aarong/Documents/TOR.bam"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -107,6 +119,13 @@
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = ""
+            value = ""
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

@@ -36,12 +36,12 @@
 		9F6E35901F043B6900358867 /* GTF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = GTF.cpp; sourceTree = "<group>"; };
 		9F6E35911F043B6900358867 /* GTF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GTF.h; sourceTree = "<group>"; };
 		9F92C3B11F1D076C007C2022 /* libbamtools.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbamtools.a; path = /usr/local/lib/libbamtools.a; sourceTree = "<absolute>"; };
+		9FAF04051F42416E00F95FA6 /* en */ = {isa = PBXFileReference; lastKnownFileType = file; name = en; path = en.lproj/IntervalTree.profdata; sourceTree = "<group>"; };
 		9FB84E851F321E1E003142F8 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9FB84E871F3221F5003142F8 /* Expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Expression.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		9FB84E881F3221F5003142F8 /* Expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Expression.h; sourceTree = "<group>"; };
 		9FC80EE51F1564A1002E3482 /* BED.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BED.cpp; sourceTree = "<group>"; };
 		9FC80EE61F1564A1002E3482 /* BED.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BED.h; sourceTree = "<group>"; };
-		9FEF28F11F3CF97D00900453 /* IntervalTree.profdata */ = {isa = PBXFileReference; lastKnownFileType = file; path = IntervalTree.profdata; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,7 +102,7 @@
 		9FEF28F01F3CF97D00900453 /* OptimizationProfiles */ = {
 			isa = PBXGroup;
 			children = (
-				9FEF28F11F3CF97D00900453 /* IntervalTree.profdata */,
+				9FAF04061F42416E00F95FA6 /* IntervalTree.profdata */,
 			);
 			path = OptimizationProfiles;
 			sourceTree = "<group>";
@@ -173,6 +173,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		9FAF04061F42416E00F95FA6 /* IntervalTree.profdata */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9FAF04051F42416E00F95FA6 /* en */,
+			);
+			name = IntervalTree.profdata;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		9F6E357E1F03F9A500358867 /* Debug */ = {
@@ -268,7 +279,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_USE_OPTIMIZATION_PROFILE = YES;
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
@@ -298,7 +309,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				CLANG_USE_OPTIMIZATION_PROFILE = YES;
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
