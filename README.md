@@ -67,6 +67,11 @@ Version 2.0.0
       --legacy                          Use legacy gene counting rules. Gene
                                         counts match output of RNA-SeQC 1.1.6
 
+      --stranded=[stranded]             Use strand-specific metrics. Only
+                                        features on the same strand of a read
+                                        will be considered. Allowed values are
+                                        'RF', 'rf', 'FR', and 'fr'
+
       -v, --verbose                     Give some feedback about what's going
                                         on. Supply this argument twice for
                                         progress updates while parsing the bam
@@ -78,10 +83,21 @@ Version 2.0.0
 
 ### Output files:
 The following output files are generated in the output directory you provide:
-* report.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
-* exonReport.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
-* geneReport.tsv : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all exons which had at least one read map to at least one of its exons
-* fragmentSizes.txt : A list of fragment sizes recorded, if a BED file was provided
+* {sample}.report.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
+* {sample}.exonReport.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
+* {sample}.geneReport.tsv : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all exons which had at least one read map to at least one of its exons
+* {sample}.fragmentSizes.txt : A list of fragment sizes recorded, if a BED file was provided
+
+#### A note on various rates reported:
+{sample}.report.tsv categorizes all reads into one of 5 bins (among the other statistics generated) which are
+reported as rates out of all primary reads. The rates are:
+* Exonic rate: Percentage of reads for which all sections of the read fully aligned to exons of the same gene(s)
+* Intronic rate: Percentage of reads which partially aligned to a gene, but never aligned to any exons
+* Intergenic rate: Percentage of reads which never partially aligned to any genes
+* Disqualification rate: Percentage of reads which fully aligned to at least one exon, but not all parts of the read fully aligned to exons of the same gene. These reads are disqualified because it is ambiguous which gene the read belongs to. This covers reads which had at least one exonic and at least one intergenic or intronic segment, as well as reads which had exonic segments on two different genes.
+* Discard rate: Percentage of reads which were discarded by preliminary filters and were never checked against the GTF.
+
+Other rates and statistics reported are not complimentary. Only these 5 are designed to sum to 1
       
 ### Code Documentation:
 
