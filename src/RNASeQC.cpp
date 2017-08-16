@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS. Default: 100bp", {"split-distance"});
     Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
-    ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
+    ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', 'fr', and 'single'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag", {'t', "tag"});
 	try
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
             string tmp_strand = strandSpecific.Get();
             if (tmp_strand == "RF" || tmp_strand == "rf") STRAND_SPECIFIC = 1;
             else if(tmp_strand == "FR" || tmp_strand == "fr") STRAND_SPECIFIC = -1;
-            else throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr'}");
+            else if(tmp_strand != "single") throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr', 'single'}");
         }
 
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
