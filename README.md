@@ -83,9 +83,10 @@ Version 2.0.0
 
 ### Output files:
 The following output files are generated in the output directory you provide:
-* {sample}.report.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
-* {sample}.exonReport.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
-* {sample}.geneReport.tsv : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all exons which had at least one read map to at least one of its exons
+* {sample}.metrics.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
+* {sample}.exon_reads.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
+* {sample}.gene_reads.gct : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all genes which had at least one read map to at least one of its exons
+* {sample}.gene_rpkm.gct : A tab-delimited GCT file with (Gene ID, Gene Name, RPKM) tuples for all genes reported in the gene_reads.gct file
 * {sample}.fragmentSizes.txt : A list of fragment sizes recorded, if a BED file was provided
 
 #### A note on various rates reported:

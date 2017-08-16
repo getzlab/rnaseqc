@@ -354,8 +354,8 @@ int main(int argc, char* argv[])
                 const char first = gene->first.at(0);
                 if (first != '+' && first != '-') ++geneCount;
             }
-            ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".geneReport.gct");
-            ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".geneRPKM.gct");
+            ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
+            ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_rpkm.gct");
             geneReport << "#1.2" << endl;
             geneRPKM << "#1.2" << endl;
             geneReport << geneCount << "\t1" << endl;
@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
     
         //exon coverage report generation
         {
-            ofstream exonReport(outputDir.Get()+"/"+SAMPLENAME+".exonReport.gct");
+            ofstream exonReport(outputDir.Get()+"/"+SAMPLENAME+".exon_reads.gct");
             exonReport << "#1.2" << endl;
             exonReport << exonCoverage.size() << "\t1" << endl;
             exonReport << "Name\tDescription\tRNA-SeQC" << endl;
@@ -422,7 +422,7 @@ int main(int argc, char* argv[])
         }
         
         //append SAMPLENAME
-        ofstream output(outputDir.Get()+"/"+SAMPLENAME+".report.tsv");
+        ofstream output(outputDir.Get()+"/"+SAMPLENAME+".metrics.tsv");
         //output rates and other fractions to the report
         output << "Sample\t" << SAMPLENAME << endl;
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
