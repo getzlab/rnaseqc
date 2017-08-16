@@ -70,7 +70,7 @@ Version 2.0.0
       --stranded=[stranded]             Use strand-specific metrics. Only
                                         features on the same strand of a read
                                         will be considered. Allowed values are
-                                        'RF', 'rf', 'FR', and 'fr'
+                                        'RF', 'rf', 'FR', 'fr', and 'single'
 
       -v, --verbose                     Give some feedback about what's going
                                         on. Supply this argument twice for
