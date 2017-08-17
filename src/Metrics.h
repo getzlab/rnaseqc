@@ -23,7 +23,7 @@ public:
     void increment(std::string, int);
     unsigned long get(std::string);
     double frac(std::string, std::string);
-    friend std::ofstream& operator<<(std::ofstream&, const Metrics&);
+    friend std::ofstream& operator<<(std::ofstream&, Metrics&);
 };
 
 class Collector {
@@ -44,5 +44,5 @@ public:
     double sum();
 };
 
-std::ofstream& operator<<(std::ofstream&, const Metrics&);
+std::ofstream& operator<<(std::ofstream&, Metrics&);
 #endif /* Metrics_h */

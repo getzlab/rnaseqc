@@ -84,7 +84,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-    
+
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -93,18 +93,18 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         if (lastEnd > 0 && !split) split = (block->start - lastEnd) > SPLIT_DISTANCE;
         lastEnd = block->end;
     }
-    
+
     counter.increment("Alignment Blocks", blocks.size());
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
     current.start = alignment.Position+1; //0-based + 1 == 1-based
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
-    
+
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
-    
+
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
         bool blockWasIntragenic = false; //legacy
@@ -133,7 +133,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                 int intersectionSize = partialIntersect(*result, *block);
                 //check that this block fully overlaps the feature
                 //(if any bases of the block don't overlap, then the read is discarded)
-                
+
                 if (intersectionSize == block->end - block->start)
                 {
                     genes.rbegin()->insert(result->gene_id);
@@ -141,13 +141,13 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                     double tmp = (double) intersectionSize / length;
                     exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
                 }
-                
+
             }
             else if (result->type == "gene")
             {
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
-                
+
                 //We do count coverage in the 3'/5' regions of the gene, however.
                 //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
                 //crowded argument list
@@ -182,19 +182,19 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         else exonCoverageCollector.collectSingle(*gene);
         doExonMetrics = true;
     }
-    
+
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
         {
-            counter.increment("Intronic");
+            counter.increment("Intronic Reads");
             counter.increment("Intragenic Reads");
         }
         else counter.increment("Intergenic Reads");
     }
     else if (doExonMetrics) //if exons were detected and at least one exon ended up being collected, we count this as exonic
     {
-        counter.increment("Exonic");
+        counter.increment("Exonic Reads");
         counter.increment("Intragenic Reads");
         if (split) counter.increment("Split Reads");
     }
@@ -203,9 +203,9 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         //It's unclear how to properly classify these reads
         //They had exon coverage, but aligned to multiple genes
         //Any exon and gene coverage they had was discarded and not recorded
-        counter.increment("Intron/Exon disqualified reads");
+        counter.increment("Intron/Exon Disqualified Reads");
     }
-    if (ribosomal) counter.increment("rRNA");
+    if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts
     if (transcriptMinus ^ transcriptPlus && alignment.IsPaired())
     {
@@ -226,7 +226,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-    
+
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -235,18 +235,18 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         if (lastEnd > 0 && !split) split = (block->start - lastEnd) > SPLIT_DISTANCE;
         lastEnd = block->end;
     }
-    
+
     counter.increment("Alignment Blocks", blocks.size());
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
     current.start = alignment.Position+1; //0-based + 1 == 1-based
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
-    
+
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
-    
+
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
         genes.push_back(set<string>()); //create a new set for this block
@@ -281,15 +281,15 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                     genes.rbegin()->insert(result->gene_id);
                     double tmp = (double) intersectionSize / length;
                     exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
-                    
+
                 }
-                
+
             }
             else if (result->type == "gene")
             {
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
-                
+
                 //We do count coverage in the 3'/5' regions of the gene, however.
                 //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
                 //crowded argument list
@@ -311,7 +311,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         }
         delete results; //clean up dynamic allocation
     }
-    
+
     if (genes.size() >= 1)
     {
         //if there was more than one block, iterate through each block's set of genes and intersect them
@@ -332,19 +332,19 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
             doExonMetrics = true;
         }
     }
-    
+
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
         {
-            counter.increment("Intronic");
+            counter.increment("Intronic Reads");
             counter.increment("Intragenic Reads");
         }
         else counter.increment("Intergenic Reads");
     }
     else if (doExonMetrics) //if exons were detected and at least one exon ended up being collected, we count this as exonic
     {
-        counter.increment("Exonic");
+        counter.increment("Exonic Reads");
         counter.increment("Intragenic Reads");
         if (split) counter.increment("Split Reads");
     }
@@ -353,9 +353,9 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         //It's unclear how to properly classify these reads
         //They had exon coverage, but aligned to multiple genes
         //Any exon and gene coverage they had was discarded and not recorded
-        counter.increment("Intron/Exon disqualified reads");
+        counter.increment("Intron/Exon Disqualified Reads");
     }
-    if (ribosomal) counter.increment("rRNA");
+    if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts
     //TODO: check standing metrics.  Counts are probably off because of null intron/exon calls
     if (transcriptMinus ^ transcriptPlus && alignment.IsPaired())
@@ -379,7 +379,7 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<unsigned short
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
     bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
     string exonName = ""; // the name of the intersected exon from the bed
-    
+
     trimFeatures(alignment, (*bedFeatures)[chr]); //trim out the features to speed up intersections
     for (auto block = blocks.begin(); sameExon && block != blocks.end(); ++block)
     {
