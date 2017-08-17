@@ -30,13 +30,54 @@ double Metrics::frac(std::string a, std::string b)
     return (double) this->get(a) / this->get(b);
 }
 
-std::ofstream& operator<<(std::ofstream &stream, const Metrics &counter)
+std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
 {
+    unsigned int NUM_KEYS = 33;
+    std::string keys[] = {
+        "Alternative Alignments",
+        "Chimeric Pairs",
+        "Duplicate Reads",
+        "End 1 Antisense",
+        "End 2 Antisense",
+        "End 1 Bases",
+        "End 2 Bases",
+        "End 1 Mapped Reads",
+        "End 2 Mapped Reads",
+        "End 1 Mismatches",
+        "End 2 Mismatches",
+        "End 1 Sense",
+        "End 2 Sense",
+        "Exonic Reads", //reads
+        "Failed Vendor QC",
+        // "Filtered by tag: ", //FIXME
+        "Intergenic Reads",
+        "Intragenic Reads",
+        "Intron/Exon Disqualified Reads", //capitalize
+        "Intronic Reads",
+        "Low quality reads",
+        "Mapped Duplicate Reads",
+        "Mapped Reads",
+        "Mapped Unique Reads",
+        "Mismatched Bases", //bases
+        "Reads excluded from exon counts",
+        "Reads used for Intron/Exon counts",
+        "rRNA Reads",
+        "Split Reads",
+        "Total Bases",
+        "Total Mapped Pairs",
+        "Total Reads",
+        "Unique Mapping, Vendor QC Passed Reads",
+        "Unpaired Reads"
+    };
+    for (int i = 0; i < NUM_KEYS; ++i) stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;
     auto beg = counter.counter.begin();
     auto end = counter.counter.end();
     while (beg != end)
     {
-        stream << beg->first << "\t" << beg->second << std::endl;
+        if( beg->first.length() > 17 && beg->first.substr(0,17) == "Filtered by tag: ")
+        {
+            stream << beg->first << "\t" << beg->second << std::endl;
+        }
         ++beg;
     }
     return stream;

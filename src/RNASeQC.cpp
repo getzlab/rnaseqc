@@ -25,12 +25,14 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-//TODO: add strand-mode option (--strand-specific)
+//TODO: fix counter names
+//TODO: add 'raw' counts of various filtrs and flags (match samtools summary & q255)
+//TODO: 'Total Reads' -> Unique mapping, vendor QC passed reads
 
 int main(int argc, char* argv[])
 {
     //Set up command line syntax
-    ArgumentParser parser("rnaSeQC");
+    ArgumentParser parser("RNASeQC 2.0.0");
     HelpFlag help(parser, "help", "Display this message and quit", {'h', "help"});
     Positional<string> gtfFile(parser, "gtf", "The input GTF file containing features to check the bam against");
     Positional<string> bamFile(parser, "bam", "The input SAM/BAM file containing reads to process");
@@ -173,7 +175,8 @@ int main(int argc, char* argv[])
                 else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
                 if (alignment.IsPrimaryAlignment() && !alignment.IsFailedQC() /*&& alignment.MapQuality >= 255u*/)
                 {
-                    counter.increment("Total Reads");
+                    counter.increment("Unique Mapping, Vendor QC Passed Reads");
+                    //raw counts:
                     if (!alignment.IsPaired()) counter.increment("Unpaired Reads");
                     if (alignment.IsDuplicate()) counter.increment("Duplicate Reads");
                     if (alignment.IsMapped())
@@ -249,7 +252,7 @@ int main(int argc, char* argv[])
                                     counter.increment("End 1 Mapped Reads");
                                     counter.increment("End 1 Mismatches", mismatches);
                                     counter.increment("End 1 Bases", alignment.Length);
-                                    if (alignment.IsDuplicate())counter.increment("Duplicate Fragments");
+                                    if (alignment.IsDuplicate())counter.increment("Duplicate Pairs");
                                     else counter.increment("Unique Fragments");
                                 }
                                 else
@@ -260,7 +263,7 @@ int main(int argc, char* argv[])
                                 }
 
                             }
-                            counter.increment("Mismatches", mismatches);
+                            counter.increment("Mismatched Bases", mismatches);
                         }
                         counter.increment("Total Bases", alignment.Length);
                         //generic filter tags:
@@ -321,7 +324,8 @@ int main(int argc, char* argv[])
             cout << "Total runtime: " << difftime(t2, t0) << "; Total CPU Time: " << (clock() - start_clock)/CLOCKS_PER_SEC << endl;
             cout << "Estimating library complexity..." << endl;
         }
-        double duplicates = (double) counter.get("Duplicate Fragments");
+        counter.increment("Total Reads", alignmentCount);
+        double duplicates = (double) counter.get("Duplicate Pairs");
         double unique = (double) counter.get("Unique Fragments");
         double numReads = duplicates + unique;
         unsigned int minReads = 0u, minError = UINT_MAX;
@@ -428,22 +432,22 @@ int main(int argc, char* argv[])
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
-        output << "Base Mismatch\t" << counter.frac("Mismatches", "Total Bases") << endl;
+        output << "Base Mismatch\t" << counter.frac("Mismatched Bases", "Total Bases") << endl;
         output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", "Total Reads") << endl;
         output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Total Reads") << endl;
         output << "End 1 Mismatch Rate\t" << counter.frac("End 1 Mismatches", "End 1 Bases") << endl;
         output << "End 2 Mismatch Rate\t" << counter.frac("End 2 Mismatches", "End 2 Bases") << endl;
-        output << "Expression Profiling Efficiency\t" << counter.frac("Exonic", "Total Reads") << endl;
-        output << "Exonic Rate\t" << counter.frac("Exonic", "Mapped Reads") << endl;
-        output << "Intronic Rate\t" << counter.frac("Intronic", "Mapped Reads") << endl;
+        output << "Expression Profiling Efficiency\t" << counter.frac("Exonic Reads", "Total Reads") << endl;
+        output << "Exonic Rate\t" << counter.frac("Exonic Reads", "Mapped Reads") << endl;
+        output << "Intronic Rate\t" << counter.frac("Intronic Reads", "Mapped Reads") << endl;
         output << "Intergenic Rate\t" << counter.frac("Intergenic Reads", "Mapped Reads") << endl;
         output << "Intragenic Rate\t" << counter.frac("Intragenic Reads", "Mapped Reads") << endl;
-        output << "Disqualification Rate\t" << counter.frac("Intron/Exon disqualified reads", "Mapped Reads") << endl;
+        output << "Disqualification Rate\t" << counter.frac("Intron/Exon Disqualified Reads", "Mapped Reads") << endl;
         output << "Discard Rate\t" << (double)(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
-        output << "rRNA Rate\t" << counter.frac("rRNA", "Mapped Reads") << endl;
+        output << "rRNA Rate\t" << counter.frac("rRNA Reads", "Mapped Reads") << endl;
         output << "End 1 Sense Rate\t" << (double) counter.get("End 1 Sense") / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;
         output << "End 2 Sense Rate\t" << (double) counter.get("End 2 Sense") / (counter.get("End 2 Sense") + counter.get("End 2 Antisense")) << endl;
-        output << "Avg. Blocks per Read\t" << counter.frac("Alignment Blocks", "Mapped Reads") << endl;
+        output << "Avg. Splits per Read\t" << counter.frac("Alignment Blocks", "Mapped Reads") - 1.0 << endl;
         //automatically dump the raw counts of all metrics to the file
         output << counter;
         //append metrics that were manually tracked
@@ -454,7 +458,6 @@ int main(int argc, char* argv[])
         output << "Median 5' bias\t" << ratioMedian << endl;
         output << "5' bias Std\t" << ratioStd << endl;
         output << "5' bias MAD_Std\t" << ratioMedDev << endl;
-        output << "Total Reads (incl. supplemental and failed reads)\t" << alignmentCount << endl;
 
         if (fragmentSizes.size())
         {
