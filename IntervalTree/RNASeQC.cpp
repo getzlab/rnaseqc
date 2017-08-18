@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
         }
 
         //3'/5' coverage ratio calculations
-        double ratioAvg = 0.0, ratioMedDev, ratioMedian, ratioStd = 0.0;
+        double ratioAvg = 0.0, ratioMedDev, ratioMedian, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
         if (ratios.size())
         {
             vector<double> ratioDeviations;
@@ -408,6 +408,28 @@ int main(int argc, char* argv[])
                 ratioStd += pow((*ratio) - ratioAvg, 2.0) / (double) ratios.size();
             }
             ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
+            double index = .25 * ratios.size();
+            if (index > floor(index))
+            {
+                index = ceil(index);
+                ratio25 = ratios[(int) index];
+            }
+            else
+            {
+                index = ceil(index);
+                ratio25 = (ratios[(int) index] + ratios[(int) index])/2.0;
+            }
+            index = .75 * ratios.size();
+            if (index > floor(index))
+            {
+                index = ceil(index);
+                ratio75 = ratios[(int) index];
+            }
+            else
+            {
+                index = ceil(index);
+                ratio75 = (ratios[(int) index] + ratios[(int) index])/2.0;
+            }
         }
 
         //exon coverage report generation
@@ -454,10 +476,12 @@ int main(int argc, char* argv[])
         output << "Read Length\t" << readLength << endl;
         output << "Genes Detected\t" << genesDetected << endl;
         output << "Estimated Library Complexity\t" << minReads << endl;
-        output << "Mean 5' bias\t" << ratioAvg << endl;
-        output << "Median 5' bias\t" << ratioMedian << endl;
-        output << "5' bias Std\t" << ratioStd << endl;
-        output << "5' bias MAD_Std\t" << ratioMedDev << endl;
+        output << "Mean 3' bias\t" << ratioAvg << endl;
+        output << "Median 3' bias\t" << ratioMedian << endl;
+        output << "3' bias Std\t" << ratioStd << endl;
+        output << "3' bias MAD_Std\t" << ratioMedDev << endl;
+        output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
+        output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
 
         if (fragmentSizes.size())
         {
