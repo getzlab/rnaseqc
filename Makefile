@@ -19,10 +19,6 @@ OBJECTS=$(SOURCES:.cpp=.o)
 rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
 
-src/%.cpp: IntervalTree/%.cpp
-	mkdir -p src
-	cp $(wildcard IntervalTree/*.cpp) $(wildcard IntervalTree/*.h) src
-
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
