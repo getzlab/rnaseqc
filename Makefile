@@ -11,12 +11,18 @@ LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz
 
 CC=g++
 STDLIB=-std=c++14
-CFLAGS=-Wall -I. $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -O3
+CFLAGS=-Wall $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -c
+SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp
+SRCDIR=src
+OBJECTS=$(SOURCES:.cpp=.o)
 
-rnaseqc: BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp
-	$(CC) $(CFLAGS) $(INCLUDE_DIRS) $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
+rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
+	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
 .PHONY: clean
 
 clean:
-	rm rnaseqc
+	rm $(wildcard $(SRCDIR)/*.o)
