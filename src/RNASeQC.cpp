@@ -1,5 +1,6 @@
 // IntervalTree.cpp : Defines the entry point for the console application.
 
+
 //Include headers
 #include "BED.h"
 #include "Metrics.h"
@@ -25,9 +26,12 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
+map<string, double> rpkms;
 //TODO: fix counter names
 //TODO: add 'raw' counts of various filtrs and flags (match samtools summary & q255)
 //TODO: 'Total Reads' -> Unique mapping, vendor QC passed reads
+
+bool compGenes(const string&, const string&);
 
 int main(int argc, char* argv[])
 {
@@ -368,6 +372,7 @@ int main(int argc, char* argv[])
             geneRPKM << "Name\tDescription\tSAMPLE" << endl;
             geneRPKM << fixed;
             const double scaleRPKM = (double) alignmentCount / 1000000.0;
+            vector<string> genesByRPKM;
             //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
             for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             {
@@ -375,16 +380,25 @@ int main(int argc, char* argv[])
                 //This is not gene coverage per se, but coverage for the end of a gene.  skip for now
                 if (first == '+' || first == '-') continue;
                 geneReport << gene->first << "\t" << geneNames[gene->first] << "\t" << (long) gene->second << endl;
-                geneRPKM << gene->first << "\t" << geneNames[gene->first] << "\t" << (1000.0 * gene->second / scaleRPKM) / (double) geneLengths[gene->first] << endl;
+                double RPKM = (1000.0 * gene->second / scaleRPKM) / (double) geneLengths[gene->first];
+                geneRPKM << gene->first << "\t" << geneNames[gene->first] << "\t" << RPKM << endl;
+                rpkms[gene->first] = RPKM;
                 if (gene->second >= 5.0) ++genesDetected;
-                double cov5 = ceil(geneCoverage["+"+gene->first]);
-                double cov3 = ceil(geneCoverage["-"+gene->first]);
+                genesByRPKM.push_back(gene->first);
+                
+            }
+            geneReport.close();
+            geneRPKM.close();
+            sort(genesByRPKM.begin(), genesByRPKM.end(), compGenes);
+            for(auto gene = genesByRPKM.rbegin(); ratios.size() < 1000 && gene != genesByRPKM.rend(); ++gene)
+            {
+                double cov5 = ceil(geneCoverage["+"+(*gene)]);
+                double cov3 = ceil(geneCoverage["-"+(*gene)]);
                 if (cov5 + cov3 > 0) //because NaN really throws a wrench in calculations
                 {
                     ratios.push_back(cov5 / (cov5 + cov3));
                 }
             }
-            geneReport.close();
         }
 
         //3'/5' coverage ratio calculations
@@ -591,4 +605,9 @@ int main(int argc, char* argv[])
 	}
 
     return 0;
+}
+
+bool compGenes(const string &a, const string &b)
+{
+    return rpkms[a] < rpkms[b];
 }
