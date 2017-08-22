@@ -123,3 +123,32 @@ double Collector::sum()
 {
     return this->total;
 }
+
+void BiasCounter::checkBias(Feature &gene, Feature &block)
+{
+    if (geneLengths[gene.feature_id] < this->geneLength) return;
+    Feature tmp;
+    //adjust the start and end coordinates with the offset
+    tmp.start = gene.start + this->offset;
+    tmp.end = gene.end - this->offset;
+    //bool if the block intersects the left window of the gene.
+    bool leftEnd = block.start <= tmp.start + this->windowSize && block.start >= tmp.start;
+    if (leftEnd || (block.end >= tmp.end - this->windowSize && block.end <= tmp.end))
+    {
+        //Key:
+        // + strand, left end -> 5'
+        // + strand, right end -> 3'
+        // - strand, left end -> 3'
+        // - strand, right end -> 5'
+        if ((gene.strand == 1)^leftEnd) this->fiveEnd[gene.feature_id] += 1;
+        else this->threeEnd[gene.feature_id] += 1;
+    }
+}
+
+double BiasCounter::getBias(const std::string &geneID)
+{
+    double cov5 = this->fiveEnd[geneID];
+    double cov3 = this->threeEnd[geneID];
+    if (cov5 + cov3 > 0.0) return cov5 / (cov5 + cov3);
+    return -1.0;
+}

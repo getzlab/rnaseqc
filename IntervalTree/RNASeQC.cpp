@@ -50,9 +50,12 @@ int main(int argc, char* argv[])
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
     ValueFlag<unsigned int> baseMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"base-mismatch"});
     ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS. Default: 100bp", {"split-distance"});
+    ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150bp", {"offset"});
+    ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100bp", {"window-size"});
+    ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600bp", {"gene-length"});
     Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
-    ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', 'fr', and 'single'", {"stranded"});
+    ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag", {'t', "tag"});
 	try
@@ -69,7 +72,7 @@ int main(int argc, char* argv[])
             string tmp_strand = strandSpecific.Get();
             if (tmp_strand == "RF" || tmp_strand == "rf") STRAND_SPECIFIC = 1;
             else if(tmp_strand == "FR" || tmp_strand == "fr") STRAND_SPECIFIC = -1;
-            else if(tmp_strand != "single") throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr', 'single'}");
+            else throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr'}");
         }
 
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
@@ -80,6 +83,9 @@ int main(int argc, char* argv[])
         const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : 255u;
         const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
+        const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 150;
+        const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
+        const int BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 600u;
         const vector<string> tags = filterTags ? filterTags.Get() : vector<string>{"mC"}; //STAR chimeric pair tag
         const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
 
@@ -147,6 +153,7 @@ int main(int argc, char* argv[])
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
         map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
+        BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
@@ -298,8 +305,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr]); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -352,7 +359,8 @@ int main(int argc, char* argv[])
 
         //gene coverage report generation
         unsigned int genesDetected = 0;
-        vector<double> ratios;
+        double _medianRatio2;
+        vector<double> ratios, ratios2;
         {
             unsigned long geneCount = 0ul;
             //not a super efficient approach, but I'm not too concerned about efficiency during report generation
@@ -385,20 +393,38 @@ int main(int argc, char* argv[])
                 rpkms[gene->first] = RPKM;
                 if (gene->second >= 5.0) ++genesDetected;
                 genesByRPKM.push_back(gene->first);
+                double geneBias = bias.getBias(gene->first);
+                if (geneBias != -1.0) ratios.push_back(geneBias);
                 
             }
             geneReport.close();
             geneRPKM.close();
             sort(genesByRPKM.begin(), genesByRPKM.end(), compGenes);
-            for(auto gene = genesByRPKM.rbegin(); ratios.size() < 1000 && gene != genesByRPKM.rend(); ++gene)
+            /*for(auto gene = genesByRPKM.rbegin(); gene != genesByRPKM.rend(); ++gene)
             {
                 double cov5 = ceil(geneCoverage["+"+(*gene)]);
                 double cov3 = ceil(geneCoverage["-"+(*gene)]);
                 if (cov5 + cov3 > 0) //because NaN really throws a wrench in calculations
                 {
-                    ratios.push_back(cov5 / (cov5 + cov3));
+                    if (ratios.size() < 1000) ratios.push_back(cov5 / (cov5 + cov3));
+                    ratios2.push_back(cov5 / (cov5 + cov3));
                 }
             }
+            for(auto gene = genesByRPKM.rbegin(); ratios2.size() < 1000 && gene != genesByRPKM.rend(); ++gene)
+            {
+                double cov3 = ceil(geneCoverage["-"+(*gene)]);
+                if (true)
+                {
+                    double tmp = cov3 * (double) readLength / 100.0;
+                    //tmp /= rpkms[*gene];
+                    tmp /= (geneCoverage[*gene] * (double) readLength / (double) geneLengths[*gene]);
+                    ratios2.push_back(tmp);
+                }
+            }
+            sort(ratios2.begin(), ratios2.end());
+            auto _median = ratios2.begin();
+            for(int i = ratios2.size(); i > ratios2.size()/2; --i) ++_median;
+            _medianRatio2 = *_median;*/
         }
 
         //3'/5' coverage ratio calculations
@@ -492,6 +518,7 @@ int main(int argc, char* argv[])
         output << "Estimated Library Complexity\t" << minReads << endl;
         output << "Mean 3' bias\t" << ratioAvg << endl;
         output << "Median 3' bias\t" << ratioMedian << endl;
+        //output << "Median 3' coverage\t" << _medianRatio2 << endl;
         output << "3' bias Std\t" << ratioStd << endl;
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;

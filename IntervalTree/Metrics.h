@@ -9,6 +9,7 @@
 #ifndef Metrics_h
 #define Metrics_h
 
+#include "GTF.h"
 #include <map>
 #include <fstream>
 #include <string>
@@ -42,6 +43,22 @@ public:
     bool queryGene(const std::string&);
     bool isDirty();
     double sum();
+};
+
+class BiasCounter {
+    const int offset;
+    const int windowSize;
+    const unsigned long geneLength;
+    std::map<std::string, unsigned long> fiveEnd;
+    std::map<std::string, unsigned long> threeEnd;
+public:
+    BiasCounter(int offset, int windowSize, unsigned long geneLength) : offset(offset), windowSize(windowSize), geneLength(geneLength), fiveEnd(), threeEnd()
+    {
+        
+    }
+    
+    void checkBias(Feature&, Feature&);
+    double getBias(const std::string&);
 };
 
 std::ofstream& operator<<(std::ofstream&, Metrics&);

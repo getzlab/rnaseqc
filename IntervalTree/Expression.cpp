@@ -80,7 +80,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -148,18 +148,8 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
 
-                //We do count coverage in the 3'/5' regions of the gene, however.
-                //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
-                //crowded argument list
-                //first check if the read maps to either the start or end areas of a gene
-                bool intersectsStart = block->start <= result->start + 100l && block->start >= result->start;
-                if (intersectsStart || (block->end >= result->end - 100l && block->end <= result->end))
-                {
-                    //Key: + if read maps to gene's 5'
-                    //     - if read maps to gene's 3'
-                    string key = (result->strand == 1)^intersectsStart ? "+" : "-";
-                    geneCoverage[key+result->gene_id] += (double) (block->end - block->start + 1) / length;
-                }
+                //Now check 3'/5' bias
+                bias.checkBias(*result, *block);
             }
             if (result->ribosomal) ribosomal = true;
         }
@@ -222,7 +212,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     }
 }
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -290,22 +280,8 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
 
-                //We do count coverage in the 3'/5' regions of the gene, however.
-                //The naming is a little hacky '(+/-)gene_id' but it avoids adding yet another argument to the alredy
-                //crowded argument list
-                //first check if the read maps to either the start or end areas of a gene
-                bool intersectsStart = block->start <= result->start + 100l && block->start >= result->start;
-                if (intersectsStart || (block->end >= result->end - 100l && block->end <= result->end))
-                {
-                    //Key: + if read maps to gene's 5'
-                    //     - if read maps to gene's 3'
-                    Feature tmp;
-                    tmp.start = intersectsStart ? result->start : result->end - 100l;
-                    tmp.end = intersectsStart ? result->start + 100l : result->end;
-                    string key = (result->strand == 1)^intersectsStart ? "+" : "-";
-                    geneCoverage[key+result->gene_id] += (double) (block->end - block->start + 1) / length;
-                    //geneCoverage[key+result->gene_id] += (double) partialIntersect(tmp, *block) / 100;
-                }
+                //Now check 3'/5' bias
+                bias.checkBias(*result, *block);
             }
             if (result->ribosomal) ribosomal = true;
         }
