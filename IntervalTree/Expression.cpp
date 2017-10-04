@@ -118,9 +118,6 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                 if (stranded == 1) target = !target;
                 if (result->strand != (target ? 1 : -1))
                 {
-                    //cout << alignment.Name << endl;
-                    //cout << alignment.IsFirstMate() << " " << alignment.IsReverseStrand() << endl;
-                    //cout << target << " " << result->strand << endl;
                     continue;
                 }
             }
@@ -249,9 +246,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                 if (stranded == 1) target = !target;
                 if (result->strand != (target ? 1 : -1))
                 {
-                    //cout << alignment.Name << endl;
-                    //cout << alignment.IsFirstMate() << " " << alignment.IsReverseStrand() << endl;
-                    //cout << target << " " << result->strand << endl;
+
                     continue;
                 }
             }

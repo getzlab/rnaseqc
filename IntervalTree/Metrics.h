@@ -61,5 +61,6 @@ public:
     double getBias(const std::string&);
 };
 
+
 std::ofstream& operator<<(std::ofstream&, Metrics&);
 #endif /* Metrics_h */

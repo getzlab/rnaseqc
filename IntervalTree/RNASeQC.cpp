@@ -53,11 +53,12 @@ int main(int argc, char* argv[])
     ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150bp", {"offset"});
     ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100bp", {"window-size"});
     ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600bp", {"gene-length"});
-    Flag debugMode(parser, "debug", "Include values of various internal constants in the output", {'d', "debug"});
     Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
     ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
-    ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag", {'t', "tag"});
+    ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
+    ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be called as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
+    Flag excludeChimeric(parser, "exclude", "Exclude chimeric reads from the read counts", {'e', "exclude"});
 	try
 	{
         //parse and validate the command line arguments
@@ -83,10 +84,11 @@ int main(int argc, char* argv[])
         const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : 255u;
         const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
-        const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 150;
+        const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 0; //150
         const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
-        const int BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 600u;
-        const vector<string> tags = filterTags ? filterTags.Get() : vector<string>{"mC"}; //STAR chimeric pair tag
+        const unsigned long BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 200u; //600
+        const vector<string> tags = filterTags ? filterTags.Get() : vector<string>();
+        const string chimeric_tag = chimericTag ? chimericTag.Get() : "mC";
         const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
 
         time_t t0, t1, t2; //various timestamps to record execution time
@@ -109,7 +111,7 @@ int main(int argc, char* argv[])
                 if(LegacyMode.Get() && line.end == line.start)
                 {
                     //legacy code excludes single base exons
-                    if (VERBOSITY > 1) cout<<"Legacy excluded exon: " << line.feature_id << endl;
+                    if (VERBOSITY > 1) cout<<"Legacy mode excluded feature: " << line.feature_id << endl;
                     continue;
                 }
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
@@ -123,6 +125,16 @@ int main(int argc, char* argv[])
         for (auto beg = features.begin(); beg != features.end(); ++beg) beg->second.sort(compIntervalStart);
         time(&t1); //record the time taken to parse the GTF
         if (VERBOSITY) cout << "Finished processing GTF in " << difftime(t1, t0) << " seconds" << endl;
+//        auto blerg = features.begin()->first;
+//        for(auto chr = features.begin(); chr != features.end(); ++chr)
+//        for(auto feature = features[chr->first].begin(); feature != features[chr->first].end(); ++feature)
+//        {
+//            if(feature->feature_id == "ERCC-00002")
+//            {
+//                cout << "Feature found " << chr->first << " " << feature->start << " " << feature->end << endl;
+//                blerg = chr->first;
+//            }
+//        }
 
 
         //fragment size variables
@@ -181,6 +193,7 @@ int main(int argc, char* argv[])
                     if (VERBOSITY > 1) cout << "Time elapsed: " << difftime(t2, t1) << "; Alignments processed: " << alignmentCount << endl;
                 }
                 //count metrics based on basic read data
+                
                 if (!alignment.IsPrimaryAlignment()) counter.increment("Alternative Alignments");
                 else if (alignment.IsFailedQC()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
@@ -200,18 +213,23 @@ int main(int argc, char* argv[])
                         unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
                         if (alignmentSize > MAX_READ_LENGTH) continue;
                         if (alignmentSize > readLength) readLength = alignment.Length;
+                        alignment.BuildCharData(); //Load read name and tags
+                        if (!LegacyMode.Get() && alignment.HasTag(chimeric_tag))
+                        {
+                            counter.increment("Chimeric Reads_tag");
+                            if(excludeChimeric.Get()) continue;
+                        }
                         if (alignment.IsPaired() && alignment.IsMateMapped() && alignment.IsProperPair())
                         {
                             if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
-                            if (LegacyMode.Get() && (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE))
+                            if (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE || (LegacyMode.Get() && alignment.RefID > 127))
                             {
-                                counter.increment("Chimeric Pairs");
-                                continue;
+                                counter.increment("Chimeric Reads_contig");
+                                if(excludeChimeric.Get()) continue;
                             }
                         }
                         //Get tag data
                         unsigned int mismatches = 0;
-                        alignment.BuildCharData(); //Load read name and tags
                         if (alignment.HasTag(NM))
                         {
                             char nmType;
@@ -300,6 +318,7 @@ int main(int argc, char* argv[])
                             vector<Feature> blocks;
                             string chrName = (sequences.Begin()+alignment.RefID)->Name;
                             unsigned short chr = chromosomeMap(chrName); //parse out a chromosome shorthand
+
                             //extract each cigar block from the alignment
                             unsigned int length = extractBlocks(alignment, blocks, chr);
                             trimFeatures(alignment, features[chr]); //drop features that appear before this read
@@ -359,8 +378,7 @@ int main(int argc, char* argv[])
 
         //gene coverage report generation
         unsigned int genesDetected = 0;
-        double _medianRatio2;
-        vector<double> ratios, ratios2;
+        vector<double> ratios;
         {
             unsigned long geneCount = 0ul;
             //not a super efficient approach, but I'm not too concerned about efficiency during report generation
@@ -376,55 +394,40 @@ int main(int argc, char* argv[])
             geneRPKM << "#1.2" << endl;
             geneReport << geneCount << "\t1" << endl;
             geneRPKM << geneCount << "\t1" << endl;
-            geneReport << "Name\tDescription\tRNA-SeQC" << endl;
-            geneRPKM << "Name\tDescription\tSAMPLE" << endl;
+            geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
+            geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "RPKM") << endl;
             geneRPKM << fixed;
             const double scaleRPKM = (double) alignmentCount / 1000000.0;
             vector<string> genesByRPKM;
             //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
-            for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
+            //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
+            for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
-                const char first = gene->first.at(0);
+                const char first = gene->at(0);//gene->first.at(0);
                 //This is not gene coverage per se, but coverage for the end of a gene.  skip for now
                 if (first == '+' || first == '-') continue;
-                geneReport << gene->first << "\t" << geneNames[gene->first] << "\t" << (long) gene->second << endl;
-                double RPKM = (1000.0 * gene->second / scaleRPKM) / (double) geneLengths[gene->first];
-                geneRPKM << gene->first << "\t" << geneNames[gene->first] << "\t" << RPKM << endl;
-                rpkms[gene->first] = RPKM;
-                if (gene->second >= 5.0) ++genesDetected;
-                genesByRPKM.push_back(gene->first);
-                double geneBias = bias.getBias(gene->first);
+                geneReport << *gene << "\t" << geneNames[*gene] << "\t" << (long) geneCoverage[*gene] << endl;
+                double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) geneLengths[*gene];
+                geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
+                rpkms[*gene] = RPKM;
+                if (geneCoverage[*gene] >= 5.0) ++genesDetected;
+                genesByRPKM.push_back(*gene);
+                /*/
+                if (gene->second * (double) readLength / (double) geneLengths[gene->first] > 1.0)
+                {
+                    double geneBias = bias.getBias(gene->first);
+                    if (geneBias != -1.0) ratios.push_back(geneBias);
+                }
+                /*/
+                //this gets you -.544, E-21
+                //with partials, it's -.534, E-20
+                double geneBias = bias.getBias(*gene);
                 if (geneBias != -1.0) ratios.push_back(geneBias);
-                
+                /**/
             }
             geneReport.close();
             geneRPKM.close();
-            sort(genesByRPKM.begin(), genesByRPKM.end(), compGenes);
-            /*for(auto gene = genesByRPKM.rbegin(); gene != genesByRPKM.rend(); ++gene)
-            {
-                double cov5 = ceil(geneCoverage["+"+(*gene)]);
-                double cov3 = ceil(geneCoverage["-"+(*gene)]);
-                if (cov5 + cov3 > 0) //because NaN really throws a wrench in calculations
-                {
-                    if (ratios.size() < 1000) ratios.push_back(cov5 / (cov5 + cov3));
-                    ratios2.push_back(cov5 / (cov5 + cov3));
-                }
-            }
-            for(auto gene = genesByRPKM.rbegin(); ratios2.size() < 1000 && gene != genesByRPKM.rend(); ++gene)
-            {
-                double cov3 = ceil(geneCoverage["-"+(*gene)]);
-                if (true)
-                {
-                    double tmp = cov3 * (double) readLength / 100.0;
-                    //tmp /= rpkms[*gene];
-                    tmp /= (geneCoverage[*gene] * (double) readLength / (double) geneLengths[*gene]);
-                    ratios2.push_back(tmp);
-                }
-            }
-            sort(ratios2.begin(), ratios2.end());
-            auto _median = ratios2.begin();
-            for(int i = ratios2.size(); i > ratios2.size()/2; --i) ++_median;
-            _medianRatio2 = *_median;*/
+
         }
 
         //3'/5' coverage ratio calculations
@@ -471,21 +474,22 @@ int main(int argc, char* argv[])
                 ratio75 = (ratios[(int) index] + ratios[(int) index])/2.0;
             }
         }
-
         //exon coverage report generation
         {
             ofstream exonReport(outputDir.Get()+"/"+SAMPLENAME+".exon_reads.gct");
             exonReport << "#1.2" << endl;
             exonReport << exonCoverage.size() << "\t1" << endl;
-            exonReport << "Name\tDescription\tRNA-SeQC" << endl;
+            exonReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             exonReport << fixed;
             //iterate over every exon with coverage reported
-            for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
+            //for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
+            for(auto exon = exonList.begin(); exon != exonList.end(); ++exon)
             {
-                exonReport << exon->first << "\t" << geneNames[exon->first] << "\t" << exon->second << endl;
+                exonReport << *exon << "\t" << geneNames[*exon] << "\t" << exonCoverage[*exon] << endl;
             }
             exonReport.close();
         }
+        
 
         //append SAMPLENAME
         ofstream output(outputDir.Get()+"/"+SAMPLENAME+".metrics.tsv");
@@ -561,19 +565,6 @@ int main(int argc, char* argv[])
             output << "Fragment Length Median\t" << fragmentMed << endl;
             output << "Fragment Length Std\t" << fragmentStd << endl;
             output << "Fragment Length MAD_Std\t" << fragmentMedDev << endl;
-        }
-
-        if (debugMode.Get())
-        {
-            //output the constants used
-            output << "[DEBUG]CHIMERIC_DISTANCE\t" << CHIMERIC_DISTANCE << endl;
-            output << "[DEBUG]MAX_READ_LENGTH\t" << MAX_READ_LENGTH << endl;
-            output << "[DEBUG]FRAGMENT_SIZE_SAMPLES\t" << FRAGMENT_SIZE_SAMPLES << endl;
-            output << "[DEBUG]LOW_QUALITY_READS_THRESHOLD\t" << LOW_QUALITY_READS_THRESHOLD << endl;
-            output << "[DEBUG]EXON_MISMATCH_THRESHOLD\t" << BASE_MISMATCH_THRESHOLD << endl;
-            output << "[DEBUG]EXON_QUALITY_THRESHOLD\t" << MAPPING_QUALITY_THRESHOLD << endl;
-            output << "[DEBUG]SPLIT_DISTANCE\t" << SPLIT_DISTANCE << endl;
-
         }
 
         output.close();
