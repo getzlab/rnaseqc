@@ -61,8 +61,20 @@ Version 2.0.0
                                         distance are counted as split reads, BUT
                                         ARE STILL USED IN COUNTS. Default: 100bp
 
-      -d, --debug                       Include values of various internal
-                                        constants in the output
+      --offset=[OFFSET]                 Set the offset into the gene for the 3'
+                                        and 5' windows in bias calculation. A
+                                        positive value shifts the 3' and 5'
+                                        windows towards eachother, while a
+                                        negative value shifts them apart.
+                                        Default: 150bp
+
+      --window-size=[SIZE]              Set the size of the 3' and 5' windows in
+                                        bias calculation. Default: 100bp
+
+      --gene-length=[LENGTH]            Set the minimum size of a gene for bias
+                                        calculation. Genes below this size are
+                                        ignored in the calculation. Default:
+                                        600bp
 
       --legacy                          Use legacy gene counting rules. Gene
                                         counts match output of RNA-SeQC 1.1.6
@@ -70,13 +82,20 @@ Version 2.0.0
       --stranded=[stranded]             Use strand-specific metrics. Only
                                         features on the same strand of a read
                                         will be considered. Allowed values are
-                                        'RF', 'rf', 'FR', 'fr', and 'single'
+                                        'RF', 'rf', 'FR', and 'fr'
 
       -v, --verbose                     Give some feedback about what's going
                                         on. Supply this argument twice for
                                         progress updates while parsing the bam
 
       -t[TAG...], --tag=[TAG...]        Filter out reads with the specified tag.
+
+      --chimeric-tag=[TAG]              Reads maked with the specified tag will
+                                        be called as Chimeric. Defaults to 'mC'
+                                        for STAR
+
+      -e, --exclude                     Exclude chimeric reads from the read
+                                        counts
 
       "--" can be used to terminate flag options and force all following
       arguments to be treated as positional options
@@ -99,7 +118,7 @@ reported as rates out of all primary reads. The rates are:
 * Discard rate: Percentage of reads which were discarded by preliminary filters and were never checked against the GTF.
 
 Other rates and statistics reported are not complimentary. Only these 5 are designed to sum to 1
-      
+
 ### Code Documentation:
 
 ###### Included source files:

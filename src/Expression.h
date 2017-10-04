@@ -9,7 +9,6 @@
 #ifndef Expression_h
 #define Expression_h
 
-#include "GTF.h"
 #include "Metrics.h"
 #include <vector>
 #include <list>
@@ -33,8 +32,8 @@ void trimFeatures(BamTools::BamAlignment&, std::list<Feature> &);
 //Metrics functions
 unsigned int fragmentSizeMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>*, std::map<std::string, std::string>&, std::list<long long>&, BamTools::SamSequenceDictionary&, std::vector<Feature>&, BamTools::BamAlignment&);
 
-void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short);
+void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&);
 
-void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short);
+void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&);
 
 #endif /* Expression_h */

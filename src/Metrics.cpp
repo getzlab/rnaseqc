@@ -32,10 +32,9 @@ double Metrics::frac(std::string a, std::string b)
 
 std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
 {
-    unsigned int NUM_KEYS = 33;
-    std::string keys[] = {
-        "Alternative Alignments",
-        "Chimeric Pairs",
+    std::vector<std::string> keys =  {
+        //"Alternative Alignments",
+        //"Chimeric Reads",
         "Duplicate Reads",
         "End 1 Antisense",
         "End 2 Antisense",
@@ -69,7 +68,11 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
         "Unique Mapping, Vendor QC Passed Reads",
         "Unpaired Reads"
     };
-    for (int i = 0; i < NUM_KEYS; ++i) stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;
+    stream << "Alternative Alignments\t" << counter.get("Alternative Alignments") << std::endl;
+    stream << "Chimeric Reads\t";
+    if (counter.get("Chimeric Reads_tag")) stream << counter.get("Chimeric Reads_tag") << std::endl;
+    else stream << counter.get("Chimeric Reads_contig") << std::endl;
+    for (int i = 0; i < keys.size(); ++i) stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;
     auto beg = counter.counter.begin();
     auto end = counter.counter.end();
     while (beg != end)
@@ -122,4 +125,36 @@ bool Collector::isDirty()
 double Collector::sum()
 {
     return this->total;
+}
+
+void BiasCounter::checkBias(Feature &gene, Feature &block)
+{
+    if (geneLengths[gene.feature_id] < this->geneLength) return;
+    Feature tmp;
+    //adjust the start and end coordinates with the offset
+    tmp.start = gene.start + this->offset;
+    tmp.end = gene.end - this->offset;
+    //bool if the block intersects the left window of the gene.
+    bool leftEnd = block.start <= tmp.start + this->windowSize && block.start >= tmp.start;
+    if (leftEnd || (block.end >= tmp.end - this->windowSize && block.end <= tmp.end))
+    {
+        //Key:
+        // + strand, left end -> 5'
+        // + strand, right end -> 3'
+        // - strand, left end -> 3'
+        // - strand, right end -> 5'
+//        Feature target;
+//        target.start = leftEnd ? gene.start : gene.end - this->windowSize;
+//        target.end = leftEnd ? gene.start + this->windowSize : gene.end;
+        if ((gene.strand == 1)^leftEnd) this->threeEnd[gene.feature_id] += partialIntersect(tmp, block);
+        else this->fiveEnd[gene.feature_id] += partialIntersect(tmp, block);
+    }
+}
+
+double BiasCounter::getBias(const std::string &geneID)
+{
+    double cov5 = this->fiveEnd[geneID];
+    double cov3 = this->threeEnd[geneID];
+    if (cov5 + cov3 > 0.0) return cov3 / (cov5 + cov3);
+    return -1.0;
 }
