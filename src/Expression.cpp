@@ -21,7 +21,7 @@ using std::pair;
 
 
 //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
-unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr)
+unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr, bool legacy)
 {
     //parse the cigar string and populate the provided vector with each block of the read
     auto beg = alignment.CigarData.begin();
@@ -50,8 +50,11 @@ unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, uns
                 start += current.Length;
             case 'H':
             case 'P':
-            case 'S':
+//            case 'S':
             case 'I':
+                break;
+            case 'S':
+                if (legacy) alignedSize += current.Length;
                 break;
             default:
                 throw std::invalid_argument("Unrecognized Cigar Op");
@@ -84,92 +87,114 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-
+    const bool dbg = false;
+    if (dbg) cout << "~" << alignment.Name;
+    
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
     for(auto block = blocks.begin(); block != blocks.end(); ++block)
     {
-        if (lastEnd > 0 && !split) split = (block->start - lastEnd) > SPLIT_DISTANCE;
+        if (lastEnd > 0 && !split) split = (block->start - lastEnd) > SPLIT_DISTANCE - 1;
         lastEnd = block->end;
     }
 
+    
     counter.increment("Alignment Blocks", blocks.size());
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
     current.start = alignment.Position+1; //0-based + 1 == 1-based
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
-
+    
+    list<Feature> *results = intersectBlock(current, features[chr]);
+    
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
-    Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
-
-    for (auto block = blocks.begin(); block != blocks.end(); ++block)
+    bool legacyNotSplit = false; //Legacy bug to override a read being split
+    for (auto result = results->begin(); result != results->end(); ++result)
     {
-        bool blockWasIntragenic = false; //legacy
-        genes.push_back(set<string>()); //create a new set for this block
-        list<Feature> *results = intersectBlock(*block, features[chr]); //grab the list of intersecting features
-        for (auto result = results->begin(); result != results->end(); ++result)
+        Feature exon;
+        bool legacyFoundExon = false, legacyFoundGene = false;
+        map<string, double> legacySplitDosage;
+        legacyNotSplit = false;
+        if (result->type == "gene")
         {
-            if (stranded)
-            {
-                bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
-                if (stranded == 1) target = !target;
-                if (result->strand != (target ? 1 : -1))
-                {
-                    continue;
-                }
-            }
-            //if (stranded && result->strand != (alignment.IsReverseStrand() ^ (stranded == 1 ? alignment.IsFirstMate() : alignment.IsSecondMate()) ? -1 : 1)) continue;
+            intragenic = true;
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
-            if (result->type == "exon")
+            for (auto block = blocks.begin(); block != blocks.end(); ++block)
             {
-                exonic = true;
-                int intersectionSize = partialIntersect(*result, *block);
-                //check that this block fully overlaps the feature
-                //(if any bases of the block don't overlap, then the read is discarded)
-
-                if (intersectionSize == block->end - block->start)
+                //if (block->start == block->end) continue;
+                if (stranded)
                 {
-                    genes.rbegin()->insert(result->gene_id);
-                    blockWasIntragenic = true; //legacy
-                    double tmp = (double) intersectionSize / length;
-                    exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
+                    bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
+                    if (stranded == 1) target = !target;
+                    if (result->strand != (target ? 1 : -1))
+                    {
+                        continue;
+                    }
                 }
+                
+                bool legacyMatchIntron = false;
+                bool firstexon = false;
+                legacyFoundExon = false;
+//                if (intersectInterval(*result, *block))
+                {
+                    legacyFoundGene = true;
+                    bias.checkBias(*result, *block);
+                    for (auto ex = results->begin(); ex != results->end() && !firstexon ; ++ex)
+                    {
+                        if (ex->type == "exon" && ex->gene_id == result->gene_id && intersectInterval(*ex, *block)  )
+                        {
+                            if (result->ribosomal) ribosomal = true;
+                            if (partialIntersect(*ex, *block) == (block->end - block->start))
+                            {
+                                exon = *ex;
+                                exonic = true;
+                                firstexon = true;
+                                legacyFoundExon=true; //should this be part of the loop condition?  look into overlapsIntronp
+                            }
+                        }
 
+                    }
+                    if (split && !legacyNotSplit)
+                    {
+                        if (legacyFoundExon)
+                        {
+                            legacySplitDosage[exon.feature_id] += (double) (block->end - block->start) / length;
+                        }
+                        else legacyNotSplit = true;
+                    }
+                }
             }
-            else if (result->type == "gene")
+            //record gene to collect, probs want to keep a list of single and partial collections
+            if (legacyFoundExon)
             {
-                intragenic = true;
-                //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
-
-                //Now check 3'/5' bias
-                bias.checkBias(*result, *block);
+                if (split && !legacyNotSplit)
+                {
+                    for (auto coverage = legacySplitDosage.begin(); coverage != legacySplitDosage.end(); ++coverage)
+                    {
+                        exonCoverage[coverage->first] += coverage->second;
+                        if (dbg) cout << "\t" << coverage->first << " " << coverage->second;
+                    }
+                }
+                else
+                {
+                    //If read was not detected as split or the legacy bug changed it to unsplit, only record last exon
+                    exonCoverage[exon.feature_id] += 1.0;
+                    if (dbg) cout << "\t" << exon.feature_id << " 1.0";
+                }
+                geneCoverage[exon.gene_id] += 1.0;
+                doExonMetrics = true;
             }
-            if (result->ribosomal) ribosomal = true;
         }
-        delete results; //clean up dynamic allocation
-        //legacy split read handling:
-        if (split && !blockWasIntragenic && genes.size() == 1 && blocks.size() > 1)
-        {
-            genes.pop_back();
-            split = false;
-        }
+        //if (split && !legacyNotSplit && !legacyFoundGene) legacyNotSplit = true;
+                
     }
-    //legacy code only examines 'final' (closer to the end of the contig) segment of each read
-    for (auto gene = genes.rbegin()->begin(); gene != genes.rbegin()->end(); ++gene)
-    {
-        if (exonCoverageCollector.queryGene(*gene))
-        {
-            geneCoverage[*gene]++;
-        }
-        if(split) exonCoverageCollector.collect(*gene);
-        else exonCoverageCollector.collectSingle(*gene);
-        doExonMetrics = true;
-    }
-
+    delete results;
+    if (dbg) cout << endl;
+    
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
@@ -208,6 +233,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         }
     }
 }
+
 
 void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias)
 {
