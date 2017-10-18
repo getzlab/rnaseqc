@@ -21,8 +21,9 @@ const string EXON_NAME = "exon";
 const boost::regex ribosomalPattern("(Mt_)?rRNA");
 map<string, unsigned short> chromosomes;
 map<string, string> geneNames;
-map<string, coord> geneLengths;
+map<string, coord> geneLengths, transcriptCodingLengths;
 std::vector<std::string> geneList, exonList;
+map<string, unsigned int> exon_names;
 
 
 
@@ -78,10 +79,22 @@ ifstream& operator>>(ifstream &in, Feature &out)
                 geneList.push_back(attributes["gene_id"]);
             }
             if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
-            if (out.type == "exon" && attributes.find("exon_id") != attributes.end())
+            if (out.type == "exon")
             {
-                out.feature_id = attributes["exon_id"];
-                exonList.push_back(attributes["exon_id"]);
+                if (attributes.find("exon_id") != attributes.end())
+                {
+                    out.feature_id = attributes["exon_id"];
+                }
+                else if (attributes.find("gene_id") != attributes.end())
+                {
+                    out.feature_id = attributes["gene_id"] + "_" + std::to_string(++exon_names[attributes["gene_id"]]);
+                    std::cout << "Automatic exon name: Gene: "<<attributes["gene_id"] << " Exon: " << out.feature_id << std::endl;
+                }
+                exonList.push_back(out.feature_id);
+                if (attributes.find("transcript_id") != attributes.end())
+                {
+                    transcriptCodingLengths[attributes["transcript_id"]] += 1 + (out.end - out.start);
+                }
             }
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
@@ -104,7 +117,6 @@ unsigned short chromosomeMap(std::string chr)
     if (entry == chromosomes.end())
     {
         chromosomes[chr] = chromosomes.size() + 1u;
-        //std::cout << chr << " -> " << chromosomes.size() << std::endl;
     }
     return chromosomes[chr];
 }

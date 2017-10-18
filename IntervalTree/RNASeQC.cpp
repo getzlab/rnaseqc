@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
                 {
                     //legacy code excludes single base exons
                     if (VERBOSITY > 1) cout<<"Legacy mode excluded feature: " << line.feature_id << endl;
+                    if (line.type == "exon") transcriptCodingLengths[line.gene_id] -= 1;
                     continue;
                 }
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
@@ -125,17 +126,6 @@ int main(int argc, char* argv[])
         for (auto beg = features.begin(); beg != features.end(); ++beg) beg->second.sort(compIntervalStart);
         time(&t1); //record the time taken to parse the GTF
         if (VERBOSITY) cout << "Finished processing GTF in " << difftime(t1, t0) << " seconds" << endl;
-//        auto blerg = features.begin()->first;
-//        for(auto chr = features.begin(); chr != features.end(); ++chr)
-//        for(auto feature = features[chr->first].begin(); feature != features[chr->first].end(); ++feature)
-//        {
-//            if(feature->feature_id == "ERCC-00002")
-//            {
-//                cout << "Feature found " << chr->first << " " << feature->start << " " << feature->end << endl;
-//                blerg = chr->first;
-//            }
-//        }
-
 
         //fragment size variables
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
@@ -193,7 +183,7 @@ int main(int argc, char* argv[])
                     if (VERBOSITY > 1) cout << "Time elapsed: " << difftime(t2, t1) << "; Alignments processed: " << alignmentCount << endl;
                 }
                 //count metrics based on basic read data
-                
+
                 if (!alignment.IsPrimaryAlignment()) counter.increment("Alternative Alignments");
                 else if (alignment.IsFailedQC()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
@@ -320,7 +310,7 @@ int main(int argc, char* argv[])
                             unsigned short chr = chromosomeMap(chrName); //parse out a chromosome shorthand
 
                             //extract each cigar block from the alignment
-                            unsigned int length = extractBlocks(alignment, blocks, chr);
+                            unsigned int length = extractBlocks(alignment, blocks, chr, LegacyMode.Get());
                             trimFeatures(alignment, features[chr]); //drop features that appear before this read
 
                             //run the read through exon metrics
@@ -380,34 +370,23 @@ int main(int argc, char* argv[])
         unsigned int genesDetected = 0;
         vector<double> ratios;
         {
-            unsigned long geneCount = 0ul;
-            //not a super efficient approach, but I'm not too concerned about efficiency during report generation
-            //this is really where I pay for the downside of putting end coverage in the same DS as regular gene coverage
-            for (auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
-            {
-                const char first = gene->first.at(0);
-                if (first != '+' && first != '-') ++geneCount;
-            }
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
             ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_rpkm.gct");
             geneReport << "#1.2" << endl;
             geneRPKM << "#1.2" << endl;
-            geneReport << geneCount << "\t1" << endl;
-            geneRPKM << geneCount << "\t1" << endl;
+            geneReport << geneList.size() << "\t1" << endl;
+            geneRPKM << geneList.size() << "\t1" << endl;
             geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "RPKM") << endl;
             geneRPKM << fixed;
-            const double scaleRPKM = (double) alignmentCount / 1000000.0;
+            const double scaleRPKM = (double) counter.get("Exonic Reads") / 1000000.0;
             vector<string> genesByRPKM;
             //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
             //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
-                const char first = gene->at(0);//gene->first.at(0);
-                //This is not gene coverage per se, but coverage for the end of a gene.  skip for now
-                if (first == '+' || first == '-') continue;
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << (long) geneCoverage[*gene] << endl;
-                double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) geneLengths[*gene];
+                double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) transcriptCodingLengths[*gene];
                 geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
                 rpkms[*gene] = RPKM;
                 if (geneCoverage[*gene] >= 5.0) ++genesDetected;
@@ -489,9 +468,8 @@ int main(int argc, char* argv[])
             }
             exonReport.close();
         }
-        
 
-        //append SAMPLENAME
+
         ofstream output(outputDir.Get()+"/"+SAMPLENAME+".metrics.tsv");
         //output rates and other fractions to the report
         output << "Sample\t" << SAMPLENAME << endl;

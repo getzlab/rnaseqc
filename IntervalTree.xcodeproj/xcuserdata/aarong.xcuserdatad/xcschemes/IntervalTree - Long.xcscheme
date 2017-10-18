@@ -73,8 +73,8 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--bam"
-            isEnabled = "NO">
+            argument = "--legacy"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/aarong/Documents/GTEX-111CU-0126-SM-5GZWZ.Aligned.sortedByCoord.out.patched.bam"

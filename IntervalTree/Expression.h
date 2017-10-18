@@ -24,7 +24,7 @@ bool isIn(std::set<T> &s, T member)
     return s.size() ? s.find(member) != s.end() : false;
 }
 
-unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short);
+unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short, bool);
 //unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short);
 std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
 void trimFeatures(BamTools::BamAlignment&, std::list<Feature> &);
