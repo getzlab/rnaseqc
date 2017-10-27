@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
                             counter.increment("Chimeric Reads_tag");
                             if(excludeChimeric.Get()) continue;
                         }
-                        if (alignment.IsPaired() && alignment.IsMateMapped() && alignment.IsProperPair())
+                        if (alignment.IsPaired() && alignment.IsMateMapped() )
                         {
                             if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
                             if (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE || (LegacyMode.Get() && alignment.RefID > 127))

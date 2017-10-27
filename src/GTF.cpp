@@ -88,7 +88,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
                 else if (attributes.find("gene_id") != attributes.end())
                 {
                     out.feature_id = attributes["gene_id"] + "_" + std::to_string(++exon_names[attributes["gene_id"]]);
-                    std::cout << "Automatic exon name: Gene: "<<attributes["gene_id"] << " Exon: " << out.feature_id << std::endl;
+                    std::cout << "Unnamed exon: Gene: "<<attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                 }
                 exonList.push_back(out.feature_id);
                 if (attributes.find("transcript_id") != attributes.end())
