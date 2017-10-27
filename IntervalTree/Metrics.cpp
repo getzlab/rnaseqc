@@ -35,6 +35,7 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
     std::vector<std::string> keys =  {
         //"Alternative Alignments",
         //"Chimeric Reads",
+        "Shit",
         "Duplicate Reads",
         "End 1 Antisense",
         "End 2 Antisense",
