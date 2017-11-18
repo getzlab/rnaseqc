@@ -89,7 +89,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     const bool dbg = false;
     if (dbg) cout << "~" << alignment.Name;
-    
+
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -99,16 +99,16 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
         lastEnd = block->end;
     }
 
-    
+
     counter.increment("Alignment Blocks", blocks.size());
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
     current.start = alignment.Position+1; //0-based + 1 == 1-based
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
-    
+
     list<Feature> *results = intersectBlock(current, features[chr]);
-    
+
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
     bool legacyNotSplit = false; //Legacy bug to override a read being split
@@ -116,7 +116,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     {
         Feature exon;
         bool legacyFoundExon = false, legacyFoundGene = false;
-        map<string, double> legacySplitDosage;
+        map<string, float> legacySplitDosage;
         legacyNotSplit = false;
         if (result->type == "gene")
         {
@@ -135,7 +135,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                         continue;
                     }
                 }
-                
+
                 bool legacyMatchIntron = false;
                 bool firstexon = false;
                 legacyFoundExon = false;
@@ -162,7 +162,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                     {
                         if (legacyFoundExon)
                         {
-                            legacySplitDosage[exon.feature_id] += (double) (block->end - block->start) / length;
+                            legacySplitDosage[exon.feature_id] += (float) (block->end - block->start) / (float) alignment.Length;//length;
                         }
                         else legacyNotSplit = true;
                     }
@@ -190,11 +190,11 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
             }
         }
         //if (split && !legacyNotSplit && !legacyFoundGene) legacyNotSplit = true;
-                
+
     }
     delete results;
     if (dbg) cout << endl;
-    
+
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
@@ -208,7 +208,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
     {
         counter.increment("Exonic Reads");
         counter.increment("Intragenic Reads");
-        if (split) counter.increment("Split Reads");
+        if (split && !legacyNotSplit) counter.increment("Split Reads");
     }
     else
     {
