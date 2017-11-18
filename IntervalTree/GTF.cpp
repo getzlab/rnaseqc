@@ -99,6 +99,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
             if (attributes.find("gene_name") != attributes.end()) geneNames[out.feature_id] = attributes["gene_name"];
+            else if (attributes.find("gene_id") != attributes.end()) geneNames[out.feature_id] = attributes["gene_id"];
             out.ribosomal = boost::regex_match(out.transcript_type, ribosomalPattern);
             break;
         }
