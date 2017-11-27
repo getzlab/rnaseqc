@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150bp", {"offset"});
     ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100bp", {"window-size"});
     ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600bp", {"gene-length"});
-    Flag LegacyMode(parser, "legacy", "Use legacy gene counting rules.  Gene counts match output of RNA-SeQC 1.1.6", {"legacy"});
+    Flag LegacyMode(parser, "legacy", "Use legacy counting rules.  Gene and exon counts match output of RNA-SeQC 1.1.6", {"legacy"});
     ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
             ifstream reader(gtfFile.Get());
             if (!reader.is_open())
             {
-                cout << "Unable to open GTF file: " << gtfFile.Get() << endl;
+                cerr << "Unable to open GTF file: " << gtfFile.Get() << endl;
                 return 10;
             }
 
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
             ifstream bedReader(bedFile.Get());
             if (!bedReader.is_open())
             {
-                cout << "Unable to open BED file: " << bedFile.Get() << endl;
+                cerr << "Unable to open BED file: " << bedFile.Get() << endl;
                 return 10;
             }
             //extract each line of the bed and insert it into the bedFeatures map
@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
         map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
+        
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
             BamAlignment alignment; //current bam alignment
@@ -164,11 +165,28 @@ int main(int argc, char* argv[])
             bam.Open(bamFilename);
             if (!bam.IsOpen())
             {
-                cout << "Unable to open BAM file: " << bamFilename << endl;
+                cerr << "Unable to open BAM file: " << bamFilename << endl;
                 return 10;
             }
             bam.LocateIndex(); //load in the index, if found.  Slightly improves IO perf
             sequences = bam.GetHeader().Sequences; //read the sequence dictionary from the header
+            //Check the sequence dictionary for contig overlap with gtf
+            if (VERBOSITY > 1) cout<<"Checking bam header..."<<endl;
+            bool hasOverlap = false;
+            for(auto sequence = sequences.Begin(); sequence != sequences.End(); ++sequence)
+            {
+                unsigned short chrom = chromosomeMap(sequence->Name);
+                if (features.find(chrom) != features.end())
+                {
+                    hasOverlap = true;
+                    break;
+                }
+            }
+            if (!hasOverlap)
+            {
+                cerr << "BAM file shares no contigs with GTF" << endl;
+                return 11;
+            }
             if (VERBOSITY) cout<<"Parsing bam..."<<endl;
             time(&report_time);
             time(&t2);
@@ -301,7 +319,7 @@ int main(int argc, char* argv[])
                         if (alignment.RefID < 0 || alignment.RefID >= sequences.Size())
                         {
                             //The read had an unrecognized RefID (one not defined in the bam's header)
-                            if (VERBOSITY) cout << "Unrecognized RefID on alignment: " << alignment.Name<<endl;
+                            if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Name<<endl;
                         }
                         else if(mismatches <= BASE_MISMATCH_THRESHOLD && alignment.IsProperPair() && alignment.MapQuality >= MAPPING_QUALITY_THRESHOLD)
                         {
@@ -555,48 +573,48 @@ int main(int argc, char* argv[])
     }
     catch (args::ParseError &e)
     {
-        cout << parser << endl;
-        cout << "Argument parsing error: " << e.what() << endl;
+        cerr << parser << endl;
+        cerr << "Argument parsing error: " << e.what() << endl;
         return 5;
     }
     catch (args::ValidationError &e)
     {
-        cout << parser << endl;
-        cout << "Argument validation error: " << e.what() << endl;
+        cerr << parser << endl;
+        cerr << "Argument validation error: " << e.what() << endl;
         return 6;
     }
     catch (std::invalid_argument &e)
     {
-        cout << "Invalid argument type provided: " << e.what() << endl;
+        cerr << "Invalid argument type provided: " << e.what() << endl;
         return 7;
     }
     catch (boost::filesystem::filesystem_error &e)
     {
-        cout << "Filesystem error:  " << e.what() << endl;
+        cerr << "Filesystem error:  " << e.what() << endl;
         return 8;
     }
     catch (std::length_error &e)
     {
-        cout<<"Unable to parse the GFT lines"<<endl;
+        cerr<<"Unable to parse the GFT lines"<<endl;
         cerr<<e.what()<<endl;
         return 1;
     }
     catch (std::range_error &e)
     {
-        cout<<"Invalid chromosome range"<<endl;
+        cerr<<"Invalid chromosome range"<<endl;
         cerr<<e.what()<<endl;
         return 2;
     }
     catch(std::domain_error &e)
     {
-        cout<<"Unable to perform string conversion"<<endl;
+        cerr<<"Unable to perform string conversion"<<endl;
         cerr<<e.what()<<endl;
         return 3;
     }
 	catch (...)
 	{
-        cout << parser << endl;
-        cout << "Unknown error" << endl;
+        cerr << parser << endl;
+        cerr << "Unknown error" << endl;
         return -1;
 	}
 
