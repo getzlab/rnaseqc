@@ -59,6 +59,7 @@ int main(int argc, char* argv[])
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
     ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be called as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
     Flag excludeChimeric(parser, "exclude", "Exclude chimeric reads from the read counts", {'e', "exclude"});
+    Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
 	try
 	{
         //parse and validate the command line arguments
@@ -321,7 +322,7 @@ int main(int argc, char* argv[])
                             //The read had an unrecognized RefID (one not defined in the bam's header)
                             if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Name<<endl;
                         }
-                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && alignment.IsProperPair() && alignment.MapQuality >= MAPPING_QUALITY_THRESHOLD)
+                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.IsProperPair()) && alignment.MapQuality >= MAPPING_QUALITY_THRESHOLD)
                         {
                             vector<Feature> blocks;
                             string chrName = (sequences.Begin()+alignment.RefID)->Name;

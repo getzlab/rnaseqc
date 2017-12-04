@@ -74,7 +74,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--legacy"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "/Users/aarong/Documents/GTEX-111CU-0126-SM-5GZWZ.Aligned.sortedByCoord.out.patched.bam"
