@@ -43,22 +43,22 @@ int main(int argc, char* argv[])
     Positional<string> outputDir(parser, "output", "Output directory");
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
-    ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000bp", {"chimeric-distance"});
-    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100000bp", {"read-length"});
-    ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1,000,000", {"fragment-samples"});
+    ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
+    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100000 [bp]", {"read-length"});
+    ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
     ValueFlag<unsigned int> baseMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"base-mismatch"});
-    ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the maximum distance between aligned blocks of a read.  Reads with aligned blocks separated by more than this distance are counted as split reads, BUT ARE STILL USED IN COUNTS. Default: 100bp", {"split-distance"});
-    ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150bp", {"offset"});
-    ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100bp", {"window-size"});
-    ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600bp", {"gene-length"});
-    Flag LegacyMode(parser, "legacy", "Use legacy counting rules.  Gene and exon counts match output of RNA-SeQC 1.1.6", {"legacy"});
+    ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the minimum distance between aligned blocks of a read for the read to be counted as split. Default: 100 [bp]", {"split-distance"});
+    ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150 [bp]", {"offset"});
+    ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100 [bp]", {"window-size"});
+    ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600 [bp]", {"gene-length"});
+    Flag LegacyMode(parser, "legacy", "Use legacy counting rules.  Gene and exon counts match output of RNA-SeQC 1.1.9", {"legacy"});
     ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
-    ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be called as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
-    Flag excludeChimeric(parser, "exclude", "Exclude chimeric reads from the read counts", {'e', "exclude"});
+    ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be labeled as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
+    Flag excludeChimeric(parser, "exclude-chimeric", "Exclude chimeric reads from the read counts", {"exclude-chimeric"});
     Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
 	try
 	{
