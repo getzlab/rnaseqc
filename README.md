@@ -28,15 +28,15 @@ Version 2.0.0
       --chimeric-distance=[DISTANCE]    Set the maximum accepted distance
                                         between read mates. Mates beyond this
                                         distance will be counted as chimeric
-                                        pairs. Default: 2000000bp
+                                        pairs. Default: 2000000 [bp]
 
       --read-length=[LENGTH]            Set the maximum accepted length. Reads
                                         longer than this threshold are
-                                        discarded. Default: 100000bp
+                                        discarded. Default: 100000 [bp]
 
       --fragment-samples=[SAMPLES]      Set the number of samples to take when
                                         computing fragment sizes. Requires the
-                                        --bed argument. Default: 1,000,000
+                                        --bed argument. Default: 1000000
 
       --low-quality=[QUALITY]           Set the lower bound on read quality.
                                         Reads below this number are counted as
@@ -55,29 +55,27 @@ Version 2.0.0
                                         this number of mismatches are excluded
                                         from coverage metrics. Default: 6
 
-      --split-distance=[DISTANCE]       Set the maximum distance between aligned
-                                        blocks of a read. Reads with aligned
-                                        blocks separated by more than this
-                                        distance are counted as split reads, BUT
-                                        ARE STILL USED IN COUNTS. Default: 100bp
+      --split-distance=[DISTANCE]       Set the minimum distance between aligned
+                                        blocks of a read for the read to be counted
+                                        as split. Default: 100 [bp]
 
       --offset=[OFFSET]                 Set the offset into the gene for the 3'
                                         and 5' windows in bias calculation. A
                                         positive value shifts the 3' and 5'
                                         windows towards eachother, while a
                                         negative value shifts them apart.
-                                        Default: 150bp
+                                        Default: 150 [bp]
 
       --window-size=[SIZE]              Set the size of the 3' and 5' windows in
-                                        bias calculation. Default: 100bp
+                                        bias calculation. Default: 100 [bp]
 
       --gene-length=[LENGTH]            Set the minimum size of a gene for bias
                                         calculation. Genes below this size are
                                         ignored in the calculation. Default:
-                                        600bp
+                                        600 [bp]
 
-      --legacy                          Use legacy gene counting rules. Gene
-                                        counts match output of RNA-SeQC 1.1.6
+      --legacy                          Use legacy read counting rules. Read
+                                        counts match output of RNA-SeQC 1.1.9
 
       --stranded=[stranded]             Use strand-specific metrics. Only
                                         features on the same strand of a read
@@ -91,10 +89,10 @@ Version 2.0.0
       -t[TAG...], --tag=[TAG...]        Filter out reads with the specified tag.
 
       --chimeric-tag=[TAG]              Reads maked with the specified tag will
-                                        be called as Chimeric. Defaults to 'mC'
-                                        for STAR
+                                        be labeled as Chimeric. Defaults to 'mC'
+                                        for compatibility with STAR
 
-      -e, --exclude                     Exclude chimeric reads from the read
+      --exclude-chimeric                Exclude chimeric reads from the read
                                         counts
 
       "--" can be used to terminate flag options and force all following
