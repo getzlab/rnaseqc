@@ -32,7 +32,7 @@ Version 2.0.0
 
       --read-length=[LENGTH]            Set the maximum accepted length. Reads
                                         longer than this threshold are
-                                        discarded. Default: 100000 [bp]
+                                        discarded. Default: 1000000 [bp]
 
       --fragment-samples=[SAMPLES]      Set the number of samples to take when
                                         computing fragment sizes. Requires the

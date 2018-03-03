@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
-    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100000 [bp]", {"read-length"});
+    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 1000000 [bp]", {"read-length"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
         }
 
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
-        const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 100000u;
+        const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 1000000u;
         const unsigned int FRAGMENT_SIZE_SAMPLES = fragmentSamples ? fragmentSamples.Get() : 1000000u;
         const unsigned int LOW_QUALITY_READS_THRESHOLD = lowQualityThreshold ? lowQualityThreshold.Get() : 255u;
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
