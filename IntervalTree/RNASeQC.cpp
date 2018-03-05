@@ -26,7 +26,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-map<string, double> rpkms;
+map<string, double> tpms;
 //TODO: fix counter names
 //TODO: add 'raw' counts of various filtrs and flags (match samtools summary & q255)
 //TODO: 'Total Reads' -> Unique mapping, vendor QC passed reads
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
-    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 100000 [bp]", {"read-length"});
+    ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 1000000 [bp]", {"read-length"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
     ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be labeled as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
     Flag excludeChimeric(parser, "exclude-chimeric", "Exclude chimeric reads from the read counts", {"exclude-chimeric"});
     Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
+    Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
 	try
 	{
         //parse and validate the command line arguments
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
         }
 
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
-        const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 100000u;
+        const unsigned int MAX_READ_LENGTH = maxReadLength ? maxReadLength.Get() : 1000000u;
         const unsigned int FRAGMENT_SIZE_SAMPLES = fragmentSamples ? fragmentSamples.Get() : 1000000u;
         const unsigned int LOW_QUALITY_READS_THRESHOLD = lowQualityThreshold ? lowQualityThreshold.Get() : 255u;
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
@@ -390,26 +391,35 @@ int main(int argc, char* argv[])
         vector<double> ratios;
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
-            ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_rpkm.gct");
+            ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_"+(useRPKM.Get() ? "rpkm" : "tpm")+".gct");
             geneReport << "#1.2" << endl;
             geneRPKM << "#1.2" << endl;
             geneReport << geneList.size() << "\t1" << endl;
             geneRPKM << geneList.size() << "\t1" << endl;
             geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
-            geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "RPKM") << endl;
+            geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : (useRPKM.Get() ? "RPKM" : "TPM")) << endl;
             geneRPKM << fixed;
             const double scaleRPKM = (double) counter.get("Exonic Reads") / 1000000.0;
-            vector<string> genesByRPKM;
+            double scaleTPM = 0.0;
+//            vector<string> genesByRPKM;
             //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
             //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << (long) geneCoverage[*gene] << endl;
-                double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) transcriptCodingLengths[*gene];
-                geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
-                rpkms[*gene] = RPKM;
+                if (useRPKM.Get())
+                {
+                    double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) transcriptCodingLengths[*gene];
+                    geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
+                }
+                else
+                {
+                    double TPM = (1000.0 * geneCoverage[*gene]) / (double) transcriptCodingLengths[*gene];
+                    tpms[*gene] = TPM;
+                    scaleTPM += TPM;
+                }
                 if (geneCoverage[*gene] >= 5.0) ++genesDetected;
-                genesByRPKM.push_back(*gene);
+//                genesByRPKM.push_back(*gene);
                 /*/
                 if (gene->second * (double) readLength / (double) geneLengths[gene->first] > 1.0)
                 {
@@ -424,6 +434,12 @@ int main(int argc, char* argv[])
                 /**/
             }
             geneReport.close();
+            if (!useRPKM.Get())
+            {
+                scaleTPM /= 1000000.0;
+                for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
+                    geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << tpms[*gene] / scaleTPM << endl;
+            }
             geneRPKM.close();
 
         }
@@ -624,5 +640,5 @@ int main(int argc, char* argv[])
 
 bool compGenes(const string &a, const string &b)
 {
-    return rpkms[a] < rpkms[b];
+    return tpms[a] < tpms[b];
 }
