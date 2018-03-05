@@ -94,6 +94,12 @@ Version 2.0.0
 
       --exclude-chimeric                Exclude chimeric reads from the read
                                         counts
+                                        
+      -u, --unpaired                    Treat all reads as unpaired, ignoring
+                                        filters which require properly paired
+                                        reads
+                                        
+      --rpkm                            Output gene RPKM values instead of TPMs
 
       "--" can be used to terminate flag options and force all following
       arguments to be treated as positional options
