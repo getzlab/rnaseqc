@@ -588,7 +588,11 @@ int main(int argc, char* argv[])
         
         { //Do base-coverage metrics
             if (VERBOSITY) cout << "Computing per-base coverage metrics" << endl;
-            ifstream reader(outputDir.Get() + "/coverage.tmp.tsv");
+            ifstream reader(outputDir.Get() + "/coverage.tmp.tsv", ifstream::ate | ifstream::binary);
+            double pos = reader.tellg();
+            double nextUpdate = 0.1;
+            reader.close();
+            reader = ifstream(outputDir.Get() + "/coverage.tmp.tsv");
             ofstream writer(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv");
             writer << "gene_id\ttranscript_id\tcoverage_mean\t";
             writer << "coverage_median\tcoverage_std\tcoverage_MAD_std" << endl;
@@ -597,11 +601,16 @@ int main(int argc, char* argv[])
             string gene_id, transcript_id, line, asterisk = "*";
             while (getline(reader, line))
             {
+                if ( VERBOSITY > 1 && ((double) reader.tellg()/pos) > nextUpdate)
+                {
+                    cout << round(((double) reader.tellg()/pos) * 100) << "% complete" << endl;
+                    nextUpdate = ((double) reader.tellg()/pos) + 0.1;
+                }
                 std::istringstream tokenizer(line);
                 string buffer, current_gene, current_transcript;
                 getline(tokenizer, current_gene, '\t');
                 getline(tokenizer, current_transcript, '\t');
-                if (exons.size() && (current_transcript != current_transcript || current_gene != current_gene))
+                if (exons.size() && (current_transcript != transcript_id || current_gene != gene_id))
                 {
                     computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
                     coverage.clear();
@@ -623,6 +632,7 @@ int main(int argc, char* argv[])
             {
                 computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
             }
+            remove(string(outputDir.Get() + "/coverage.tmp.tsv").c_str());
         }
 
         output.close();
