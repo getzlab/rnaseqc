@@ -1,4 +1,4 @@
-# Dockerfile for GTEx RNA-seq pipeline dependencies
+# Dockerfile for RNASeQC
 FROM ubuntu:16.04
 MAINTAINER Aaron Graubert
 
@@ -15,10 +15,6 @@ RUN apt-get update && apt-get install -y software-properties-common && \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
-#-----------------------------
-# Pipeline components
-#-----------------------------
 
 # Args
 RUN cd /opt && \
