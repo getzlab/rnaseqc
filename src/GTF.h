@@ -15,6 +15,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <sstream>
 
 typedef long long coord;
 
@@ -22,7 +23,7 @@ struct Feature {
     coord start, end;
     unsigned short chromosome;
     short strand;
-    std::string type, feature_id, gene_id, transcript_type;
+    std::string type, feature_id, gene_id, transcript_type, transcript_id;
     bool ribosomal;
 };
 

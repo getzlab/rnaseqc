@@ -7,10 +7,10 @@
 #include "Expression.h"
 #include <string>
 #include <iostream>
-#include <exception>
 #include <iterator>
 #include <stdio.h>
 #include <set>
+#include <tuple>
 #include <regex>
 #include <list>
 #include <ctime>
@@ -26,12 +26,16 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
+const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 //TODO: fix counter names
 //TODO: add 'raw' counts of various filtrs and flags (match samtools summary & q255)
 //TODO: 'Total Reads' -> Unique mapping, vendor QC passed reads
 
 bool compGenes(const string&, const string&);
+template <typename T> double computeMedian(unsigned long, T&&, unsigned int=0u);
+void add_range(vector<unsigned long>&, coord, unsigned int);
+tuple<double, double, double, double, double> computeCoverage(ofstream&, string&, string&, const double, map<string, vector<CoverageEntry> >&, vector<string>&);
 
 int main(int argc, char* argv[])
 {
@@ -61,6 +65,7 @@ int main(int argc, char* argv[])
     Flag excludeChimeric(parser, "exclude-chimeric", "Exclude chimeric reads from the read counts", {"exclude-chimeric"});
     Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
     Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
+    Flag outputTranscriptCoverage(parser, "coverage", "If this flag is provided, coverage statistics for each transcript will be written to a table. Otherwise, only summary coverage statistics are generated and added to the metrics table", {"coverage"});
 	try
 	{
         //parse and validate the command line arguments
@@ -150,6 +155,12 @@ int main(int argc, char* argv[])
             while (extractBED(bedReader, line)) (*bedFeatures)[line.chromosome].push_back(line);
             bedReader.close();
         }
+        
+        //use boost to ensure that the output directory exists before the metrics are dumped to it
+        if (!boost::filesystem::exists(outputDir.Get()))
+        {
+            boost::filesystem::create_directories(outputDir.Get());
+        }
 
         BamReader bam;
         const string bamFilename = bamFile.Get();
@@ -157,6 +168,7 @@ int main(int argc, char* argv[])
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
         map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
+        BaseCoverage baseCoverage(outputDir.Get() + "/coverage.tmp.tsv");
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         
@@ -331,11 +343,11 @@ int main(int argc, char* argv[])
 
                             //extract each cigar block from the alignment
                             unsigned int length = extractBlocks(alignment, blocks, chr, LegacyMode.Get());
-                            trimFeatures(alignment, features[chr]); //drop features that appear before this read
+                            trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -352,16 +364,13 @@ int main(int argc, char* argv[])
             } //end of bam alignment loop
         } //end of bam alignment scope
 
-        //use boost to ensure that the output directory exists before the metrics are dumped to it
-        if (!boost::filesystem::exists(outputDir.Get()))
-        {
-            boost::filesystem::create_directories(outputDir.Get());
-        }
+        baseCoverage.close();
         time(&t2);
         if (VERBOSITY)
         {
             cout<< "Time Elapsed: " << difftime(t2, t1) << "; Alignments processed: " << alignmentCount << endl;
             cout << "Total runtime: " << difftime(t2, t0) << "; Total CPU Time: " << (clock() - start_clock)/CLOCKS_PER_SEC << endl;
+            if (VERBOSITY > 1) cout << "Average Reads/Sec: " << (double) alignmentCount / difftime(t2, t1) << endl;
             cout << "Estimating library complexity..." << endl;
         }
         counter.increment("Total Reads", alignmentCount);
@@ -388,6 +397,7 @@ int main(int argc, char* argv[])
 
         //gene coverage report generation
         unsigned int genesDetected = 0;
+        double fragmentMed = 0.0;
         vector<double> ratios;
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
@@ -450,16 +460,18 @@ int main(int argc, char* argv[])
         {
             vector<double> ratioDeviations;
             sort(ratios.begin(), ratios.end());
-            auto median = ratios.begin();
-            for (unsigned long midpoint = ratios.size() / 2; midpoint > 0; --midpoint) ++median;
-            ratioMedian = *median;
+//            auto median = ratios.begin();
+//            for (unsigned long midpoint = ratios.size() / 2; midpoint > 0; --midpoint) ++median;
+//            ratioMedian = *median;
+            ratioMedian = computeMedian(ratios.size(), ratios.begin());
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
                 ratioAvg += (*ratio)/(double) ratios.size();
                 ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
             }
             sort(ratioDeviations.begin(), ratioDeviations.end());
-            ratioMedDev = ratioDeviations[ratioDeviations.size() /2] * 1.4826;
+            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
+//            ratioMedDev = ratioDeviations[ratioDeviations.size() /2] * MAD_FACTOR;
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
                 ratioStd += pow((*ratio) - ratioAvg, 2.0) / (double) ratios.size();
@@ -548,14 +560,15 @@ int main(int argc, char* argv[])
 
 
 
-            double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMed = 0.0, fragmentMedDev = 0.0;
+            double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMedDev = 0.0;
             //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
             //using the old implimentation of list which has to walk the entire sequence to determine size
             double size = (double) fragmentSizes.size();
             vector<double> deviations; //list of recorded deviations from the median
-            auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
-            for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
-            fragmentMed = (double) *median; //save the median value
+            fragmentMed = computeMedian(size, fragmentSizes.begin());
+//            auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
+//            for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
+//            fragmentMed = (double) *median; //save the median value
             ofstream fragmentList(outputDir.Get()+"/"+SAMPLENAME+".fragmentSizes.txt"); //raw list of each fragment size recorded
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
@@ -566,7 +579,8 @@ int main(int argc, char* argv[])
             fragmentList.close();
             sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
             //now compute the median absolute deviation, an estimator for standard deviation
-            fragmentMedDev = (double) deviations[deviations.size()/2] * 1.4826;
+//            fragmentMedDev = (double) deviations[deviations.size()/2] * MAD_FACTOR;
+            fragmentMedDev = computeMedian(deviations.size(), deviations.begin()) * MAD_FACTOR;
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
@@ -578,6 +592,88 @@ int main(int argc, char* argv[])
             output << "Fragment Length Median\t" << fragmentMed << endl;
             output << "Fragment Length Std\t" << fragmentStd << endl;
             output << "Fragment Length MAD_Std\t" << fragmentMedDev << endl;
+        }
+        
+        { //Do base-coverage metrics
+            if (VERBOSITY) cout << "Computing per-base coverage metrics" << endl;
+            list<double> means, medians, stdDevs, mads, cvs;
+            ifstream reader(outputDir.Get() + "/coverage.tmp.tsv", ifstream::ate | ifstream::binary);
+            double pos = reader.tellg();
+            double nextUpdate = 0.1;
+            reader.close();
+            reader = ifstream(outputDir.Get() + "/coverage.tmp.tsv");
+            ofstream writer(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv");
+            if (!outputTranscriptCoverage.Get()) writer.close(); //Close the writer preventing any output to the file
+            writer << "gene_id\ttranscript_id\tcoverage_mean\t";
+            writer << "coverage_median\tcoverage_std\tcoverage_MAD_std\tcoverage_CV" << endl;
+            map<string, vector<CoverageEntry> > coverage;
+            vector<string> exons;
+            string gene_id, transcript_id, line;
+            while (getline(reader, line))
+            {
+                if ( VERBOSITY > 1 && ((double) reader.tellg()/pos) > nextUpdate)
+                {
+                    cout << round(((double) reader.tellg()/pos) * 100) << "% complete" << endl;
+                    nextUpdate = ((double) reader.tellg()/pos) + 0.1;
+                }
+                std::istringstream tokenizer(line);
+                string buffer, current_gene, current_transcript;
+                getline(tokenizer, current_gene, '\t');
+                getline(tokenizer, current_transcript, '\t');
+                if (exons.size() && (current_transcript != transcript_id || current_gene != gene_id))
+                {
+                    auto results = computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
+                    means.push_back(get<0>(results));
+                    medians.push_back(get<1>(results));
+                    stdDevs.push_back(get<2>(results));
+                    mads.push_back(get<3>(results));
+                    cvs.push_back(get<4>(results));
+                    coverage.clear();
+                    exons.clear();
+                    gene_id = current_gene;
+                    transcript_id = current_transcript;
+                }
+                CoverageEntry tmp;
+                tmp.transcript_id = transcript_id;
+                getline(tokenizer, tmp.feature_id, '\t');
+                getline(tokenizer, buffer, '\t');
+                tmp.offset = stoull(buffer);
+                getline(tokenizer, buffer, '\t');
+                tmp.length = stoul(buffer);
+                if (!(exons.size() && exons.back() == tmp.feature_id)) exons.push_back(tmp.feature_id);
+                coverage[tmp.feature_id].push_back(tmp);
+            }
+            if (exons.size())
+            {
+                auto results = computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
+                means.push_back(get<0>(results));
+                medians.push_back(get<1>(results));
+                stdDevs.push_back(get<2>(results));
+                mads.push_back(get<3>(results));
+                cvs.push_back(get<4>(results));
+            }
+            writer.close();
+            remove(string(outputDir.Get() + "/coverage.tmp.tsv").c_str());
+            if (!outputTranscriptCoverage.Get()) remove(string(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv").c_str());
+            if (VERBOSITY > 1) cout << "Computing median coverage statistics" << endl;
+            unsigned long nTranscripts = means.size();
+            means.sort();
+            medians.sort();
+            stdDevs.sort();
+            mads.sort();
+            auto beg = cvs.begin();
+            auto end = cvs.end();
+            while (beg != end)
+            {
+                if (isnan(*beg) || isinf(*beg)) cvs.erase(beg++);
+                else ++beg;
+            }
+            cvs.sort();
+            output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
+            output << "Median of Median Transcript Coverage\t" << computeMedian(nTranscripts, medians.begin()) << endl;
+            output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
+            output << "Median of Transcript Coverage MAD_Std\t" << computeMedian(nTranscripts, mads.begin()) << endl;
+            output << "Median of Transcript Coverage CV\t" << computeMedian(cvs.size(), cvs.begin()) << endl;
         }
 
         output.close();
@@ -636,6 +732,73 @@ int main(int argc, char* argv[])
 	}
 
     return 0;
+}
+
+void add_range(vector<unsigned long> &coverage, coord offset, unsigned int length)
+{
+//    if (offset + length >= coverage.size()) coverage.resize(offset + length, 0ul);
+//    for (coord i = offset; offset < offset + length; ++i) coverage[i] = coverage[i] + 1;
+    for (coord i = 0; i < offset + length; ++i)
+    {
+        unsigned long x = i >= offset ? 1ul : 0ul;
+        if (i >= coverage.size()) coverage.push_back(x);
+        else coverage[i] = coverage[i] + x;
+    }
+}
+
+tuple<double, double, double, double, double> computeCoverage(ofstream &writer, string &gene_id, string &transcript_id, const double median_insert_size, map<string, vector<CoverageEntry> > &entries, vector<string> &exons)
+{
+    vector<unsigned long> coverage;
+    for (unsigned int i = 0; i < exons.size(); ++i)
+    {
+        auto beg = entries[exons[i]].begin();
+        auto end = entries[exons[i]].end();
+        vector<unsigned long> exon_coverage;
+        while (beg != end)
+        {
+            add_range(exon_coverage, beg->offset, beg->length);
+            ++beg;
+        }
+        coverage.reserve(coverage.size() + exon_coverage.size());
+        coverage.insert(coverage.end(), exon_coverage.begin(), exon_coverage.end());
+    }
+    double avg = 0.0, med = 0.0, std = 0.0, medDev = 0.0;
+    vector<double> deviations;
+//    auto median = coverage.begin();
+    double size = (double) coverage.size() - (2 * median_insert_size);
+    if (size > 0)
+    {
+        med = computeMedian(size, coverage.begin(), median_insert_size);
+//        for (unsigned int midpoint = coverage.size() / 2; midpoint > median_insert_size; --midpoint) ++median;
+//        med = (double) *median;
+        for (auto base = coverage.begin(); base != coverage.end() && deviations.size() < size; ++base)
+        {
+            avg += (double) (*base) / size;
+            deviations.push_back(fabs((double) *base - med));
+        }
+        sort(deviations.begin(), deviations.end());
+//        medDev = (double) deviations[deviations.size() / 2] * MAD_FACTOR;
+        medDev = computeMedian(deviations.size(), deviations.begin()) * MAD_FACTOR;
+        unsigned int i = 0;
+        for (auto base = coverage.begin(); base != coverage.end() && i < size; ++base, ++i)
+            std += pow((double) (*base) - avg, 2.0) / size;
+        std = pow(std, 0.5);
+        writer << gene_id << "\t" << transcript_id << "\t";
+        writer << avg << "\t" << med << "\t" << std << "\t" << medDev << "\t" << (100.0 * std / avg) << endl;
+    }
+    return make_tuple(avg, med, std, medDev, (100.0 * std / avg));
+}
+
+template <typename T>
+double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
+{
+    for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
+    if (size % 1)
+    {
+        double value = (double) (*(iterator++));
+        return (value + (double) (*iterator)) / 2.0;
+    }
+    return (double) (*iterator);
 }
 
 bool compGenes(const string &a, const string &b)

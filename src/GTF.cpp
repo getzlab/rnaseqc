@@ -7,7 +7,6 @@
 //
 
 #include "GTF.h"
-#include <sstream>
 #include <exception>
 #include <stdexcept>
 #include <boost/regex.hpp>
@@ -91,10 +90,8 @@ ifstream& operator>>(ifstream &in, Feature &out)
                     std::cout << "Unnamed exon: Gene: "<<attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                 }
                 exonList.push_back(out.feature_id);
-                if (attributes.find("transcript_id") != attributes.end())
-                {
-                    transcriptCodingLengths[attributes["transcript_id"]] += 1 + (out.end - out.start);
-                }
+                out.transcript_id = attributes.find("transcript_id") != attributes.end() ? attributes["transcript_id"] : (attributes.find("gene_id") != attributes.end() ? attributes["gene_id"] : "unknown_transcript");
+                transcriptCodingLengths[out.transcript_id] += 1 + (out.end - out.start);
             }
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];

@@ -70,6 +70,17 @@ void trimFeatures(BamAlignment &alignment, list<Feature> &features)
     while (!features.empty() && features.front().end < alignment.Position) features.pop_front();
 }
 
+void trimFeatures(BamAlignment &alignment, list<Feature> &features, BaseCoverage &coverage)
+{
+    //trim intervals upstream of this block
+    //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
+    while (!features.empty() && features.front().end < alignment.Position)
+    {
+        coverage.dump(features.front()); //Once this feature leaves the search window, dump it to a file
+        features.pop_front();
+    }
+}
+
 list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 {
     list<Feature> *output = new list<Feature>();
@@ -83,7 +94,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -154,6 +165,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                                 exonic = true;
                                 firstexon = true;
                                 legacyFoundExon=true; //should this be part of the loop condition?  look into overlapsIntronp
+                                baseCoverage.add(*ex, block->start, block->end);
                             }
                         }
 
@@ -186,6 +198,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                     if (dbg) cout << "\t" << exon.feature_id << " 1.0";
                 }
                 geneCoverage[exon.gene_id] += 1.0;
+                baseCoverage.commit(exon.gene_id);
                 doExonMetrics = true;
             }
         }
@@ -232,10 +245,11 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
             else transcriptPlus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
         }
     }
+    baseCoverage.reset();
 }
 
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -292,6 +306,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                     genes.rbegin()->insert(result->gene_id);
                     double tmp = (double) intersectionSize / length;
                     exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
+                    baseCoverage.add(*result, block->start, block->end); //provisionally add per-base coverage to this gene
 
                 }
 
@@ -326,6 +341,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
         {
             if (exonCoverageCollector.queryGene(*gene)) geneCoverage[*gene]++;
             exonCoverageCollector.collect(*gene); //collect and keep exon coverage for this gene
+            baseCoverage.commit(*gene); //keep the per-base coverage recorded on this gene
             doExonMetrics = true;
         }
     }
@@ -368,6 +384,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
             else transcriptPlus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
         }
     }
+    baseCoverage.reset();
 }
 
 unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<unsigned short, list<Feature>> *bedFeatures, map<string, string> &fragments, list<long long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
@@ -388,6 +405,7 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<unsigned short
             else if (exonName != results->begin()->feature_id) //ensure the same exon name on subsequent passes
             {
                 sameExon = false;
+                delete results;
                 break;
             }
         }

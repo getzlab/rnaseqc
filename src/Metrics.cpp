@@ -127,6 +127,56 @@ double Collector::sum()
     return this->total;
 }
 
+void BaseCoverage::add(const Feature &exon, const coord start, const coord end) //Adds to the cache
+{
+    CoverageEntry tmp;
+    tmp.offset = start - exon.start;
+    tmp.length = end - start;
+    tmp.transcript_id = exon.transcript_id;
+    tmp.feature_id = exon.feature_id;
+    this->cache[exon.gene_id].push_back(tmp);
+}
+
+void BaseCoverage::commit(const std::string &gene_id) //moves one gene out of the cache to permanent storage
+{
+    auto beg = this->cache[gene_id].begin();
+    auto end = this->cache[gene_id].end();
+    while (beg != end)
+    {
+        CoverageEntry tmp;
+        tmp.offset = beg->offset;
+        tmp.length = beg->length;
+        tmp.transcript_id = beg->transcript_id;
+        tmp.feature_id = gene_id;
+        this->coverage[beg->feature_id].push_back(tmp);
+        ++beg;
+    }
+}
+
+void BaseCoverage::reset() //Empties the cache
+{
+    this->cache.clear();
+}
+
+void BaseCoverage::dump(const Feature &exon) //Dumps one exon to the tmp file
+{
+    auto beg = this->coverage[exon.feature_id].begin();
+    auto end = this->coverage[exon.feature_id].end();
+    while (beg != end)
+    {
+        this->writer << beg->feature_id << "\t" << beg->transcript_id << "\t" << exon.feature_id << "\t";
+        this->writer << beg->offset << "\t" << beg->length << std::endl;
+        ++beg;
+    }
+    this->coverage.erase(this->coverage.find(exon.feature_id));
+}
+
+void BaseCoverage::close()
+{
+    this->writer.flush();
+    this->writer.close();
+}
+
 void BiasCounter::checkBias(Feature &gene, Feature &block)
 {
     if (geneLengths[gene.feature_id] < this->geneLength) return;

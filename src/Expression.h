@@ -27,13 +27,14 @@ bool isIn(std::set<T> &s, T member)
 unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short, bool);
 //unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short);
 std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
-void trimFeatures(BamTools::BamAlignment&, std::list<Feature> &);
+void trimFeatures(BamTools::BamAlignment&, std::list<Feature>&);
+void trimFeatures(BamTools::BamAlignment&, std::list<Feature>&, BaseCoverage&);
 
 //Metrics functions
 unsigned int fragmentSizeMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>*, std::map<std::string, std::string>&, std::list<long long>&, BamTools::SamSequenceDictionary&, std::vector<Feature>&, BamTools::BamAlignment&);
 
-void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&);
+void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
 
-void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&);
+void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
 
 #endif /* Expression_h */
