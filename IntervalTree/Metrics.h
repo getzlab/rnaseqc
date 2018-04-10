@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <exception>
 
 class Metrics {
     std::map<std::string, unsigned long> counter;
@@ -43,6 +44,30 @@ public:
     bool queryGene(const std::string&);
     bool isDirty();
     double sum();
+};
+
+struct CoverageEntry {
+    coord offset;
+    unsigned int length;
+    std::string transcript_id, feature_id;
+};
+
+class BaseCoverage {
+    std::map<std::string, std::vector<CoverageEntry> > coverage, cache;
+    //Coverage is EID -> Entry<GID>
+    //Cache is GID -> Entry<EID>
+    std::ofstream writer;
+public:
+    BaseCoverage(const std::string &filename) : coverage(), cache(), writer(filename)
+    {
+        if (!this->writer) throw std::runtime_error("Unable to open BaseCoverage output file");
+    }
+    
+    void add(const Feature&, const coord, const coord); //Adds to the cache
+    void commit(const std::string&); //moves one gene out of the cache to permanent storage
+    void reset(); //Empties the cache
+    void dump(const Feature&); //Dumps one exon to the tmp file
+    void close(); //Flush and close the ofstream
 };
 
 class BiasCounter {

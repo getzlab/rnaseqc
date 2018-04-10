@@ -69,6 +69,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--bed"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/xchip_gtex/francois/resources/gencode.v19.hg19.insert_size_intervals_geq1000bp.bed"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "/Volumes/xchip_gtex/resources/gencode.v19.genes.v7.patched_contigs.gtf"
             isEnabled = "YES">
          </CommandLineArgument>
