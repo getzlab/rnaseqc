@@ -656,7 +656,7 @@ int main(int argc, char* argv[])
             auto end = cvs.end();
             while (beg != end)
             {
-                if (::isnan(*beg) || ::isinf(*beg)) cvs.erase(beg++);
+                if (std::isnan(*beg) || std::isinf(*beg)) cvs.erase(beg++);
                 else ++beg;
             }
             cvs.sort();
