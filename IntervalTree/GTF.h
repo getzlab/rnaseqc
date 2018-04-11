@@ -36,8 +36,7 @@ int partialIntersect(const Feature&, const Feature&);
 
 extern std::map<std::string, unsigned short> chromosomes;
 extern std::map<std::string, std::string> geneNames;
-extern std::map<std::string, coord> geneLengths;
-extern std::map<std::string, coord> transcriptCodingLengths;
+extern std::map<std::string, coord> geneLengths, transcriptCodingLengths;
 extern std::vector<std::string> geneList, exonList;
 
 unsigned short chromosomeMap(std::string);

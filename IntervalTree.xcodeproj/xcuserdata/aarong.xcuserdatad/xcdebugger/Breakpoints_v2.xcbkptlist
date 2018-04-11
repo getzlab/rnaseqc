@@ -522,9 +522,7 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "786"
-            endingLineNumber = "786"
-            landmarkName = "computeCoverage(ofstream &amp;writer, string &amp;gene_id, string &amp;transcript_id, const double median_insert_size, map&lt;string, vector&lt;CoverageEntry&gt; &gt; &amp;entries, vector&lt;string&gt; &amp;exons)"
-            landmarkType = "9">
+            endingLineNumber = "786">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -539,22 +537,6 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "663"
             endingLineNumber = "663"
-            landmarkName = "main(int argc, char* argv[])"
-            landmarkType = "9">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "545082220.7206219"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "671"
-            endingLineNumber = "671"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
