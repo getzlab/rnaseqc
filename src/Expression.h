@@ -18,11 +18,6 @@
 #include <api/BamAlignment.h>
 
 //Utility functions
-template <typename T>
-bool isIn(std::set<T> &s, T member)
-{
-    return s.size() ? s.find(member) != s.end() : false;
-}
 
 unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short, bool);
 //unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short);
