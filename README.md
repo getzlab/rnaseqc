@@ -96,13 +96,13 @@ Version 2.0.0
 
       --exclude-chimeric                Exclude chimeric reads from the read
                                         counts
-                                        
+
       -u, --unpaired                    Treat all reads as unpaired, ignoring
                                         filters which require properly paired
                                         reads
-                                        
+
       --rpkm                            Output gene RPKM values instead of TPMs
-      
+
       --coverage                        If this flag is provided, coverage
                                         statistics for each transcript will be
                                         written to a table. Otherwise, only
@@ -150,7 +150,7 @@ The following output files are generated in the output directory you provide:
 
 ### Legacy mode differences
 
-The **--legacy** flag enables compatability with RNASeQC 1.1.9. This ensures that exon and gene readcounts match exactly the counts which would have been produced by running that version. This also adds an extra condition to classify reads as chimeric (see "Chimeric Reads", above). Any metrics which existed in 1.1.9 will also match within Java's floating point precision.
+The **--legacy** flag enables compatibility with RNASeQC 1.1.9. This ensures that exon and gene readcounts match exactly the counts which would have been produced by running that version. This also adds an extra condition to classify reads as chimeric (see "Chimeric Reads", above). Any metrics which existed in 1.1.9 will also match within Java's floating point precision.
 
 ### Code Documentation:
 
@@ -189,7 +189,8 @@ The **--legacy** flag enables compatability with RNASeQC 1.1.9. This ensures tha
 
 * `void exonAlignmentMetrics(<args...>)` : Queries each segment of a read against the features in the GTF. To be counted towards a gene, all segments of a read must fully map to exons of the gene. Exon and gene coverage is discarded for reads which do not meet that criteria (having bases overhang off an exon/gene, aligning to introns or intergenic regions, etc). Reads are counted as Intronic if none of their segments aligned to any exons (even if the coverage is discarded), and Intergenic if they additionally never intersected any genes. Because of this criteria, a read is counted as disqualified if not all of its segments fully mapped to exons of the same gene(s).
 
-* `void legacyExonAlignmentMetrics(<args...>)` : Modified version of `exonAlignmentMetrics()`. This version was written to exactly match the gene expression counts (geneReport.tsv) from RNA-SeQC 1.1.6.  Other metrics will also match closer to the old version.  Note that these counts are not 100% accurate due to bugs that were intentionally included in the legacy version of this function.
+* `void legacyExonAlignmentMetrics(<args...>)` : Modified version of `exonAlignmentMetrics()` which produces counts that match the output of
+RNASeQC 1.1.9.
 
 ##### Metrics
 * `Metrics` (class) : Used for keeping track of various counters and statistics regarding the reads that have been processed so far
