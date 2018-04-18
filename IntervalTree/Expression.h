@@ -24,6 +24,7 @@ unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsig
 std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
 void trimFeatures(BamTools::BamAlignment&, std::list<Feature>&);
 void trimFeatures(BamTools::BamAlignment&, std::list<Feature>&, BaseCoverage&);
+void dropFeatures(std::list<Feature>&, BaseCoverage&);
 
 //Metrics functions
 unsigned int fragmentSizeMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>*, std::map<std::string, std::string>&, std::list<long long>&, BamTools::SamSequenceDictionary&, std::vector<Feature>&, BamTools::BamAlignment&);

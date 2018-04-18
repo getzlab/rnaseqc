@@ -77,6 +77,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--coverage"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--tag"
             isEnabled = "NO">
          </CommandLineArgument>

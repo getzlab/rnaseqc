@@ -81,6 +81,12 @@ void trimFeatures(BamAlignment &alignment, list<Feature> &features, BaseCoverage
     }
 }
 
+void dropFeatures(std::list<Feature> &features, BaseCoverage &coverage)
+{
+    for (auto feat = features.begin(); feat != features.end(); ++feat) coverage.dump(*feat);
+    features.clear();
+}
+
 list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 {
     list<Feature> *output = new list<Feature>();

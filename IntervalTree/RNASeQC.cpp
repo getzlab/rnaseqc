@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
         map<unsigned short, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
+        map<string, Feature> transcripts; //map of chr -> transcripts; for coverage metrics later
         //Parse the GTF and extract features
         {
             Feature line; //current feature being read from the gtf
@@ -124,6 +125,7 @@ int main(int argc, char* argv[])
                 {
                     features[line.chromosome].push_back(line);
                 }
+                else if (line.type == "transcript") transcripts[line.feature_id] = line;
             }
         }
 		//ensure that the features are sorted.  This MUST be true for the exon alignment metrics
@@ -168,6 +170,7 @@ int main(int argc, char* argv[])
         BaseCoverage baseCoverage(outputDir.Get() + "/coverage.tmp.tsv");
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
+        unsigned short current_chrom = 0;
 
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
@@ -231,6 +234,7 @@ int main(int argc, char* argv[])
                         //check length against max read length
                         unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
                         if (alignmentSize > MAX_READ_LENGTH) continue;
+                        if (!readLength) current_chrom = chromosomeMap((sequences.Begin()+alignment.RefID)->Name);
                         if (alignmentSize > readLength) readLength = alignment.Length;
                         alignment.BuildCharData(); //Load read name and tags
                         if (!LegacyMode.Get() && alignment.HasTag(chimeric_tag))
@@ -337,6 +341,11 @@ int main(int argc, char* argv[])
                             vector<Feature> blocks;
                             string chrName = (sequences.Begin()+alignment.RefID)->Name;
                             unsigned short chr = chromosomeMap(chrName); //parse out a chromosome shorthand
+                            if (chr != current_chrom)
+                            {
+                                dropFeatures(features[current_chrom], baseCoverage);
+                                current_chrom = chr;
+                            }
 
                             //extract each cigar block from the alignment
                             unsigned int length = extractBlocks(alignment, blocks, chr, LegacyMode.Get());
@@ -360,6 +369,9 @@ int main(int argc, char* argv[])
 
             } //end of bam alignment loop
         } //end of bam alignment scope
+        
+        for (auto feats = features.begin(); feats != features.end(); ++feats)
+            if (feats->second.size()) dropFeatures(feats->second, baseCoverage);
 
         baseCoverage.close();
         time(&t2);
@@ -604,8 +616,8 @@ int main(int argc, char* argv[])
             writer << "gene_id\ttranscript_id\tcoverage_mean\t";
             writer << "coverage_std\tcoverage_CV" << endl;
             map<string, vector<CoverageEntry> > coverage;
-            vector<string> exons;
-            string gene_id, transcript_id, line;
+            map<string, vector<string>> exons; //map of tid -> [exons]
+            string line;
             while (getline(reader, line))
             {
                 if ( VERBOSITY > 1 && ((double) reader.tellg()/pos) > nextUpdate)
@@ -617,33 +629,58 @@ int main(int argc, char* argv[])
                 string buffer, current_gene, current_transcript;
                 getline(tokenizer, current_gene, '\t');
                 getline(tokenizer, current_transcript, '\t');
-                if (exons.size() && (current_transcript != transcript_id || current_gene != gene_id))
+                if (transcripts.find(current_transcript) == transcripts.end())
                 {
-                    auto results = computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
-                    means.push_back(get<0>(results));
-                    stdDevs.push_back(get<1>(results));
-                    cvs.push_back(get<2>(results));
-                    coverage.clear();
-                    exons.clear();
-                    gene_id = current_gene;
-                    transcript_id = current_transcript;
+                    cerr << "Current transcript " << current_transcript << " not present in GTF!" << endl;
+                    continue;
+                }
+                Feature transcript = transcripts[current_transcript];
+
+                auto elem = exons.begin();
+                while (elem != exons.end())
+                {
+                    if (transcripts.find(elem->first) == transcripts.end())
+                    {
+                        cerr << "Unknown transcript in buffer: " << elem->first << endl;
+                    }
+                    Feature compTranscript = transcripts[elem->first];
+                    if (transcript.chromosome != compTranscript.chromosome || transcript.start > compTranscript.end)
+                    {
+                        auto results = computeCoverage(writer, compTranscript.gene_id, compTranscript.feature_id, fragmentMed, coverage, elem->second);
+                        means.push_back(get<0>(results));
+                        stdDevs.push_back(get<1>(results));
+                        cvs.push_back(get<2>(results));
+                        for (auto exon = elem->second.begin(); exon != elem->second.end(); ++exon) coverage.erase(*exon);
+                        exons.erase(elem++);
+                    }
+                    else ++elem;
                 }
                 CoverageEntry tmp;
-                tmp.transcript_id = transcript_id;
+                tmp.transcript_id = transcript.feature_id;
                 getline(tokenizer, tmp.feature_id, '\t');
                 getline(tokenizer, buffer, '\t');
                 tmp.offset = stoull(buffer);
                 getline(tokenizer, buffer, '\t');
                 tmp.length = stoul(buffer);
-                if (!(exons.size() && exons.back() == tmp.feature_id)) exons.push_back(tmp.feature_id);
+                if (!(exons[transcript.feature_id].size() && exons[transcript.feature_id].back() == tmp.feature_id)) exons[transcript.feature_id].push_back(tmp.feature_id);
                 coverage[tmp.feature_id].push_back(tmp);
             }
             if (exons.size())
             {
-                auto results = computeCoverage(writer, gene_id, transcript_id, fragmentMed, coverage, exons);
-                means.push_back(get<0>(results));
-                stdDevs.push_back(get<1>(results));
-                cvs.push_back(get<2>(results));
+                for (auto elem = exons.begin(); elem != exons.end(); ++elem)
+                {
+                    Feature transcript = transcripts[elem->first];
+                    if (elem->second.size())
+                    {
+                        auto results = computeCoverage(writer, transcript.gene_id, transcript.feature_id, fragmentMed, coverage, elem->second);
+                        means.push_back(get<0>(results));
+                        stdDevs.push_back(get<1>(results));
+                        cvs.push_back(get<2>(results));
+                        for (auto exon = elem->second.begin(); exon != elem->second.end(); ++exon) coverage.erase(*exon);
+                    }
+                    else ++elem;
+                }
+                if (coverage.size()) cout << "WARNING: " << coverage.size() << " unclaimed exons" << endl;
             }
             writer.close();
             remove(string(outputDir.Get() + "/coverage.tmp.tsv").c_str());
@@ -656,7 +693,7 @@ int main(int argc, char* argv[])
             auto end = cvs.end();
             while (beg != end)
             {
-                if (::isnan(*beg) || ::isinf(*beg)) cvs.erase(beg++);
+                if (std::isnan(*beg) || std::isinf(*beg)) cvs.erase(beg++);
                 else ++beg;
             }
             cvs.sort();
