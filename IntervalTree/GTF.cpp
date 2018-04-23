@@ -20,7 +20,8 @@ const string EXON_NAME = "exon";
 const boost::regex ribosomalPattern("(Mt_)?rRNA");
 map<string, unsigned short> chromosomes;
 map<string, string> geneNames;
-map<string, coord> geneLengths, transcriptCodingLengths;
+map<string, coord> geneLengths, transcriptCodingLengths, exonLengths;
+std::map<std::string, std::vector<std::string>> transcriptExons;
 std::vector<std::string> geneList, exonList;
 map<string, unsigned int> exon_names;
 
@@ -91,7 +92,9 @@ ifstream& operator>>(ifstream &in, Feature &out)
                 }
                 exonList.push_back(out.feature_id);
                 out.transcript_id = attributes.find("transcript_id") != attributes.end() ? attributes["transcript_id"] : (attributes.find("gene_id") != attributes.end() ? attributes["gene_id"] : "unknown_transcript");
+                transcriptExons[out.transcript_id].push_back(out.feature_id);
                 transcriptCodingLengths[out.transcript_id] += 1 + (out.end - out.start);
+                exonLengths[out.feature_id] = 1 + (out.end - out.start);
             }
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];

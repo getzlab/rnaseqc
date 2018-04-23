@@ -16,6 +16,7 @@
 #include <ctime>
 #include <limits.h>
 #include <math.h>
+#include <unordered_set>
 #include <api/BamReader.h>
 #include <api/BamAlignment.h>
 #include <api/BamConstants.h>
@@ -32,7 +33,8 @@ map<string, double> tpms;
 bool compGenes(const string&, const string&);
 template <typename T> double computeMedian(unsigned long, T&&, unsigned int=0u);
 void add_range(vector<unsigned long>&, coord, unsigned int);
-tuple<double, double, double> computeCoverage(ofstream&, string&, string&, const double, map<string, vector<CoverageEntry> >&, vector<string>&);
+tuple<double, double, double> computeCoverage(ofstream&, string&, string&, const double, map<string, vector<CoverageEntry> >&, list<double>&);
+double reduceDeltaCV(list<double>&);
 
 int main(int argc, char* argv[])
 {
@@ -605,7 +607,7 @@ int main(int argc, char* argv[])
 
         { //Do base-coverage metrics
             if (VERBOSITY) cout << "Computing per-base coverage metrics" << endl;
-            list<double> means, stdDevs, cvs;
+            list<double> means, stdDevs, cvs, deltaCV;
             ifstream reader(outputDir.Get() + "/coverage.tmp.tsv", ifstream::ate | ifstream::binary);
             double pos = reader.tellg();
             double nextUpdate = 0.1;
@@ -616,7 +618,7 @@ int main(int argc, char* argv[])
             writer << "gene_id\ttranscript_id\tcoverage_mean\t";
             writer << "coverage_std\tcoverage_CV" << endl;
             map<string, vector<CoverageEntry> > coverage;
-            map<string, vector<string>> exons; //map of tid -> [exons]
+            unordered_set<string> transcriptBuffer; //List of transcripts which are currently buffering exon coverage
             string line;
             while (getline(reader, line))
             {
@@ -636,24 +638,24 @@ int main(int argc, char* argv[])
                 }
                 Feature transcript = transcripts[current_transcript];
 
-                auto elem = exons.begin();
-                while (elem != exons.end())
+                auto tid = transcriptBuffer.begin();
+                while (tid != transcriptBuffer.end())
                 {
-                    if (transcripts.find(elem->first) == transcripts.end())
+                    if (transcripts.find(*tid) == transcripts.end())
                     {
-                        cerr << "Unknown transcript in buffer: " << elem->first << endl;
+                        cerr << "Unknown transcript in buffer: " << *tid << endl;
                     }
-                    Feature compTranscript = transcripts[elem->first];
+                    Feature compTranscript = transcripts[*tid];
                     if (transcript.chromosome != compTranscript.chromosome || transcript.start > compTranscript.end)
                     {
-                        auto results = computeCoverage(writer, compTranscript.gene_id, compTranscript.feature_id, fragmentMed, coverage, elem->second);
+                        auto results = computeCoverage(writer, compTranscript.gene_id, compTranscript.feature_id, fragmentMed, coverage, deltaCV);
                         means.push_back(get<0>(results));
                         stdDevs.push_back(get<1>(results));
                         cvs.push_back(get<2>(results));
-                        for (auto exon = elem->second.begin(); exon != elem->second.end(); ++exon) coverage.erase(*exon);
-                        exons.erase(elem++);
+                        for (auto exon = transcriptExons[*tid].begin(); exon != transcriptExons[*tid].end(); ++exon) coverage.erase(*exon);
+                        transcriptBuffer.erase(tid++);
                     }
-                    else ++elem;
+                    else ++tid;
                 }
                 CoverageEntry tmp;
                 tmp.transcript_id = transcript.feature_id;
@@ -662,23 +664,19 @@ int main(int argc, char* argv[])
                 tmp.offset = stoull(buffer);
                 getline(tokenizer, buffer, '\t');
                 tmp.length = stoul(buffer);
-                if (!(exons[transcript.feature_id].size() && exons[transcript.feature_id].back() == tmp.feature_id)) exons[transcript.feature_id].push_back(tmp.feature_id);
+                transcriptBuffer.insert(transcript.feature_id);
                 coverage[tmp.feature_id].push_back(tmp);
             }
-            if (exons.size())
+            if (transcriptBuffer.size())
             {
-                for (auto elem = exons.begin(); elem != exons.end(); ++elem)
+                for (auto tid = transcriptBuffer.begin(); tid != transcriptBuffer.end(); ++tid)
                 {
-                    Feature transcript = transcripts[elem->first];
-                    if (elem->second.size())
-                    {
-                        auto results = computeCoverage(writer, transcript.gene_id, transcript.feature_id, fragmentMed, coverage, elem->second);
-                        means.push_back(get<0>(results));
-                        stdDevs.push_back(get<1>(results));
-                        cvs.push_back(get<2>(results));
-                        for (auto exon = elem->second.begin(); exon != elem->second.end(); ++exon) coverage.erase(*exon);
-                    }
-                    else ++elem;
+                    Feature transcript = transcripts[*tid];
+                    auto results = computeCoverage(writer, transcript.gene_id, transcript.feature_id, fragmentMed, coverage, deltaCV);
+                    means.push_back(get<0>(results));
+                    stdDevs.push_back(get<1>(results));
+                    cvs.push_back(get<2>(results));
+                    for (auto exon = transcriptExons[*tid].begin(); exon != transcriptExons[*tid].end(); ++exon) coverage.erase(*exon);
                 }
                 if (coverage.size()) cout << "WARNING: " << coverage.size() << " unclaimed exons" << endl;
             }
@@ -700,6 +698,7 @@ int main(int argc, char* argv[])
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << computeMedian(cvs.size(), cvs.begin()) << endl;
+            output << "Delta CV\t" << reduceDeltaCV(deltaCV) << endl;
         }
 
         output.close();
@@ -764,40 +763,61 @@ void add_range(vector<unsigned long> &coverage, coord offset, unsigned int lengt
 {
 //    if (offset + length >= coverage.size()) coverage.resize(offset + length, 0ul);
 //    for (coord i = offset; offset < offset + length; ++i) coverage[i] = coverage[i] + 1;
-    for (coord i = 0; i < offset + length; ++i)
-    {
-        unsigned long x = i >= offset ? 1ul : 0ul;
-        if (i >= coverage.size()) coverage.push_back(x);
-        else coverage[i] = coverage[i] + x;
-    }
+//    for (coord i = 0; i < offset + length; ++i)
+//    {
+//        unsigned long x = i >= offset ? 1ul : 0ul;
+//        if (i >= coverage.size()) coverage.push_back(x);
+//        else coverage[i] = coverage[i] + x;
+//    }
+    for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
 }
 
-tuple<double, double, double> computeCoverage(ofstream &writer, string &gene_id, string &transcript_id, const double median_insert_size, map<string, vector<CoverageEntry> > &entries, vector<string> &exons)
+tuple<double, double, double> computeCoverage(ofstream &writer, string &gene_id, string &transcript_id, const double median_insert_size, map<string, vector<CoverageEntry> > &entries, list<double> &deltaCV)
 {
     vector<unsigned long> coverage;
-    for (unsigned int i = 0; i < exons.size(); ++i)
+    list<double> exonCV;
+    for (unsigned int i = 0; i < transcriptExons[transcript_id].size(); ++i)
     {
-        auto beg = entries[exons[i]].begin();
-        auto end = entries[exons[i]].end();
-        vector<unsigned long> exon_coverage;
+        auto beg = entries[transcriptExons[transcript_id][i]].begin();
+        auto end = entries[transcriptExons[transcript_id][i]].end();
+        vector<unsigned long> exon_coverage(exonLengths[transcriptExons[transcript_id][i]], 0ul);
         while (beg != end)
         {
             add_range(exon_coverage, beg->offset, beg->length);
             ++beg;
         }
+        double exonMean = 0.0, exonStd = 0.0, exonSize = (double) exon_coverage.size();
+        for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
+            exonMean += (double) (*start) / exonSize;
+        for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
+            exonStd += pow((double) (*start) - exonMean, 2.0) / exonSize;
+        exonStd = log2(pow(exonStd, 0.5) / exonMean); //technically it's a log2(CV) now, but i'm just reusing the variable briefly
+        if (!(std::isnan(exonStd) || std::isinf(exonStd))) exonCV.push_back(exonStd);
         coverage.reserve(coverage.size() + exon_coverage.size());
         coverage.insert(coverage.end(), exon_coverage.begin(), exon_coverage.end());
     }
+    if (coverage.size() != transcriptCodingLengths[transcript_id])
+        cerr << "Coding span mismatch " << transcript_id << " " << coverage.size() << " " << transcriptCodingLengths[transcript_id] << endl;
+    auto current_cv = exonCV.begin();
+    if (current_cv != exonCV.end())
+    {
+        double prev_cv = *(current_cv++);
+        while (current_cv != exonCV.end())
+        {
+            deltaCV.push_back(fabs((*current_cv++) - prev_cv));
+        }
+    }
     double avg = 0.0, std = 0.0;
 //    auto median = coverage.begin();
-    double size = (double) coverage.size() - (2 * median_insert_size);
+    double target = (double) coverage.size() - median_insert_size;
+    double size = target - median_insert_size;
     if (size > 0)
     {
         unsigned int i = 0u;
-        for (auto beg = coverage.begin(); beg != coverage.end() && i < size; ++beg, ++i)
+        for (auto beg = coverage.begin() + median_insert_size; beg != coverage.end() && i < target; ++beg, ++i)
             avg += (double) (*beg) / size;
         i = 0u;
-        for (auto base = coverage.begin(); base != coverage.end() && i < size; ++base, ++i)
+        for (auto base = coverage.begin() + median_insert_size; base != coverage.end() && i < target; ++base, ++i)
             std += pow((double) (*base) - avg, 2.0) / size;
         std = pow(std, 0.5);
         writer << gene_id << "\t" << transcript_id << "\t";
@@ -816,6 +836,11 @@ double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
         return (value + (double) (*iterator)) / 2.0;
     }
     return (double) (*iterator);
+}
+
+double reduceDeltaCV(list<double> &deltaCV)
+{
+    return computeMedian(deltaCV.size(), deltaCV.begin());
 }
 
 bool compGenes(const string &a, const string &b)
