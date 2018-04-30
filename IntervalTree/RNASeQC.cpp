@@ -27,6 +27,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
+const string VERSION = "RNASeQC 2.0.0-dev1";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -39,8 +40,9 @@ double reduceDeltaCV(list<double>&);
 int main(int argc, char* argv[])
 {
     //Set up command line syntax
-    ArgumentParser parser("RNASeQC 2.0.0");
+    ArgumentParser parser(VERSION);
     HelpFlag help(parser, "help", "Display this message and quit", {'h', "help"});
+    Flag versionFlag(parser, "version", "Display the version and quit", {"version"});
     Positional<string> gtfFile(parser, "gtf", "The input GTF file containing features to check the bam against");
     Positional<string> bamFile(parser, "bam", "The input SAM/BAM file containing reads to process");
     Positional<string> outputDir(parser, "output", "Output directory");
@@ -65,10 +67,15 @@ int main(int argc, char* argv[])
     Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
     Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
     Flag outputTranscriptCoverage(parser, "coverage", "If this flag is provided, coverage statistics for each transcript will be written to a table. Otherwise, only summary coverage statistics are generated and added to the metrics table", {"coverage"});
+    ValueFlag<unsigned int> detectionThreshold(parser, "threshold", "Number of counts on a gene to consider the gene 'detected'. Default: 5 reads", {'d', "detection-threshold"});
 	try
 	{
         //parse and validate the command line arguments
         parser.ParseCLI(argc, argv);
+        if (versionFlag && versionFlag.Get()) {
+            cout << VERSION << endl;
+            return 0;
+        }
         if (!gtfFile) throw ValidationError("No GTF file provided");
         if (!bamFile) throw ValidationError("No BAM file provided");
         if (!outputDir) throw ValidationError("No output directory provided");
@@ -96,6 +103,7 @@ int main(int argc, char* argv[])
         const vector<string> tags = filterTags ? filterTags.Get() : vector<string>();
         const string chimeric_tag = chimericTag ? chimericTag.Get() : "mC";
         const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
+        const unsigned int DETECTION_THRESHOLD = detectionThreshold ? detectionThreshold.Get() : 5u;
 
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
@@ -439,7 +447,7 @@ int main(int argc, char* argv[])
                     tpms[*gene] = TPM;
                     scaleTPM += TPM;
                 }
-                if (geneCoverage[*gene] >= 5.0) ++genesDetected;
+                if (geneCoverage[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
 //                genesByRPKM.push_back(*gene);
                 /*/
                 if (gene->second * (double) readLength / (double) geneLengths[gene->first] > 1.0)
