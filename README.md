@@ -11,6 +11,8 @@ Version 2.0.0
 
 ###### OPTIONS:
       -h, --help                        Display this message and quit
+      
+      --version                         Display the version and quit
 
       gtf                               The input GTF file containing features
                                         to check the bam against
@@ -108,6 +110,10 @@ Version 2.0.0
                                         written to a table. Otherwise, only
                                         summary coverage statistics are
                                         generated and added to the metrics table
+                                        
+      -d[threshold],
+      --detection-threshold=[threshold] Number of counts on a gene to consider
+                                        the gene 'detected'. Default: 5 reads
 
       "--" can be used to terminate flag options and force all following
       arguments to be treated as positional options
