@@ -486,7 +486,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.974352"
+            timestampString = "546818280.7187589"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "136"
@@ -502,11 +502,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.974853"
+            timestampString = "546818280.719202"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "826"
-            endingLineNumber = "826"
+            startingLineNumber = "833"
+            endingLineNumber = "833"
             landmarkName = "computeCoverage(ofstream &amp;writer, string &amp;gene_id, string &amp;transcript_id, const double median_insert_size, map&lt;string, vector&lt;CoverageEntry&gt; &gt; &amp;entries, list&lt;double&gt; &amp;deltaCV)"
             landmarkType = "9">
          </BreakpointContent>
@@ -518,11 +518,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.975086"
+            timestampString = "546818280.719438"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "858"
-            endingLineNumber = "858">
+            startingLineNumber = "865"
+            endingLineNumber = "865">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -532,11 +532,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.975275"
+            timestampString = "546818280.719625"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "715"
-            endingLineNumber = "715"
+            startingLineNumber = "722"
+            endingLineNumber = "722"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -548,23 +548,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.975481"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "814"
-            endingLineNumber = "814"
-            landmarkName = "computeCoverage(ofstream &amp;writer, string &amp;gene_id, string &amp;transcript_id, const double median_insert_size, map&lt;string, vector&lt;CoverageEntry&gt; &gt; &amp;entries, list&lt;double&gt; &amp;deltaCV)"
-            landmarkType = "9">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.975688"
+            timestampString = "546818280.719826"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "617"
@@ -580,7 +564,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.975896"
+            timestampString = "546818280.720023"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "659"
@@ -596,7 +580,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.976136"
+            timestampString = "546818280.720216"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "633"
@@ -612,7 +596,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "546804407.9764251"
+            timestampString = "546818280.72041"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "638"

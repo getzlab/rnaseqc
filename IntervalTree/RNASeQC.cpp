@@ -27,7 +27,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev1";
+const string VERSION = "RNASeQC 2.0.0-dev3";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -707,6 +707,15 @@ int main(int argc, char* argv[])
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << computeMedian(cvs.size(), cvs.begin()) << endl;
             output << "Delta CV\t" << reduceDeltaCV(deltaCV) << endl;
+//            {
+//                deltaCV.sort();
+//                double exonMedian = computeMedian(deltaCV.size(), deltaCV.begin());
+//                vector<double> exonDeviations;
+//                for (auto cv = deltaCV.begin(); cv != deltaCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
+//                sort(exonDeviations.begin(), exonDeviations.end());
+//                output << "Median Exon CV\t" << exonMedian << endl;
+//                output << "Exon CV MAD\t" << computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR << endl;
+//            }
         }
 
         output.close();
@@ -848,6 +857,7 @@ double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
 
 double reduceDeltaCV(list<double> &deltaCV)
 {
+    deltaCV.sort();
     return computeMedian(deltaCV.size(), deltaCV.begin());
 }
 
