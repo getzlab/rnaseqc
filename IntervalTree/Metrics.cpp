@@ -164,7 +164,7 @@ void BaseCoverage::dump(const Feature &exon) //Dumps one exon to the tmp file
     auto end = this->coverage[exon.feature_id].end();
     while (beg != end)
     {
-        this->writer << beg->feature_id << "\t" << beg->transcript_id << "\t" << exon.feature_id << "\t";
+        this->writer << /*beg->feature_id << "\t" <<*/ beg->transcript_id << "\t" << exon.feature_id << "\t";
         this->writer << beg->offset << "\t" << beg->length << std::endl;
         ++beg;
     }
