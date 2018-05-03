@@ -310,7 +310,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                 {
                     //store the exon split dosage coverage in the collector for now
                     genes.rbegin()->insert(result->gene_id);
-                    double tmp = (double) intersectionSize / length;
+                    double tmp = static_cast<double>(intersectionSize) / length;
                     exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
                     baseCoverage.add(*result, block->start, block->end); //provisionally add per-base coverage to this gene
 

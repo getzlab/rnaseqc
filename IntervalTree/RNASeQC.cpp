@@ -27,7 +27,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev7";
+const string VERSION = "RNASeQC 2.0.0-dev8";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -274,32 +274,32 @@ int main(int argc, char* argv[])
                                 case Constants::BAM_TAG_TYPE_INT8:
                                     int8_t tmpi8;
                                     alignment.GetTag(NM, tmpi8);
-                                    mismatches = (unsigned int) tmpi8;
+                                    mismatches = static_cast<unsigned int>(tmpi8);
                                     break;
                                 case Constants::BAM_TAG_TYPE_UINT8:
                                     uint8_t tmpu8;
                                     alignment.GetTag(NM, tmpu8);
-                                    mismatches = (unsigned int) tmpu8;
+                                    mismatches = static_cast<unsigned int>(tmpu8);
                                     break;
                                 case Constants::BAM_TAG_TYPE_INT16:
                                     int16_t tmpi16;
                                     alignment.GetTag(NM, tmpi16);
-                                    mismatches = (unsigned int) tmpi16;
+                                    mismatches = static_cast<unsigned int>(tmpi16);
                                     break;
                                 case Constants::BAM_TAG_TYPE_UINT16:
                                     uint16_t tmpu16;
                                     alignment.GetTag(NM, tmpu16);
-                                    mismatches = (unsigned int) tmpu16;
+                                    mismatches = static_cast<unsigned int>(tmpu16);
                                     break;
                                 case Constants::BAM_TAG_TYPE_INT32:
                                     int32_t tmpi32;
                                     alignment.GetTag(NM, tmpi32);
-                                    mismatches = (unsigned int) tmpi32;
+                                    mismatches = static_cast<unsigned int>(tmpi32);
                                     break;
                                 case Constants::BAM_TAG_TYPE_UINT32:
                                     uint32_t tmpu32;
                                     alignment.GetTag(NM, tmpu32);
-                                    mismatches = (unsigned int) tmpu32;
+                                    mismatches = static_cast<unsigned int>(tmpu32);
                                     break;
                                 default:
                                     string msg = "";
@@ -379,7 +379,7 @@ int main(int argc, char* argv[])
 
             } //end of bam alignment loop
         } //end of bam alignment scope
-        
+
         for (auto feats = features.begin(); feats != features.end(); ++feats)
             if (feats->second.size()) dropFeatures(feats->second, baseCoverage);
 
@@ -389,12 +389,12 @@ int main(int argc, char* argv[])
         {
             cout<< "Time Elapsed: " << difftime(t2, t1) << "; Alignments processed: " << alignmentCount << endl;
             cout << "Total runtime: " << difftime(t2, t0) << "; Total CPU Time: " << (clock() - start_clock)/CLOCKS_PER_SEC << endl;
-            if (VERBOSITY > 1) cout << "Average Reads/Sec: " << (double) alignmentCount / difftime(t2, t1) << endl;
+            if (VERBOSITY > 1) cout << "Average Reads/Sec: " << static_cast<double>(alignmentCount) / difftime(t2, t1) << endl;
             cout << "Estimating library complexity..." << endl;
         }
         counter.increment("Total Reads", alignmentCount);
-        double duplicates = (double) counter.get("Duplicate Pairs");
-        double unique = (double) counter.get("Unique Fragments");
+        double duplicates = static_cast<double>(counter.get("Duplicate Pairs"));
+        double unique = static_cast<double>(counter.get("Unique Fragments"));
         double numReads = duplicates + unique;
         unsigned int minReads = 0u, minError = UINT_MAX;
         if (duplicates > 0)
@@ -403,11 +403,11 @@ int main(int argc, char* argv[])
             for (double x = unique; x < 1e9; ++x)
             {
                 double estimate = x * (1.0 - exp(-1.0 * numReads / x)); //lander-waterman
-                unsigned int error = (unsigned int) fabs(estimate - unique);
+                unsigned int error = static_cast<unsigned int>(fabs(estimate - unique));
                 if (error < minError)
                 {
                     minError = error;
-                    minReads = (unsigned int) x;
+                    minReads = static_cast<unsigned int>(x);
                 }
             }
         }
@@ -428,22 +428,22 @@ int main(int argc, char* argv[])
             geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : (useRPKM.Get() ? "RPKM" : "TPM")) << endl;
             geneRPKM << fixed;
-            const double scaleRPKM = (double) counter.get("Exonic Reads") / 1000000.0;
+            const double scaleRPKM = static_cast<double>(counter.get("Exonic Reads")) / 1000000.0;
             double scaleTPM = 0.0;
 //            vector<string> genesByRPKM;
             //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
             //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
-                geneReport << *gene << "\t" << geneNames[*gene] << "\t" << (long) geneCoverage[*gene] << endl;
+                geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCoverage[*gene]) << endl;
                 if (useRPKM.Get())
                 {
-                    double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / (double) transcriptCodingLengths[*gene];
+                    double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / static_cast<double>(transcriptCodingLengths[*gene]);
                     geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
                 }
                 else
                 {
-                    double TPM = (1000.0 * geneCoverage[*gene]) / (double) transcriptCodingLengths[*gene];
+                    double TPM = (1000.0 * geneCoverage[*gene]) / static_cast<double>(transcriptCodingLengths[*gene]);
                     tpms[*gene] = TPM;
                     scaleTPM += TPM;
                 }
@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
             ratioMedian = computeMedian(ratios.size(), ratios.begin());
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
-                ratioAvg += (*ratio)/(double) ratios.size();
+                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
                 ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
             }
             sort(ratioDeviations.begin(), ratioDeviations.end());
@@ -493,30 +493,30 @@ int main(int argc, char* argv[])
 //            ratioMedDev = ratioDeviations[ratioDeviations.size() /2] * MAD_FACTOR;
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
-                ratioStd += pow((*ratio) - ratioAvg, 2.0) / (double) ratios.size();
+                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
             }
             ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
             double index = .25 * ratios.size();
             if (index > floor(index))
             {
                 index = ceil(index);
-                ratio25 = ratios[(int) index];
+                ratio25 = ratios[static_cast<int>(index)];
             }
             else
             {
                 index = ceil(index);
-                ratio25 = (ratios[(int) index] + ratios[(int) index])/2.0;
+                ratio25 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index)])/2.0;
             }
             index = .75 * ratios.size();
             if (index > floor(index))
             {
                 index = ceil(index);
-                ratio75 = ratios[(int) index];
+                ratio75 = ratios[static_cast<int>(index)];
             }
             else
             {
                 index = ceil(index);
-                ratio75 = (ratios[(int) index] + ratios[(int) index])/2.0;
+                ratio75 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index)])/2.0;
             }
         }
         //exon coverage report generation
@@ -553,10 +553,10 @@ int main(int argc, char* argv[])
         output << "Intergenic Rate\t" << counter.frac("Intergenic Reads", "Mapped Reads") << endl;
         output << "Intragenic Rate\t" << counter.frac("Intragenic Reads", "Mapped Reads") << endl;
         output << "Disqualification Rate\t" << counter.frac("Intron/Exon Disqualified Reads", "Mapped Reads") << endl;
-        output << "Discard Rate\t" << (double)(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
+        output << "Discard Rate\t" << static_cast<double>(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
         output << "rRNA Rate\t" << counter.frac("rRNA Reads", "Mapped Reads") << endl;
-        output << "End 1 Sense Rate\t" << (double) counter.get("End 1 Sense") / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;
-        output << "End 2 Sense Rate\t" << (double) counter.get("End 2 Sense") / (counter.get("End 2 Sense") + counter.get("End 2 Antisense")) << endl;
+        output << "End 1 Sense Rate\t" << static_cast<double>(counter.get("End 1 Sense")) / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;
+        output << "End 2 Sense Rate\t" << static_cast<double>(counter.get("End 2 Sense")) / (counter.get("End 2 Sense") + counter.get("End 2 Antisense")) << endl;
         output << "Avg. Splits per Read\t" << counter.frac("Alignment Blocks", "Mapped Reads") - 1.0 << endl;
         //automatically dump the raw counts of all metrics to the file
         output << counter;
@@ -582,7 +582,7 @@ int main(int argc, char* argv[])
             double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMedDev = 0.0;
             //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
             //using the old implimentation of list which has to walk the entire sequence to determine size
-            double size = (double) fragmentSizes.size();
+            double size = static_cast<double>(fragmentSizes.size());
             vector<double> deviations; //list of recorded deviations from the median
             fragmentMed = computeMedian(size, fragmentSizes.begin());
 //            auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
@@ -592,8 +592,8 @@ int main(int argc, char* argv[])
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
                 fragmentList << abs(*fragment) << endl; //record the fragment size into the output list
-                fragmentAvg += (double) abs(*fragment) / size; //add this fragment's size to the mean
-                deviations.push_back(fabs((double) (*fragment) - fragmentMed)); //record this fragment's deviation
+                fragmentAvg += fabs(*fragment) / size; //add this fragment's size to the mean
+                deviations.push_back(fabs(static_cast<double>(*fragment) - fragmentMed)); //record this fragment's deviation
             }
             fragmentList.close();
             sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
@@ -603,7 +603,7 @@ int main(int argc, char* argv[])
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
-                fragmentStd += pow((double) (*fragment) - fragmentAvg, 2.0) / size;
+                fragmentStd += pow(static_cast<double>(*fragment) - fragmentAvg, 2.0) / size;
             }
             fragmentStd = pow(fragmentStd, 0.5); //compute the standard deviation
 
@@ -630,10 +630,10 @@ int main(int argc, char* argv[])
             string line;
             while (getline(reader, line))
             {
-                if ( VERBOSITY > 1 && ((double) reader.tellg()/pos) > nextUpdate)
+                if ( VERBOSITY > 1 && (static_cast<double>(reader.tellg())/pos) > nextUpdate)
                 {
-                    cout << round(((double) reader.tellg()/pos) * 100) << "% complete" << endl;
-                    nextUpdate = ((double) reader.tellg()/pos) + 0.1;
+                    cout << round((static_cast<double>(reader.tellg())/pos) * 100) << "% complete" << endl;
+                    nextUpdate = (static_cast<double>(reader.tellg())/pos) + 0.1;
                 }
                 std::istringstream tokenizer(line);
                 string buffer, /*current_gene,*/ current_transcript;
@@ -714,7 +714,7 @@ int main(int argc, char* argv[])
                 sort(exonDeviations.begin(), exonDeviations.end());
                 output << "Median Exon CV\t" << exonMedian << endl;
                 output << "Exon CV MAD\t" << computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR << endl;
-                
+
 //                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) tmp_exons << (*cv) << endl;
 //                tmp_exons.close();
             }
@@ -805,11 +805,11 @@ tuple<double, double, double> computeCoverage(ofstream &writer, string &gene_id,
             add_range(exon_coverage, beg->offset, beg->length);
             ++beg;
         }
-        double exonMean = 0.0, exonStd = 0.0, exonSize = (double) exon_coverage.size();
+        double exonMean = 0.0, exonStd = 0.0, exonSize = static_cast<double>(exon_coverage.size());
         for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
-            exonMean += (double) (*start) / exonSize;
+            exonMean += static_cast<double>(*start) / exonSize;
         for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
-            exonStd += pow((double) (*start) - exonMean, 2.0) / exonSize;
+            exonStd += pow(static_cast<double>(*start) - exonMean, 2.0) / exonSize;
         exonStd = pow(exonStd, 0.5) / exonMean; //technically it's a CV now
         if (!(std::isnan(exonStd) || std::isinf(exonStd)))
         {
@@ -832,16 +832,16 @@ tuple<double, double, double> computeCoverage(ofstream &writer, string &gene_id,
 //    }
     double avg = 0.0, std = 0.0;
 //    auto median = coverage.begin();
-    double target = (double) coverage.size() - median_insert_size;
+    double target = static_cast<double>(coverage.size()) - median_insert_size;
     double size = target - median_insert_size;
     if (size > 0)
     {
         unsigned int i = 0u;
         for (auto beg = coverage.begin() + median_insert_size; beg != coverage.end() && i < target; ++beg, ++i)
-            avg += (double) (*beg) / size;
+            avg += static_cast<double>(*beg) / size;
         i = 0u;
         for (auto base = coverage.begin() + median_insert_size; base != coverage.end() && i < target; ++base, ++i)
-            std += pow((double) (*base) - avg, 2.0) / size;
+            std += pow(static_cast<double>(*base) - avg, 2.0) / size;
         std = pow(std, 0.5);
         writer << gene_id << "\t" << transcript_id << "\t";
         writer << avg << "\t" << std << "\t" << (std / avg) << endl;
@@ -855,10 +855,10 @@ double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
     for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
     if (size % 1)
     {
-        double value = (double) (*(iterator++));
-        return (value + (double) (*iterator)) / 2.0;
+        double value = static_cast<double>(*(iterator++));
+        return (value + static_cast<double>(*iterator)) / 2.0;
     }
-    return (double) (*iterator);
+    return static_cast<double>(*iterator);
 }
 
 double reduceDeltaCV(list<double> &deltaCV)
