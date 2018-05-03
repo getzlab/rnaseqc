@@ -27,7 +27,7 @@ unsigned long Metrics::get(std::string key)
 
 double Metrics::frac(std::string a, std::string b)
 {
-    return (double) this->get(a) / this->get(b);
+    return static_cast<double>(this->get(a)) / this->get(b);
 }
 
 std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
@@ -114,7 +114,7 @@ void Collector::collectSingle(const std::string &gene_id)
 
 bool Collector::queryGene(const std::string &gene_id)
 {
-    return (bool) this->data[gene_id].size();
+    return static_cast<bool>(this->data[gene_id].size());
 }
 
 bool Collector::isDirty()
@@ -164,7 +164,7 @@ void BaseCoverage::dump(const Feature &exon) //Dumps one exon to the tmp file
     auto end = this->coverage[exon.feature_id].end();
     while (beg != end)
     {
-        this->writer << beg->feature_id << "\t" << beg->transcript_id << "\t" << exon.feature_id << "\t";
+        this->writer << /*beg->feature_id << "\t" <<*/ beg->transcript_id << "\t" << exon.feature_id << "\t";
         this->writer << beg->offset << "\t" << beg->length << std::endl;
         ++beg;
     }
