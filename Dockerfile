@@ -15,13 +15,6 @@ RUN apt-get update && apt-get install -y software-properties-common && \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
-# Args
-RUN cd /opt && \
-    wget --no-check-certificate https://github.com/Taywee/args/archive/6.1.0.tar.gz && \
-    tar -xf 6.1.0.tar.gz && rm 6.1.0.tar.gz && cd args-6.1.0 && \
-    make && make install
-
 # bamtools
 RUN cd /opt && \
     wget --no-check-certificate https://github.com/pezmaster31/bamtools/archive/v2.4.1.tar.gz && \
@@ -33,6 +26,7 @@ ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib/bamtools
 #RNASeQC
 COPY src /opt/rnaseqc/src
 COPY Makefile /opt/rnaseqc
+COPY args.hxx /opt/rnaseqc
 RUN cd /opt/rnaseqc && make && mv rnaseqc /usr/local/bin && make clean
 
 # clean up
