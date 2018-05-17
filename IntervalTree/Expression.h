@@ -11,14 +11,12 @@
 
 #include "Metrics.h"
 #include <vector>
-#include <list>
 #include <set>
 #include <iostream>
 #include <api/BamReader.h>
 #include <api/BamAlignment.h>
 
 //Utility functions
-
 unsigned int extractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short, bool);
 //unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, unsigned short);
 std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
@@ -32,5 +30,7 @@ unsigned int fragmentSizeMetrics(unsigned int, std::map<unsigned short, std::lis
 void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
 
 void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
+
+std::string buildSequence(BamTools::BamAlignment&);
 
 #endif /* Expression_h */

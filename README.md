@@ -111,6 +111,10 @@ Version 2.0.0
                                         summary coverage statistics are
                                         generated and added to the metrics table
                                         
+      --coverage-mask=[SIZE]            Sets how many bases at both ends of a
+                                        transcript are masked out when computing
+                                        per-base exon coverage. Default: 500bp
+                                        
       -d[threshold],
       --detection-threshold=[threshold] Number of counts on a gene to consider
                                         the gene 'detected'. Default: 5 reads
