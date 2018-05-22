@@ -27,9 +27,9 @@ void dropFeatures(std::list<Feature>&, BaseCoverage&);
 //Metrics functions
 unsigned int fragmentSizeMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>*, std::map<std::string, std::string>&, std::list<long long>&, BamTools::SamSequenceDictionary&, std::vector<Feature>&, BamTools::BamAlignment&);
 
-void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
+void exonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BaseCoverage&);
 
-void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BiasCounter&, BaseCoverage&);
+void legacyExonAlignmentMetrics(unsigned int, std::map<unsigned short, std::list<Feature>>&, Metrics&, BamTools::SamSequenceDictionary&, std::map<std::string, double>&, std::map<std::string, double>&, std::vector<Feature>&, BamTools::BamAlignment&, unsigned int, unsigned short, BaseCoverage&);
 
 std::string buildSequence(BamTools::BamAlignment&);
 

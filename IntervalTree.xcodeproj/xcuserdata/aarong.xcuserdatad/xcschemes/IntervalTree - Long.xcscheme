@@ -81,6 +81,10 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--coverage"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--legacy"
             isEnabled = "NO">
          </CommandLineArgument>

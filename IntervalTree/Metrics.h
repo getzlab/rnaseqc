@@ -18,6 +18,7 @@
 #include <exception>
 #include <tuple>
 #include <list>
+#include <unordered_set>
 
 class Metrics {
     std::map<std::string, unsigned long> counter;
@@ -54,31 +55,6 @@ struct CoverageEntry {
     std::string transcript_id, feature_id;
 };
 
-class BaseCoverage {
-    std::map<std::string, std::vector<CoverageEntry> > coverage, cache;
-    //Coverage and Cache are GID -> Entry<EID>
-    std::ofstream writer;
-    const unsigned int mask_size;
-    std::list<double> exonCVs, transcriptMeans, transcriptStds, transcriptCVs;
-    BaseCoverage(const BaseCoverage&) = delete; //No!
-public:
-    BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), transcriptMeans(), transcriptStds(), transcriptCVs()
-    {
-        if ((!this->writer.is_open()) && openFile) throw std::runtime_error("Unable to open BaseCoverage output file");
-        this->writer << "gene_id\ttranscript_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
-    }
-    
-    void add(const Feature&, const coord, const coord); //Adds to the cache
-    void commit(const std::string&); //moves one gene out of the cache to permanent storage
-    void reset(); //Empties the cache
-    void compute(const Feature&); //Computes the per-base coverage for all transcripts in the gene
-    void close(); //Flush and close the ofstream
-    std::list<double>& getExonCVs();
-    std::list<double>& getTranscriptMeans();
-    std::list<double>& getTranscriptStds();
-    std::list<double>& getTranscriptCVs();
-};
-
 class BiasCounter {
     const int offset;
     const int windowSize;
@@ -91,8 +67,36 @@ public:
         
     }
     
-    void checkBias(Feature&, Feature&);
+    void computeBias(const Feature&, std::vector<unsigned long>&);
     double getBias(const std::string&);
+};
+
+class BaseCoverage {
+    std::map<std::string, std::vector<CoverageEntry> > coverage, cache;
+    //Coverage and Cache are GID -> Entry<EID>
+    std::ofstream writer;
+    const unsigned int mask_size;
+    std::list<double> exonCVs, transcriptMeans, transcriptStds, transcriptCVs;
+    BiasCounter &bias;
+    std::unordered_set<std::string> seen;
+    BaseCoverage(const BaseCoverage&) = delete; //No!
+public:
+    BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile, BiasCounter &biasCounter) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), transcriptMeans(), transcriptStds(), transcriptCVs(), bias(biasCounter), seen()
+    {
+        if ((!this->writer.is_open()) && openFile) throw std::runtime_error("Unable to open BaseCoverage output file");
+        this->writer << "gene_id\ttranscript_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
+    }
+    
+    void add(const Feature&, const coord, const coord); //Adds to the cache
+    void commit(const std::string&); //moves one gene out of the cache to permanent storage
+    void reset(); //Empties the cache
+//    void clearCoverage(); //empties out data that won't be used
+    void compute(const Feature&); //Computes the per-base coverage for all transcripts in the gene
+    void close(); //Flush and close the ofstream
+    std::list<double>& getExonCVs();
+    std::list<double>& getTranscriptMeans();
+    std::list<double>& getTranscriptStds();
+    std::list<double>& getTranscriptCVs();
 };
 
 

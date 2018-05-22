@@ -25,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev10";
+const string VERSION = "RNASeQC 2.0.0-dev12";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -176,8 +176,8 @@ int main(int argc, char* argv[])
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
         map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
-        BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get());
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
+        BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         unsigned short current_chrom = 0;
 
@@ -361,8 +361,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias, baseCoverage);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, bias, baseCoverage);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
