@@ -628,19 +628,17 @@ int main(int argc, char* argv[])
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << computeMedian(cvs.size(), cvs.begin()) << endl;
-            {
-                list<double> totalExonCV = baseCoverage.getExonCVs();
-                totalExonCV.sort();
-                double exonMedian = computeMedian(totalExonCV.size(), totalExonCV.begin());
-                vector<double> exonDeviations;
-                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
-                sort(exonDeviations.begin(), exonDeviations.end());
-                output << "Median Exon CV\t" << exonMedian << endl;
-                output << "Exon CV MAD\t" << computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR << endl;
-
-//                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) tmp_exons << (*cv) << endl;
-//                tmp_exons.close();
-            }
+            list<double> totalExonCV = baseCoverage.getExonCVs();
+            totalExonCV.sort();
+            double exonMedian = computeMedian(totalExonCV.size(), totalExonCV.begin());
+            vector<double> exonDeviations;
+            for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
+            sort(exonDeviations.begin(), exonDeviations.end());
+            output << "Median Exon CV\t" << exonMedian << endl;
+            output << "Exon CV MAD\t" << computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR << endl;
+            
+            //                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) tmp_exons << (*cv) << endl;
+            //                tmp_exons.close();
         }
 
         output.close();
