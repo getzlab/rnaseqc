@@ -8,7 +8,11 @@
 
 #include "Metrics.h"
 #include <iostream>
+#include <math.h>
+#include <cmath>
+#include <unordered_set>
 
+std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const std::string&, const unsigned int, std::map<std::string, std::vector<CoverageEntry> >&, std::list<double>&, BiasCounter&);
 
 void Metrics::increment(std::string key)
 {
@@ -139,6 +143,11 @@ void BaseCoverage::add(const Feature &exon, const coord start, const coord end) 
 
 void BaseCoverage::commit(const std::string &gene_id) //moves one gene out of the cache to permanent storage
 {
+    if (this->seen.count(gene_id))
+    {
+        std::cerr << "Gene encountered after computing coverage " << gene_id << std::endl;
+        return;
+    }
     auto beg = this->cache[gene_id].begin();
     auto end = this->cache[gene_id].end();
     while (beg != end)
@@ -147,8 +156,8 @@ void BaseCoverage::commit(const std::string &gene_id) //moves one gene out of th
         tmp.offset = beg->offset;
         tmp.length = beg->length;
         tmp.transcript_id = beg->transcript_id;
-        tmp.feature_id = gene_id;
-        this->coverage[beg->feature_id].push_back(tmp);
+        tmp.feature_id = beg->feature_id;
+        this->coverage[gene_id].push_back(tmp);
         ++beg;
     }
 }
@@ -158,17 +167,34 @@ void BaseCoverage::reset() //Empties the cache
     this->cache.clear();
 }
 
-void BaseCoverage::dump(const Feature &exon) //Dumps one exon to the tmp file
+//void BaseCoverage::clearCoverage()
+//{
+//    std::cerr << "Force dump of " << this->coverage.size() << " genes (" << this->coverage.begin()->first << ")" <<std::endl;
+//    this->coverage.clear();
+//}
+
+void BaseCoverage::compute(const Feature &gene) //computes per-base coverage of the gene
 {
-    auto beg = this->coverage[exon.feature_id].begin();
-    auto end = this->coverage[exon.feature_id].end();
-    while (beg != end)
+    //in case of multiple transcripts per gene, support multiple TIDs
+    //buffer all exons, and store an unordered set transcript list
+    //then, after the gene has been exhausted into the buffer, compute coverage on each transcript
+    std::unordered_set<std::string> transcripts;
+    std::map<std::string, std::vector<CoverageEntry>> coverage;
+    for (auto entry = this->coverage[gene.feature_id].begin(); entry != this->coverage[gene.feature_id].end(); ++entry)
     {
-        this->writer << /*beg->feature_id << "\t" <<*/ beg->transcript_id << "\t" << exon.feature_id << "\t";
-        this->writer << beg->offset << "\t" << beg->length << std::endl;
-        ++beg;
+        coverage[entry->feature_id].push_back(*entry);
+        transcripts.insert(entry->transcript_id);
     }
-    this->coverage.erase(this->coverage.find(exon.feature_id));
+    for (auto transcript = transcripts.begin(); transcript != transcripts.end(); ++transcript)
+    {
+        std::tuple<double, double, double> results = computeCoverage(this->writer, gene, *transcript, this->mask_size, coverage, this->exonCVs, this->bias);
+        this->transcriptMeans.push_back(std::get<0>(results));
+        this->transcriptStds.push_back(std::get<1>(results));
+        this->transcriptCVs.push_back(std::get<2>(results));
+    }
+//    this->coverage[gene.feature_id].clear();
+    this->coverage.erase(gene.feature_id);
+    this->seen.insert(gene.feature_id);
 }
 
 void BaseCoverage::close()
@@ -177,28 +203,36 @@ void BaseCoverage::close()
     this->writer.close();
 }
 
-void BiasCounter::checkBias(Feature &gene, Feature &block)
+std::list<double>& BaseCoverage::getExonCVs()
 {
-    if (geneLengths[gene.feature_id] < this->geneLength) return;
-    Feature tmp;
-    //adjust the start and end coordinates with the offset
-    tmp.start = gene.start + this->offset;
-    tmp.end = gene.end - this->offset;
-    //bool if the block intersects the left window of the gene.
-    bool leftEnd = block.start <= tmp.start + this->windowSize && block.start >= tmp.start;
-    if (leftEnd || (block.end >= tmp.end - this->windowSize && block.end <= tmp.end))
-    {
-        //Key:
-        // + strand, left end -> 5'
-        // + strand, right end -> 3'
-        // - strand, left end -> 3'
-        // - strand, right end -> 5'
-//        Feature target;
-//        target.start = leftEnd ? gene.start : gene.end - this->windowSize;
-//        target.end = leftEnd ? gene.start + this->windowSize : gene.end;
-        if ((gene.strand == 1)^leftEnd) this->threeEnd[gene.feature_id] += partialIntersect(tmp, block);
-        else this->fiveEnd[gene.feature_id] += partialIntersect(tmp, block);
-    }
+    return this->exonCVs;
+}
+
+std::list<double>& BaseCoverage::getTranscriptMeans()
+{
+    return this->transcriptMeans;
+}
+
+std::list<double>& BaseCoverage::getTranscriptStds()
+{
+    return this->transcriptStds;
+}
+
+std::list<double>& BaseCoverage::getTranscriptCVs()
+{
+    return this->transcriptCVs;
+}
+
+void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &coverage)
+{
+    if (coverage.size() < this->geneLength) return; //Must meet minimum length req
+    double lcov = 0.0, rcov = 0.0, windowSize = static_cast<double>(this->windowSize);
+    for (unsigned int i = this->offset; i < this->offset + this->windowSize && i < coverage.size(); ++i)
+        lcov += static_cast<double>(coverage[i]) / windowSize;
+    for (int i = coverage.size() - (1 + this->offset); i <= 0 && i > coverage.size() - (this->offset + this->windowSize); --i)
+        rcov += static_cast<double>(coverage[i]) / windowSize;
+    this->threeEnd[gene.feature_id] += gene.strand == 1 ? rcov : lcov;
+    this->fiveEnd[gene.feature_id] += gene.strand == 1 ? lcov : rcov;
 }
 
 double BiasCounter::getBias(const std::string &geneID)
@@ -207,4 +241,114 @@ double BiasCounter::getBias(const std::string &geneID)
     double cov3 = this->threeEnd[geneID];
     if (cov5 + cov3 > 0.0) return cov3 / (cov5 + cov3);
     return -1.0;
+}
+
+
+void add_range(std::vector<unsigned long> &coverage, coord offset, unsigned int length)
+{
+    //    if (offset + length >= coverage.size()) coverage.resize(offset + length, 0ul);
+    //    for (coord i = offset; offset < offset + length; ++i) coverage[i] = coverage[i] + 1;
+    //    for (coord i = 0; i < offset + length; ++i)
+    //    {
+    //        unsigned long x = i >= offset ? 1ul : 0ul;
+    //        if (i >= coverage.size()) coverage.push_back(x);
+    //        else coverage[i] = coverage[i] + x;
+    //    }
+    for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
+}
+
+std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const std::string &transcript_id, const unsigned int mask_size, std::map<std::string, std::vector<CoverageEntry> > &entries, std::list<double> &totalExonCV, BiasCounter &bias)
+{
+    std::vector<unsigned long> coverage;
+    //    list<double> exonCV;
+    std::vector<std::vector<bool> > coverageMask;
+    unsigned int maskRemainder = mask_size;
+    for (unsigned int i = 0; i < transcriptExons[transcript_id].size(); ++i)
+    {
+        coverageMask.push_back(std::vector<bool>(exonLengths[transcriptExons[transcript_id][i]], true));
+        for (unsigned int j = 0; j < coverageMask.back().size() && maskRemainder; ++j, --maskRemainder)
+            coverageMask.back()[j] = false;
+    }
+    maskRemainder = mask_size;
+    for (int i = transcriptExons[transcript_id].size() - 1; i >= 0 && maskRemainder; --i)
+        for (int j = coverageMask[i].size() - 1; j >= 0 && maskRemainder; --j, --maskRemainder)
+            coverageMask[i][j] = false;
+    for (unsigned int i = 0; i < transcriptExons[transcript_id].size(); ++i)
+    {
+        auto beg = entries[transcriptExons[transcript_id][i]].begin();
+        auto end = entries[transcriptExons[transcript_id][i]].end();
+        std::vector<unsigned long> exon_coverage(exonLengths[transcriptExons[transcript_id][i]], 0ul);
+        while (beg != end)
+        {
+            add_range(exon_coverage, beg->offset, beg->length);
+            ++beg;
+        }
+        double exonMean = 0.0, exonStd = 0.0, exonSize = 0.0;
+        std::vector<bool> mask = coverageMask[i];
+
+        //        assert(mask.size() == exon_coverage.size());
+        for (unsigned int j = 0; j < mask.size(); ++j) if (mask[j]) exonSize += 1;
+        if (exonSize > 0)
+        {
+//            std::list<unsigned int> effective_coverage;
+            auto maskIter = mask.begin();
+            for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
+                if (*(maskIter++))
+                {
+                    exonMean += static_cast<double>(*start) / exonSize;
+//                    effective_coverage.push_back(*start);
+                }
+            maskIter = mask.begin();
+            for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
+                if (*(maskIter++)) exonStd += pow(static_cast<double>(*start) - exonMean, 2.0) / exonSize;
+            exonStd = pow(exonStd, 0.5);// / exonMean; //technically it's a CV now
+//            effective_coverage.sort();
+            //            assert(effective_coverage.size() == exonSize);
+            exonStd /= exonMean; //now it's a CV
+            if (!(std::isnan(exonStd) || std::isinf(exonStd)))
+            {
+                totalExonCV.push_back(exonStd);
+                //            exonCV.push_back(log2(exonStd));
+            }
+//            biasCoverage.reserve(biasCoverage.size() + exon_coverage.size());
+//            biasCoverage.insert(biasCoverage.end(), exon_coverage.begin(), exon_coverage.end());
+        }
+        coverage.reserve(coverage.size() + exon_coverage.size());
+        coverage.insert(coverage.end(), exon_coverage.begin(), exon_coverage.end());
+    }
+    //    if (coverage.size() != transcriptCodingLengths[transcript_id])
+    //        cerr << "Coding span mismatch " << transcript_id << " " << coverage.size() << " " << transcriptCodingLengths[transcript_id] << endl;
+    //    auto current_cv = exonCV.begin();
+    //    if (current_cv != exonCV.end())
+    //    {
+    //        double prev_cv = *(current_cv++);
+    //        while (current_cv != exonCV.end())
+    //        {
+    //            deltaCV.push_back(fabs((*current_cv++) - prev_cv));
+    //        }
+    //    }
+
+    bias.computeBias(gene, coverage);
+
+    double avg = 0.0, std = 0.0;
+    //    auto median = coverage.begin();
+    if (mask_size)
+    {
+//        auto tmp_size = coverage.size();
+        coverage.erase((mask_size > coverage.size() ? coverage.begin() : coverage.end() - mask_size), coverage.end());
+//        tmp_size = coverage.size();
+        if (coverage.size()) coverage.erase(coverage.begin(), (mask_size > coverage.size() ? coverage.end() : coverage.begin() + mask_size));
+    }
+    double size = static_cast<double>(coverage.size());
+    if (size > 0)
+    {
+        for (auto beg = coverage.begin(); beg != coverage.end(); ++beg)
+            avg += static_cast<double>(*beg) / size;
+        for (auto base = coverage.begin(); base != coverage.end(); ++base)
+            std += std::pow(static_cast<double>(*base) - avg, 2.0) / size;
+        std = std::pow(std, 0.5);
+        writer << gene.feature_id << "\t" << transcript_id << "\t";
+        writer << avg << "\t" << std << "\t" << (std / avg) << std::endl;
+    }
+    return std::make_tuple(avg, std, (std / avg));
 }

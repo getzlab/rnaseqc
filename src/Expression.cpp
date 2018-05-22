@@ -76,14 +76,14 @@ void trimFeatures(BamAlignment &alignment, list<Feature> &features, BaseCoverage
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
     while (!features.empty() && features.front().end < alignment.Position)
     {
-        coverage.dump(features.front()); //Once this feature leaves the search window, dump it to a file
+        if (features.front().type == "gene") coverage.compute(features.front()); //Once this gene leaves the search window, compute coverage
         features.pop_front();
     }
 }
 
 void dropFeatures(std::list<Feature> &features, BaseCoverage &coverage)
 {
-    for (auto feat = features.begin(); feat != features.end(); ++feat) coverage.dump(*feat);
+    for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == "gene") coverage.compute(*feat);
     features.clear();
 }
 
@@ -100,7 +100,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -119,7 +119,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
 
     counter.increment("Alignment Blocks", blocks.size());
     counter.increment("Reads used for Intron/Exon counts");
-    //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
+    //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though sams are 1-based
     Feature current; //current block of the alignment (used while iterating)
     current.start = alignment.Position+1; //0-based + 1 == 1-based
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
@@ -153,13 +153,13 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
                     }
                 }
 
-                bool legacyMatchIntron = false;
+//                bool legacyMatchIntron = false;
                 bool firstexon = false;
                 legacyFoundExon = false;
 //                if (intersectInterval(*result, *block))
                 {
                     legacyFoundGene = true;
-                    bias.checkBias(*result, *block);
+//                    bias.checkBias(*result, *block); //bias checking now handled in baseCoverage
                     for (auto ex = results->begin(); ex != results->end() && !firstexon ; ++ex)
                     {
                         if (ex->type == "exon" && ex->gene_id == result->gene_id && intersectInterval(*ex, *block)  )
@@ -255,7 +255,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
 }
 
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BiasCounter &bias, BaseCoverage &baseCoverage)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -322,8 +322,8 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
 
-                //Now check 3'/5' bias
-                bias.checkBias(*result, *block);
+                //bias checking now handled in baseCoverage
+//                bias.checkBias(*result, *block);
             }
             if (result->ribosomal) ribosomal = true;
         }
@@ -442,6 +442,20 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<unsigned short
     }
     //return the remaining count of fragment samples to take
     return doFragmentSize;
+}
+
+
+std::string buildSequence(BamTools::BamAlignment &alignment)
+{
+    if (alignment.HasTag("MD"))
+    {
+        std::string readSeq = alignment.AlignedBases, mdSeq;
+        alignment.GetTag("MD", mdSeq);
+        //Let's assume the CIGAR string matches the MD tag (for now)
+        
+        
+    }
+    return "";
 }
 
 /*unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr)
