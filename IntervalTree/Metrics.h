@@ -65,6 +65,7 @@ public:
     BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), transcriptMeans(), transcriptStds(), transcriptCVs()
     {
         if ((!this->writer.is_open()) && openFile) throw std::runtime_error("Unable to open BaseCoverage output file");
+        this->writer << "gene_id\ttranscript_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
     }
     
     void add(const Feature&, const coord, const coord); //Adds to the cache
