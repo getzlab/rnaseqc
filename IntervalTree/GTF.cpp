@@ -25,6 +25,9 @@ std::map<std::string, std::vector<std::string>> transcriptExons;
 std::vector<std::string> geneList, exonList;
 map<string, unsigned int> exon_names;
 
+Feature prev = {0,0,0};
+bool failed = false;
+
 
 
 ifstream& operator>>(ifstream &in, Feature &out)
@@ -101,6 +104,12 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (attributes.find("gene_name") != attributes.end()) geneNames[out.feature_id] = attributes["gene_name"];
             else if (attributes.find("gene_id") != attributes.end()) geneNames[out.feature_id] = attributes["gene_id"];
             out.ribosomal = boost::regex_match(out.transcript_type, ribosomalPattern);
+            if ((!failed) && (out.chromosome < prev.chromosome || (out.chromosome == prev.chromosome && out.end < prev.start)))
+            {
+                std::cerr << "Warning: GTF does not appear to be sorted" << std::endl << "The GTF must be properly sorted to obtain correct results from RNASeQC" << std::endl;
+                failed = true; //disable further checks
+            }
+            if (!failed) prev = out;
             break;
         }
 

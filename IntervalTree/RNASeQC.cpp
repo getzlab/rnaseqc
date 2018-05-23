@@ -3,7 +3,6 @@
 
 //Include headers
 #include "BED.h"
-#include "Metrics.h"
 #include "Expression.h"
 #include <string>
 #include <iostream>
