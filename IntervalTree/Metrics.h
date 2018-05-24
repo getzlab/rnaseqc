@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <exception>
 #include <tuple>
 #include <list>
 #include <unordered_set>

@@ -37,7 +37,7 @@ ifstream& extractBED(ifstream &input, Feature &out)
     }
     catch (std::exception &e)
     {
-        std::cout << "Here's what happened: "<<e.what()<<std::endl;
+        throw bedException(std::string("Encountered an unknown error while parsing the BED: ") + e.what());
     }
     return input;
 }

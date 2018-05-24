@@ -21,7 +21,7 @@ using std::pair;
 
 
 //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
-unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr, bool legacy)
+unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, chrom chr, bool legacy)
 {
     //parse the cigar string and populate the provided vector with each block of the read
     auto beg = alignment.CigarData.begin();
@@ -100,10 +100,10 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
-    unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
+    chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     const bool dbg = false;
     if (dbg) cout << "~" << alignment.Name;
 
@@ -255,10 +255,10 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short,
 }
 
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
-    unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand name
+    chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
 
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
@@ -393,10 +393,10 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<unsigned short, list<
     baseCoverage.reset();
 }
 
-unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<unsigned short, list<Feature>> *bedFeatures, map<string, string> &fragments, list<long long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
+unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, list<long long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
-    unsigned short chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
+    chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
     bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
     string exonName = ""; // the name of the intersected exon from the bed
 
@@ -458,7 +458,7 @@ std::string buildSequence(BamTools::BamAlignment &alignment)
     return "";
 }
 
-/*unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, unsigned short chr)
+/*unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, chrom chr)
 {
     unsigned int alignedSize = 0;
     auto beg = alignment.CigarData.begin();

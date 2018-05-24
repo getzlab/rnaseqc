@@ -16,12 +16,16 @@
 #include <utility>
 #include <vector>
 #include <sstream>
+#include "Fasta.h"
 
-typedef long long coord;
+struct gtfException : public std::exception {
+    std::string error;
+    gtfException(std::string msg) : error(msg) {};
+};
 
 struct Feature {
     coord start, end;
-    unsigned short chromosome;
+    chrom chromosome;
     short strand;
     std::string type, feature_id, gene_id, transcript_type, transcript_id;
     bool ribosomal;
@@ -34,13 +38,12 @@ bool intersectPoint(const Feature&, const coord);
 bool intersectInterval(const Feature&, const Feature&);
 int partialIntersect(const Feature&, const Feature&);
 
-extern std::map<std::string, unsigned short> chromosomes;
-extern std::map<std::string, std::string> geneNames;
+
+extern std::map<std::string, std::string> geneNames, geneSeqs;
 extern std::map<std::string, coord> geneLengths, transcriptCodingLengths, exonLengths;
 extern std::vector<std::string> geneList, exonList;
 extern std::map<std::string, std::vector<std::string>> transcriptExons;
 
-unsigned short chromosomeMap(std::string);
 std::ifstream& operator>>(std::ifstream&, Feature&);
 std::map<std::string,std::string>& parseAttributes(std::string&, std::map<std::string,std::string>&);
 

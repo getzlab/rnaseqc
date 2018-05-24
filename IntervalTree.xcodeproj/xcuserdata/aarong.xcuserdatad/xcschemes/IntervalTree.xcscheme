@@ -105,6 +105,14 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--fasta"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Volumes/xchip_gtex/aarong/interval/human19.fasta"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "--bam"
             isEnabled = "NO">
          </CommandLineArgument>
