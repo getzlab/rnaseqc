@@ -11,5 +11,10 @@
 
 #include "GTF.h"
 
+struct bedException : public std::exception {
+    std::string error;
+    bedException(std::string msg) : error(msg) {};
+};
+
 std::ifstream& extractBED(std::ifstream&, Feature&);
 #endif /* BED_h */

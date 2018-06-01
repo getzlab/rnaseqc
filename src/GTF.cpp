@@ -18,13 +18,11 @@ using std::map;
 const string EXON_NAME = "exon";
 //const int U_SHORT_MAX = 65535u;
 const boost::regex ribosomalPattern("(Mt_)?rRNA");
-map<string, unsigned short> chromosomes;
-map<string, string> geneNames;
+map<string, string> geneNames, geneSeqs;
 map<string, coord> geneLengths, transcriptCodingLengths, exonLengths;
 std::map<std::string, std::vector<std::string>> transcriptExons;
 std::vector<std::string> geneList, exonList;
 map<string, unsigned int> exon_names;
-
 
 
 ifstream& operator>>(ifstream &in, Feature &out)
@@ -37,23 +35,23 @@ ifstream& operator>>(ifstream &in, Feature &out)
             std::istringstream tokenizer(line);
             //get chr#
             string buffer;
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse chromosome. Invalid GTF line: " + line);
             out.chromosome = chromosomeMap(buffer);
             //get track name
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse track. Invalid GTF line: " + line);
             //get feature type
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse feature type. Invalid GTF line: " + line);
             out.type = buffer;
             //get start pos
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse start. Invalid GTF line: " + line);
             out.start = std::stoull(buffer);
             //get stop pos
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse end. Invalid GTF line: " + line);
             out.end = std::stoull(buffer);
             //get score
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse score. Invalid GTF line: " + line);
             //get strand
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse strand. Invalid GTF line: " + line);
             switch(buffer[0])
             {
                 case '+':
@@ -66,9 +64,9 @@ ifstream& operator>>(ifstream &in, Feature &out)
                     out.strand = 0;
             }
             //get frame
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse frame. Invalid GTF line: " + line);
             //get attributes
-            if(!getline(tokenizer, buffer, '\t')) throw std::length_error("invalid GTF line: "+line);
+            if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse attributes. Invalid GTF line: " + line);
             std::map<string, string> attributes;
             parseAttributes(buffer, attributes);
             if (out.type == "gene" && attributes.find("gene_id") != attributes.end())
@@ -105,21 +103,15 @@ ifstream& operator>>(ifstream &in, Feature &out)
         }
 
     }
+    catch(std::invalid_argument &e)
+    {
+        throw gtfException(std::string("GTF is in an invalid format: ") + e.what());
+    }
     catch(std::exception &e)
     {
-        std::cout<<"Here's what happened: "<<e.what()<<std::endl;
+        throw gtfException(std::string("Uncountered an unknwon error while parsing GTF: ")+e.what());
     }
     return in;
-}
-
-unsigned short chromosomeMap(std::string chr)
-{
-    auto entry = chromosomes.find(chr);
-    if (entry == chromosomes.end())
-    {
-        chromosomes[chr] = chromosomes.size() + 1u;
-    }
-    return chromosomes[chr];
 }
 
 std::map<std::string,std::string>& parseAttributes(std::string &intake, std::map<std::string,std::string> &attributes)

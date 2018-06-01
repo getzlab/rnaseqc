@@ -1,9 +1,8 @@
-// IntervalTree.cpp : Defines the entry point for the console application.
+ // IntervalTree.cpp : Defines the entry point for the console application.
 
 
 //Include headers
 #include "BED.h"
-#include "Metrics.h"
 #include "Expression.h"
 #include <string>
 #include <iostream>
@@ -45,6 +44,7 @@ int main(int argc, char* argv[])
     Positional<string> outputDir(parser, "output", "Output directory");
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
+    ValueFlag<string> fastaFile(parser, "fasta", "Optional input FASTA/FASTQ file containing the reference sequence used for GC-content statistics. Note that using this option will significantly slow the initial startup and adds a memory overhead of ~1Gb", {"fasta"});
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
     ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 1000000 [bp]", {"read-length"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
-        map<unsigned short, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
+        map<chrom, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
         map<string, Feature> transcripts; //map of chr -> transcripts; for coverage metrics later
         //Parse the GTF and extract features
         {
@@ -117,7 +117,12 @@ int main(int argc, char* argv[])
                 cerr << "Unable to open GTF file: " << gtfFile.Get() << endl;
                 return 10;
             }
-
+            Fasta fastaReader;
+            if (fastaFile)
+            {
+                fastaReader.open(fastaFile.Get());
+                if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but will slow down the initial startup..." << endl;
+            }
             if (VERBOSITY) cout<<"Reading GTF Features..."<<endl;
             time(&t0);
             while ((reader >> line))
@@ -133,6 +138,7 @@ int main(int argc, char* argv[])
                 if (line.type == "gene" || line.type == "exon")
                 {
                     features[line.chromosome].push_back(line);
+                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start, line.end, line.strand == -1);
                 }
                 else if (line.type == "transcript") transcripts[line.feature_id] = line;
             }
@@ -144,7 +150,7 @@ int main(int argc, char* argv[])
 
         //fragment size variables
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
-        map<unsigned short, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
+        map<chrom, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
         map<string, string> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
         list<long long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
@@ -152,7 +158,7 @@ int main(int argc, char* argv[])
              Feature line; //current feature being read from the bed
             if (VERBOSITY) cout << "Parsing BED intervals for fragment size computations..." << endl;
             doFragmentSize = FRAGMENT_SIZE_SAMPLES;
-            bedFeatures = new map<unsigned short, list<Feature> >();
+            bedFeatures = new map<chrom, list<Feature> >();
             ifstream bedReader(bedFile.Get());
             if (!bedReader.is_open())
             {
@@ -179,7 +185,7 @@ int main(int argc, char* argv[])
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
         BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
-        unsigned short current_chrom = 0;
+        chrom current_chrom = 0;
 
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
@@ -198,7 +204,7 @@ int main(int argc, char* argv[])
             bool hasOverlap = false;
             for(auto sequence = sequences.Begin(); sequence != sequences.End(); ++sequence)
             {
-                unsigned short chrom = chromosomeMap(sequence->Name);
+                chrom chrom = chromosomeMap(sequence->Name);
                 if (features.find(chrom) != features.end())
                 {
                     hasOverlap = true;
@@ -349,7 +355,7 @@ int main(int argc, char* argv[])
                         {
                             vector<Feature> blocks;
                             string chrName = (sequences.Begin()+alignment.RefID)->Name;
-                            unsigned short chr = chromosomeMap(chrName); //parse out a chromosome shorthand
+                            chrom chr = chromosomeMap(chrName); //parse out a chromosome shorthand
                             if (chr != current_chrom)
                             {
                                 dropFeatures(features[current_chrom], baseCoverage);
@@ -416,6 +422,7 @@ int main(int argc, char* argv[])
         //gene coverage report generation
         unsigned int genesDetected = 0;
         double fragmentMed = 0.0;
+        double gcBias = 0.0;
         vector<double> ratios;
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
@@ -435,6 +442,7 @@ int main(int argc, char* argv[])
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCoverage[*gene]) << endl;
+                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
                 if (useRPKM.Get())
                 {
                     double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / static_cast<double>(transcriptCodingLengths[*gene]);
@@ -570,6 +578,7 @@ int main(int argc, char* argv[])
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
+        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
 
         if (fragmentSizes.size())
         {
@@ -670,6 +679,26 @@ int main(int argc, char* argv[])
     {
         cerr << "Filesystem error:  " << e.what() << endl;
         return 8;
+    }
+    catch (fileException &e)
+    {
+        cerr << e.error << endl;
+        return 10;
+    }
+    catch (invalidContigException &e)
+    {
+        cerr << "GTF referenced a contig not present in the FASTA: " << e.error << endl;
+        return 11;
+    }
+    catch (gtfException &e)
+    {
+        cerr << "Failed to parse the GTF: " << e.error << endl;
+        return 11;
+    }
+    catch (bedException &e)
+    {
+        cerr << "Failed to parse the BED: " << e.error << endl;
+        return 11;
     }
     catch (std::length_error &e)
     {

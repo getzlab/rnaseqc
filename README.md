@@ -1,9 +1,11 @@
 # RNA-SeQC
 Version 2.0.0
 
+The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-cga-aarong-gtex/rnaseqc:latest`
+
 ---
 
-**NOTE**: It is recommended that the provided GTF be collapsed in such a way that there are no overlapping transcripts **on the same strand**, otherwise reads may be double-counted in areas where the read aligns to multiple exons on the same strand. This is **not** a transcript-quantification method. Readcounts and coverage are made towards exons and genes only if *all* aligned segments of a read fully align to exons of a gene, but keep in mind that coverage may be counted towards multiple transcripts (and its exons) if these criteria are met. Beyond this, no attempt will be made to disambiguate which transcript a read belongs to.
+**NOTE**: This tool requires that the provided GTF be collapsed in such a way that there are no overlapping transcripts **on the same strand** and that each gene have a single transcript whose id matches the parent gene id. This is **not** a transcript-quantification method. Readcounts and coverage are made towards exons and genes only if *all* aligned segments of a read fully align to exons of a gene, but keep in mind that coverage may be counted towards multiple transcripts (and its exons) if these criteria are met. Beyond this, no attempt will be made to disambiguate which transcript a read belongs to.
 
 ### Command Line Usage:
 
@@ -11,7 +13,7 @@ Version 2.0.0
 
 ###### OPTIONS:
       -h, --help                        Display this message and quit
-      
+
       --version                         Display the version and quit
 
       gtf                               The input GTF file containing features
@@ -110,11 +112,11 @@ Version 2.0.0
                                         written to a table. Otherwise, only
                                         summary coverage statistics are
                                         generated and added to the metrics table
-                                        
+
       --coverage-mask=[SIZE]            Sets how many bases at both ends of a
                                         transcript are masked out when computing
                                         per-base exon coverage. Default: 500bp
-                                        
+
       -d[threshold],
       --detection-threshold=[threshold] Number of counts on a gene to consider
                                         the gene 'detected'. Default: 5 reads

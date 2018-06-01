@@ -12,7 +12,7 @@ LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz
 CC=g++
 STDLIB=-std=c++14
 CFLAGS=-Wall $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -O3
-SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp
+SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp
 SRCDIR=src
 OBJECTS=$(SOURCES:.cpp=.o)
 
