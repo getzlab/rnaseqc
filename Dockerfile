@@ -27,6 +27,7 @@ ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib/bamtools
 COPY src /opt/rnaseqc/src
 COPY Makefile /opt/rnaseqc
 COPY args.hxx /opt/rnaseqc
+COPY bioio.hpp /opt/rnaseqc
 RUN cd /opt/rnaseqc && make && mv rnaseqc /usr/local/bin && make clean
 
 # clean up
