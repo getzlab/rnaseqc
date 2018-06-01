@@ -33,8 +33,7 @@ void complement(std::string &sequence)
 {
     std::string tmp = sequence;
     auto src = sequence.rbegin();
-    unsigned int i = 0;
-    for(; src != sequence.rend() && i < tmp.length(); ++src, ++i)
+    for(unsigned int i = 0; src != sequence.rend() && i < tmp.length(); ++src, ++i)
     {
         switch(*src)
         {
@@ -108,7 +107,8 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
     if (!this->isOpen) return "";
     this->calls++;
     std::string output;
-    for (coord i = start; i <= end; i+=PAGE_SIZE)
+    coord pageOffset = (floor(start / PAGE_SIZE) * PAGE_SIZE);
+    for (coord i = 1 + pageOffset; i <= end; i+=PAGE_SIZE)
     {
         indexType page = this->pageForCoord(contig, i);
         if (!this->pageCache.count(page))
@@ -119,31 +119,15 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
         this->updateLRU(page);
         output += this->pageCache[page];
     }
-    if (!revComp) return (output.substr(0, end-start+1));
-    else
-    {
-        output = output.substr(0, end-start+1);
-        complement(output);
-        return output;
-    }
+    output = output.substr(start-1-pageOffset, end-start+1);
+    if (revComp) complement(output);
+    return output;
 }
 
 void Fasta::updateLRU(indexType page)
 {
-    /**/
     this->lru.remove(page);
-    /*/bool isIn = false;
-    auto pos = this->lru.begin();
-    for (; pos != this->lru.end(); ++pos)
-        if (*pos == page)
-        {
-            isIn = true;
-            break;
-        }
-    if (isIn) {
-        this->lru.erase(pos);
-    }
-     else /**/while (this->lru.size() >= CACHE_SIZE)
+    while (this->lru.size() >= CACHE_SIZE)
      {
          this->pageCache.erase(this->lru.front());
          this->lru.pop_front();
@@ -164,7 +148,6 @@ indexType Fasta::pageForContig(chrom contig)
     {
         idx += ceil(static_cast<double>(this->contigIndex[i].length)/PAGE_SIZE);
         pageIndex[i+1] = idx;
-        
     }
     return idx;
 }
@@ -184,6 +167,6 @@ Fasta::~Fasta()
 {
     this->reader.close();
     this->pageCache.clear();
-    std::cout << this->misses << "cache misses out of" << this->calls << "requests" << std::endl;
+    std::cout << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
 }
 

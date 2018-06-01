@@ -26,7 +26,7 @@ struct gtfException : public std::exception {
 struct Feature {
     coord start, end;
     chrom chromosome;
-    short strand;
+    signed char strand;
     std::string type, feature_id, gene_id, transcript_type, transcript_id;
     bool ribosomal;
 };

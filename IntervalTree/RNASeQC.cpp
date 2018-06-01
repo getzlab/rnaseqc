@@ -442,7 +442,7 @@ int main(int argc, char* argv[])
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCoverage[*gene]) << endl;
-                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) * geneCoverage[*gene] / scaleRPKM;
+                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
                 if (useRPKM.Get())
                 {
                     double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / static_cast<double>(transcriptCodingLengths[*gene]);
@@ -578,7 +578,7 @@ int main(int argc, char* argv[])
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
-        output << "Mean Weighted GC Content\t" << gcBias * 1000000.0 << endl;
+        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
 
         if (fragmentSizes.size())
         {
