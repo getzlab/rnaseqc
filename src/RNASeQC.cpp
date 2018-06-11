@@ -1,5 +1,6 @@
  // IntervalTree.cpp : Defines the entry point for the console application.
 
+#define NO_FASTA
 
 //Include headers
 #include "BED.h"
@@ -24,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev12";
+const string VERSION = "RNASeQC 2.0.0-dev13";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -44,7 +45,11 @@ int main(int argc, char* argv[])
     Positional<string> outputDir(parser, "output", "Output directory");
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
+    
+#ifndef NO_FASTA
     ValueFlag<string> fastaFile(parser, "fasta", "Optional input FASTA/FASTQ file containing the reference sequence used for GC-content statistics. Note that using this option will significantly slow the initial startup and adds a memory overhead of ~1Gb", {"fasta"});
+#endif
+    
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
     ValueFlag<unsigned int> maxReadLength(parser, "LENGTH", "Set the maximum accepted length.  Reads longer than this threshold are discarded. Default: 1000000 [bp]", {"read-length"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
@@ -117,12 +122,16 @@ int main(int argc, char* argv[])
                 cerr << "Unable to open GTF file: " << gtfFile.Get() << endl;
                 return 10;
             }
+            
+#ifndef NO_FASTA
             Fasta fastaReader;
             if (fastaFile)
             {
                 fastaReader.open(fastaFile.Get());
                 if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but will slow down the initial startup..." << endl;
             }
+#endif
+            
             if (VERBOSITY) cout<<"Reading GTF Features..."<<endl;
             time(&t0);
             while ((reader >> line))
@@ -138,7 +147,11 @@ int main(int argc, char* argv[])
                 if (line.type == "gene" || line.type == "exon")
                 {
                     features[line.chromosome].push_back(line);
+                    
+#ifndef NO_FASTA
                     if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start, line.end, line.strand == -1);
+#endif
+                    
                 }
                 else if (line.type == "transcript") transcripts[line.feature_id] = line;
             }
@@ -442,7 +455,11 @@ int main(int argc, char* argv[])
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCoverage[*gene]) << endl;
+                
+#ifndef NO_FASTA
                 if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
+#endif
+                
                 if (useRPKM.Get())
                 {
                     double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / static_cast<double>(transcriptCodingLengths[*gene]);
@@ -578,8 +595,11 @@ int main(int argc, char* argv[])
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
+        
+#ifndef NO_FASTA
         if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
-
+#endif
+        
         if (fragmentSizes.size())
         {
             //If any fragment size samples were taken, also generate a fragment size report
