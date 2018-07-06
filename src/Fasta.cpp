@@ -105,11 +105,11 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end)
 std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
 {
     if (!this->isOpen) return "";
-    this->calls++;
     std::string output;
     coord pageOffset = (floor(start / PAGE_SIZE) * PAGE_SIZE);
     for (coord i = 1 + pageOffset; i <= end; i+=PAGE_SIZE)
     {
+        this->calls++;
         indexType page = this->pageForCoord(contig, i);
         if (!this->pageCache.count(page))
         {
@@ -167,6 +167,6 @@ Fasta::~Fasta()
 {
     this->reader.close();
     this->pageCache.clear();
-    std::cout << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
+//    std::cout << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
 }
 
