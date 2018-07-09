@@ -746,6 +746,12 @@ int main(int argc, char* argv[])
         cerr<<e.what()<<endl;
         return 3;
     }
+    catch(ios_base::failure &e)
+    {
+        cerr << "Encountered an IO failure" << endl;
+        cerr << e.what() << endl;
+        return 10;
+    }
 	catch (...)
 	{
         cerr << parser << endl;
