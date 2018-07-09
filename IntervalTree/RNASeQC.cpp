@@ -159,6 +159,14 @@ int main(int argc, char* argv[])
 		//ensure that the features are sorted.  This MUST be true for the exon alignment metrics
         for (auto beg = features.begin(); beg != features.end(); ++beg) beg->second.sort(compIntervalStart);
         time(&t1); //record the time taken to parse the GTF
+        if (!transcripts.size()) cerr << "Warning: No transcripts present in GTF" << endl;
+        if (!(geneList.size() && exonList.size()))
+        {
+            cerr << "There were either no genes or no exons in the GTF" << endl;
+            cerr << geneList.size() << " genes parsed" << endl;
+            cerr << exonList.size() << " exons parsed" << endl;
+            return 11;
+        }
         if (VERBOSITY) cout << "Finished processing GTF in " << difftime(t1, t0) << " seconds" << endl;
 
         //fragment size variables
@@ -728,7 +736,7 @@ int main(int argc, char* argv[])
     }
     catch (std::range_error &e)
     {
-        cerr<<"Invalid chromosome range"<<endl;
+        cerr<<"Invalid range"<<endl;
         cerr<<e.what()<<endl;
         return 2;
     }
@@ -752,6 +760,7 @@ int main(int argc, char* argv[])
 template <typename T>
 double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
 {
+    if (size <= 0) throw std::range_error("Cannot compute median of an empty list");
     for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
     if (size % 1)
     {
