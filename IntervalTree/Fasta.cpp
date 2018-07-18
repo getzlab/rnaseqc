@@ -104,10 +104,11 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end)
 
 std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
 {
+    //NOTE: Coordinates must be 0-based, end-exclusive
     if (!this->isOpen) return "";
     std::string output;
     coord pageOffset = (floor(start / PAGE_SIZE) * PAGE_SIZE);
-    for (coord i = 1 + pageOffset; i <= end; i+=PAGE_SIZE)
+    for (coord i = pageOffset; i < end; i+=PAGE_SIZE)
     {
         this->calls++;
         indexType page = this->pageForCoord(contig, i);
@@ -119,7 +120,15 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
         this->updateLRU(page);
         output += this->pageCache[page];
     }
-    output = output.substr(start-1-pageOffset, end-start+1);
+    if (start-pageOffset >= output.size())
+    {
+        std::cerr << "Unable to fetch sequence" << std::endl;
+        std::cerr << "Target region (GTF+1):\t" << getChromosomeName(contig) << ":" << start+1 << "-" << end << std::endl;
+        std::cerr << "# pages fetched:\t" << output.length() / PAGE_SIZE << std::endl;
+        std::cerr << "This contig page indices:\t[" << this->pageForContig(contig) << ", " << this->pageForContig(contig+1) << ")" << std::endl;
+        std::cerr << "Sequence page indices:\t[" << this->pageForCoord(contig, start) << ", " << this->pageForCoord(contig, end) << "]" << std::endl;
+    }
+    output = output.substr(start-pageOffset, end-start);
     if (revComp) complement(output);
     return output;
 }
@@ -155,18 +164,18 @@ indexType Fasta::pageForContig(chrom contig)
 std::string Fasta::readSeq(chrom contig, coord pos)
 {
     if (!this->contigIndex.count(contig)) throw invalidContigException("No such contig: " + getChromosomeName(contig));
-    return (bioio::read_fasta_contig(this->reader, this->contigIndex[contig], pos - 1, PAGE_SIZE));
+    return (bioio::read_fasta_contig(this->reader, this->contigIndex[contig], pos, PAGE_SIZE));
 }
 
 indexType Fasta::pageForCoord(chrom contig, coord pos)
 {
-    return this->pageForContig(contig) + floor(static_cast<double>(pos - 1)/PAGE_SIZE);
+    return this->pageForContig(contig) + floor(static_cast<double>(pos)/PAGE_SIZE);
 }
 
 Fasta::~Fasta()
 {
     this->reader.close();
     this->pageCache.clear();
-//    std::cout << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
+    if (this->misses) std::cerr << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
 }
 

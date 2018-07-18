@@ -146,10 +146,9 @@ int main(int argc, char* argv[])
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
                 if (line.type == "gene" || line.type == "exon")
                 {
-                    features[line.chromosome].push_back(line);
-                    
+                    features[line.chromosome].push_back(line);                    
 #ifndef NO_FASTA
-                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start, line.end, line.strand == -1);
+                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand == -1);
 #endif
                     
                 }
