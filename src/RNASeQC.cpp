@@ -25,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev13";
+const string VERSION = "RNASeQC 2.0.0-dev14";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -146,10 +146,9 @@ int main(int argc, char* argv[])
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
                 if (line.type == "gene" || line.type == "exon")
                 {
-                    features[line.chromosome].push_back(line);
-                    
+                    features[line.chromosome].push_back(line);                    
 #ifndef NO_FASTA
-                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start, line.end, line.strand == -1);
+                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand == -1);
 #endif
                     
                 }
@@ -173,7 +172,7 @@ int main(int argc, char* argv[])
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
         map<chrom, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
         map<string, string> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
-        list<long long> fragmentSizes; //list of fragment size samples taken so far
+        map<long long, unsigned long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
         {
              Feature line; //current feature being read from the bed
@@ -611,25 +610,32 @@ int main(int argc, char* argv[])
         if (fragmentSizes.size())
         {
             //If any fragment size samples were taken, also generate a fragment size report
-            fragmentSizes.sort();
+//            fragmentSizes.sort();
 
 
 
             double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMedDev = 0.0;
             //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
             //using the old implimentation of list which has to walk the entire sequence to determine size
-            double size = static_cast<double>(fragmentSizes.size());
+            
+            list<long long> dumb_fragment_expansion_list;
+            for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
+                for(unsigned long i = 0u; i < fragment->second; ++i) dumb_fragment_expansion_list.push_back(fragment->first);
+            dumb_fragment_expansion_list.sort();
+            double size = static_cast<double>(dumb_fragment_expansion_list.size());
             vector<double> deviations; //list of recorded deviations from the median
-            fragmentMed = computeMedian(size, fragmentSizes.begin());
+            fragmentMed = computeMedian(size, dumb_fragment_expansion_list.begin());
 //            auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
 //            for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
 //            fragmentMed = (double) *median; //save the median value
             ofstream fragmentList(outputDir.Get()+"/"+SAMPLENAME+".fragmentSizes.txt"); //raw list of each fragment size recorded
+            fragmentList << "Fragment Size\tCount" << endl;
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
-                fragmentList << abs(*fragment) << endl; //record the fragment size into the output list
-                fragmentAvg += fabs(*fragment) / size; //add this fragment's size to the mean
-                deviations.push_back(fabs(static_cast<double>(*fragment) - fragmentMed)); //record this fragment's deviation
+                fragmentList << fragment->first << "\t" << fragment->second << endl; //record the fragment size into the output list
+                fragmentAvg += static_cast<double>(fragment->first * fragment->second) / size; //add this fragment's size to the mean
+                double deviation = static_cast<double>(fragment->first) - fragmentMed;
+                for(unsigned long i = 0u; i < fragment->second; ++i) deviations.push_back(deviation); //record this fragment's deviation
             }
             fragmentList.close();
             sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
@@ -639,7 +645,7 @@ int main(int argc, char* argv[])
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
             {
-                fragmentStd += pow(static_cast<double>(*fragment) - fragmentAvg, 2.0) / size;
+                for(unsigned long i = 0u; i < fragment->second; ++i) fragmentStd += pow(static_cast<double>(fragment->first) - fragmentAvg, 2.0) / size;
             }
             fragmentStd = pow(fragmentStd, 0.5); //compute the standard deviation
 
