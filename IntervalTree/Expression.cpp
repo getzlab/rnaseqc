@@ -393,7 +393,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
     baseCoverage.reset();
 }
 
-unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, list<long long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
+unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
@@ -430,7 +430,7 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Fe
         else if (exonName == fragments[alignment.Name]) //second time we've encountered a read in this pair
         {
             //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
-            fragmentSizes.push_back(abs(alignment.InsertSize));
+            fragmentSizes[abs(alignment.InsertSize)] += 1;
             fragments.erase(fragment);
             --doFragmentSize;
             if (!doFragmentSize)
