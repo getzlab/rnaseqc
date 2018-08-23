@@ -25,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev14";
+const string VERSION = "RNASeQC 2.0.0-dev15-dbg";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
@@ -755,6 +755,12 @@ int main(int argc, char* argv[])
     catch(ios_base::failure &e)
     {
         cerr << "Encountered an IO failure" << endl;
+        cerr << e.what() << endl;
+        return 10;
+    }
+    catch(std::bad_alloc &e)
+    {
+        cerr << "Memory allocation failure. Out of memory" << endl;
         cerr << e.what() << endl;
         return 10;
     }
