@@ -12,7 +12,7 @@
 #include <cmath>
 #include <unordered_set>
 
-std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const std::string&, const unsigned int, std::map<std::string, std::vector<CoverageEntry> >&, std::list<double>&, BiasCounter&);
+std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const std::string&, const unsigned int, std::map<std::string, std::vector<CoverageEntry*> >&, std::list<double>&, BiasCounter&);
 
 void Metrics::increment(std::string key)
 {
@@ -179,10 +179,13 @@ void BaseCoverage::compute(const Feature &gene) //computes per-base coverage of 
     //buffer all exons, and store an unordered set transcript list
     //then, after the gene has been exhausted into the buffer, compute coverage on each transcript
     std::unordered_set<std::string> transcripts;
-    std::map<std::string, std::vector<CoverageEntry>> coverage;
+    std::map<std::string, std::vector<CoverageEntry*>> coverage;
     for (auto entry = this->coverage[gene.feature_id].begin(); entry != this->coverage[gene.feature_id].end(); ++entry)
     {
-        coverage[entry->feature_id].push_back(*entry);
+        //memory allocation here
+        //maybe switch to pointers?
+        //prolly much smaller that way
+        coverage[entry->feature_id].push_back(&(*entry));
         transcripts.insert(entry->transcript_id);
     }
     for (auto transcript = transcripts.begin(); transcript != transcripts.end(); ++transcript)
@@ -257,7 +260,7 @@ void add_range(std::vector<unsigned long> &coverage, coord offset, unsigned int 
     for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
 }
 
-std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const std::string &transcript_id, const unsigned int mask_size, std::map<std::string, std::vector<CoverageEntry> > &entries, std::list<double> &totalExonCV, BiasCounter &bias)
+std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const std::string &transcript_id, const unsigned int mask_size, std::map<std::string, std::vector<CoverageEntry*> > &entries, std::list<double> &totalExonCV, BiasCounter &bias)
 {
     std::vector<unsigned long> coverage;
     //    list<double> exonCV;
@@ -280,7 +283,7 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
         std::vector<unsigned long> exon_coverage(exonLengths[transcriptExons[transcript_id][i]], 0ul);
         while (beg != end)
         {
-            add_range(exon_coverage, beg->offset, beg->length);
+            add_range(exon_coverage, (**beg).offset, (**beg).length);
             ++beg;
         }
         double exonMean = 0.0, exonStd = 0.0, exonSize = 0.0;

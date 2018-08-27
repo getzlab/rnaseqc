@@ -25,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0-dev15-dbg";
+const string VERSION = "RNASeQC 2.0.0-dev16";
 const double MAD_FACTOR = 1.4826;
 map<string, double> tpms;
 
