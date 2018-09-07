@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y software-properties-common && \
         build-essential \
         cmake \
         git \
+        python3 \
+        python3-pip \
         libboost-all-dev \
         libbz2-dev \
         libcurl3-dev \
@@ -23,8 +25,16 @@ RUN cd /opt && \
     cp /usr/local/lib/bamtools/libbamtools.a /usr/local/lib/
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib/bamtools
 
+# python
+RUN cd /opt && git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && \
+  git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && python3 -m pip install --upgrade pip setuptools && \
+  python3 -m pip install numpy && python3 -m pip install pandas matplotlib scipy pyBigWig bx-python \
+  agutil nbformat seaborn sklearn && mkdir -p /root/.config/matplotlib && echo "backend	:	Agg" > /root/.config/matplotlib/matplotlibrc
+ENV PYTHONPATH $PYTHONPATH:/opt/
+
 #RNASeQC
 COPY src /opt/rnaseqc/src
+COPY python /scripts
 COPY Makefile /opt/rnaseqc
 COPY args.hxx /opt/rnaseqc
 COPY bioio.hpp /opt/rnaseqc
