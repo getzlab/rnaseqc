@@ -36,11 +36,6 @@ The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-c
                                         distance will be counted as chimeric
                                         pairs. Default: 2000000 [bp]
 
-      --read-length=[LENGTH]            Set the maximum accepted length. Reads
-                                        longer than this threshold are
-                                        discarded. Default: 1000000 [bp]
-                                        (10000bp in legacy mode)
-
       --fragment-samples=[SAMPLES]      Set the number of samples to take when
                                         computing fragment sizes. Requires the
                                         --bed argument. Default: 1000000
