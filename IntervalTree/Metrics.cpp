@@ -182,9 +182,7 @@ void BaseCoverage::compute(const Feature &gene) //computes per-base coverage of 
     std::map<std::string, std::vector<CoverageEntry*>> coverage;
     for (auto entry = this->coverage[gene.feature_id].begin(); entry != this->coverage[gene.feature_id].end(); ++entry)
     {
-        //memory allocation here
-        //maybe switch to pointers?
-        //prolly much smaller that way
+        //possibly move the entries instead of copying
         coverage[entry->feature_id].push_back(&(*entry));
         transcripts.insert(entry->transcript_id);
     }
