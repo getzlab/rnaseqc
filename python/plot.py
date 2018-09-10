@@ -101,7 +101,7 @@ def main(args):
                     fragments = [
                         int(line.strip().split()[0])
                         for line in r
-                        for _ in int(line.strip().split()[1])
+                        for _ in range(int(line.strip().split()[1]))
                     ]
                 else:
                     r.seek(0,0)
@@ -125,7 +125,7 @@ def main(args):
                         fragments = [
                             int(line.strip().split()[0])
                             for line in r
-                            for _ in int(line.strip().split()[1])
+                            for _ in range(int(line.strip().split()[1]))
                         ]
                     else:
                         r.seek(0,0)
