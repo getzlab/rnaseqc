@@ -175,10 +175,29 @@ def main(args):
         metadata={'scrolled': False}
     )
     # ---
+    def remap_columns(df, sample):
+        if sample in df.columns:
+            return df[[sample]]
+        if sample.replace('.bam','') in df.columns:
+            return df[[sample.replace('.bam', '')]]
+        if 'Counts' in df.columns:
+            return df[['Counts']].rename({'Counts':sample}, axis='columns')
+    nb.add_code_cell(
+        nbe.trim("""
+        def remap_columns(df, sample):
+            if sample in df.columns:
+                return df[[sample]]
+            if sample.replace('.bam','') in df.columns:
+                return df[[sample.replace('.bam', '')]]
+            if 'Counts' in df.columns:
+                return df[['Counts']].rename({'Counts':sample}, axis='columns')
+        """)
+    )
+    # ---
     print("Generating expression PCA")
     expression_df = pd.concat(
         [
-            pd.read_csv(path+'.gene_reads.gct', sep='\t', header=2, index_col=0)[['Counts']].rename({'Counts':sample}, axis='columns')
+            remap_columns(pd.read_csv(path+'.gene_reads.gct', sep='\t', header=2, index_col=0), sample)
             for sample, path in samples.items()
         ],
         axis=1
@@ -187,7 +206,7 @@ def main(args):
         nbe.trim("""
         expression_df = pd.concat(
             [
-                pd.read_csv(path+'.gene_reads.gct', sep='\\t', header=2, index_col=0)[['Counts']].rename({'Counts':sample}, axis='columns')
+                remap_columns(pd.read_csv(path+'.gene_reads.gct', sep='\\t', header=2, index_col=0), sample)
                 for sample, path in samples.items()
             ],
             axis=1
