@@ -115,7 +115,9 @@ The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-c
 
       -d[threshold],
       --detection-threshold=[threshold] Number of counts on a gene to consider
-                                        the gene 'detected'. Default: 5 reads
+                                        the gene 'detected'. Additionally, genes
+                                        below this limit are excluded from 3'
+                                        bias computation. Default: 5 reads
 
       "--" can be used to terminate flag options and force all following
       arguments to be treated as positional options
@@ -132,8 +134,9 @@ The following output files are generated in the output directory you provide:
 #### Metrics reported:
 {sample}.metrics.tsv contains all metrics recorded by RNASeQC:
 * Mapping Rate: Proportion of all reads in the Bam which are primary alignments, mapped, and have not failed vendor QC (based on flags).
-* Unique Rate of Mapped: Proportion of all mapped reads (see above) which are not marked as duplicates (based on flags).
-* Duplicate Rate of Mapped: Proportion of all mapped reads (see "Mapping Rate", above) which are marked as duplicates (based on flags). This should be 1 - (Unique Rate of Mapped).
+* Unique Rate of Mapped: Proportion of all mapped, primary reads (see above) which are not marked as duplicates (based on flags).
+* Duplicate Rate of Mapped: Proportion of all mapped, primary reads which have at least one duplicate. This should be 1 - (Unique Rate of Mapped).
+* Duplicate Fraction: Proportion of all reads in the bam which are mapped and have not failed vendor QC, which are marked as duplicate.
 * Base Mismatch: Proportion of bases in mapped reads (see "Mapping Rate", above) which are mismatched (based on the value of the NM tag).
 * End 1/2 Mapping Rate: Proportion of mapped reads (see "Mapping Rate", above) which are paired and are the first/second (respectively) mate in the pair.
 * End 1/2 Mismatch Rate: Proportion of bases of all first/second mate reads (see above) which are mismatched (based on the value of the NM tag).

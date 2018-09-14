@@ -58,16 +58,20 @@ class BiasCounter {
     const int offset;
     const int windowSize;
     const unsigned long geneLength;
+    const unsigned int detectionThreshold;
     std::map<std::string, unsigned long> fiveEnd;
     std::map<std::string, unsigned long> threeEnd;
 public:
-    BiasCounter(int offset, int windowSize, unsigned long geneLength) : offset(offset), windowSize(windowSize), geneLength(geneLength), fiveEnd(), threeEnd()
+    BiasCounter(int offset, int windowSize, unsigned long geneLength, unsigned int detectionThreshold) : offset(offset), windowSize(windowSize), geneLength(geneLength), detectionThreshold(detectionThreshold), fiveEnd(), threeEnd()
     {
         
     }
     
     void computeBias(const Feature&, std::vector<unsigned long>&);
     double getBias(const std::string&);
+    const unsigned int getThreshold() const {
+        return this->detectionThreshold;
+    }
 };
 
 class BaseCoverage {
@@ -92,6 +96,9 @@ public:
 //    void clearCoverage(); //empties out data that won't be used
     void compute(const Feature&); //Computes the per-base coverage for all transcripts in the gene
     void close(); //Flush and close the ofstream
+    BiasCounter& getBiasCounter() const {
+        return this->bias;
+    }
     std::list<double>& getExonCVs();
     std::list<double>& getTranscriptMeans();
     std::list<double>& getTranscriptStds();

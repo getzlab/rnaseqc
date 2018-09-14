@@ -31,6 +31,11 @@
 			<key>orderHint</key>
 			<integer>3</integer>
 		</dict>
+		<key>Test.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>6</integer>
+		</dict>
 		<key>Tor.xcscheme</key>
 		<dict>
 			<key>orderHint</key>

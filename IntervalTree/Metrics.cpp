@@ -264,6 +264,7 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
     //    list<double> exonCV;
     std::vector<std::vector<bool> > coverageMask;
     unsigned int maskRemainder = mask_size;
+    unsigned int counts = 0u;
     for (unsigned int i = 0; i < transcriptExons[transcript_id].size(); ++i)
     {
         coverageMask.push_back(std::vector<bool>(exonLengths[transcriptExons[transcript_id][i]], true));
@@ -283,6 +284,7 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
         {
             add_range(exon_coverage, (**beg).offset, (**beg).length);
             ++beg;
+            ++counts;
         }
         double exonMean = 0.0, exonStd = 0.0, exonSize = 0.0;
         std::vector<bool> mask = coverageMask[i];
@@ -329,7 +331,7 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
     //        }
     //    }
     
-    bias.computeBias(gene, coverage);
+    if (counts > bias.getThreshold()) bias.computeBias(gene, coverage);
     
     double avg = 0.0, std = 0.0;
     //    auto median = coverage.begin();
