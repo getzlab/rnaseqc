@@ -100,7 +100,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -193,17 +193,17 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                 {
                     for (auto coverage = legacySplitDosage.begin(); coverage != legacySplitDosage.end(); ++coverage)
                     {
-                        exonCoverage[coverage->first] += coverage->second;
+                        exonCounts[coverage->first] += coverage->second;
                         if (dbg) cout << "\t" << coverage->first << " " << coverage->second;
                     }
                 }
                 else
                 {
                     //If read was not detected as split or the legacy bug changed it to unsplit, only record last exon
-                    exonCoverage[exon.feature_id] += 1.0;
+                    exonCounts[exon.feature_id] += 1.0;
                     if (dbg) cout << "\t" << exon.feature_id << " 1.0";
                 }
-                geneCoverage[exon.gene_id] += 1.0;
+                geneCounts[exon.gene_id] += 1.0;
                 baseCoverage.commit(exon.gene_id);
                 doExonMetrics = true;
             }
@@ -255,7 +255,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 }
 
 
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, map<string, double> &geneCoverage, map<string, double> &exonCoverage, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -277,7 +277,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
     current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
 
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
-    Collector exonCoverageCollector(&exonCoverage); //Collects coverage counts for later (counts may be discarded)
+    Collector exonCoverageCollector(&exonCounts); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
 
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
@@ -345,7 +345,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
         //after the intersection, iterate over the remaining genes and record their coverage
         for (auto gene = last.begin(); gene != last.end(); ++gene)
         {
-            if (exonCoverageCollector.queryGene(*gene)) geneCoverage[*gene]++;
+            if (exonCoverageCollector.queryGene(*gene)) geneCounts[*gene]++;
             exonCoverageCollector.collect(*gene); //collect and keep exon coverage for this gene
             baseCoverage.commit(*gene); //keep the per-base coverage recorded on this gene
             doExonMetrics = true;

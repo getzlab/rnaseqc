@@ -19,8 +19,8 @@ const string EXON_NAME = "exon";
 //const int U_SHORT_MAX = 65535u;
 const boost::regex ribosomalPattern("(Mt_)?rRNA");
 map<string, string> geneNames, geneSeqs;
-map<string, coord> geneLengths, transcriptCodingLengths, exonLengths;
-std::map<std::string, std::vector<std::string>> transcriptExons;
+map<string, coord> geneLengths, geneCodingLengths, exonLengths;
+std::map<std::string, std::vector<std::string>> exonsForGene;
 std::vector<std::string> geneList, exonList;
 map<string, unsigned int> exon_names;
 
@@ -77,6 +77,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
                 geneList.push_back(attributes["gene_id"]);
             }
             if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
+            if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (out.type == "exon")
             {
                 if (attributes.find("exon_id") != attributes.end())
@@ -89,12 +90,10 @@ ifstream& operator>>(ifstream &in, Feature &out)
                     std::cerr << "Unnamed exon: Gene: "<<attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                 }
                 exonList.push_back(out.feature_id);
-                out.transcript_id = attributes.find("transcript_id") != attributes.end() ? attributes["transcript_id"] : (attributes.find("gene_id") != attributes.end() ? attributes["gene_id"] : "unknown_transcript");
-                transcriptExons[out.transcript_id].push_back(out.feature_id);
-                transcriptCodingLengths[out.transcript_id] += 1 + (out.end - out.start);
+                exonsForGene[out.gene_id].push_back(out.feature_id);
+                geneCodingLengths[out.gene_id] += 1 + (out.end - out.start);
                 exonLengths[out.feature_id] = 1 + (out.end - out.start);
             }
-            if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
             if (attributes.find("gene_name") != attributes.end()) geneNames[out.feature_id] = attributes["gene_name"];
             else if (attributes.find("gene_id") != attributes.end()) geneNames[out.feature_id] = attributes["gene_id"];

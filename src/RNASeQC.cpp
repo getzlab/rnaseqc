@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
     Flag outputTranscriptCoverage(parser, "coverage", "If this flag is provided, coverage statistics for each transcript will be written to a table. Otherwise, only summary coverage statistics are generated and added to the metrics table", {"coverage"});
     ValueFlag<unsigned int> coverageMaskSize(parser, "SIZE", "Sets how many bases at both ends of a transcript are masked out when computing per-base exon coverage. Default: 500bp", {"coverage-mask"});
-    ValueFlag<unsigned int> detectionThreshold(parser, "threshold", "Number of counts on a gene to consider the gene 'detected'. Default: 5 reads", {'d', "detection-threshold"});
+    ValueFlag<unsigned int> detectionThreshold(parser, "threshold", "Number of counts on a gene to consider the gene 'detected'. Additionally, genes below this limit are excluded from 3' bias computation. Default: 5 reads", {'d', "detection-threshold"});
 	try
 	{
         //parse and validate the command line arguments
@@ -111,7 +111,6 @@ int main(int argc, char* argv[])
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
         map<chrom, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
-        map<string, Feature> transcripts; //map of chr -> transcripts; for coverage metrics later
         //Parse the GTF and extract features
         {
             Feature line; //current feature being read from the gtf
@@ -139,7 +138,11 @@ int main(int argc, char* argv[])
                 {
                     //legacy code excludes single base exons
                     if (VERBOSITY > 1) cerr<<"Legacy mode excluded feature: " << line.feature_id << endl;
-                    if (line.type == "exon") transcriptCodingLengths[line.gene_id] -= 1;
+                    if (line.type == "exon") {
+                        geneCodingLengths[line.gene_id] -= 1;
+                        if (exonsForGene[line.gene_id].back() == line.feature_id) exonsForGene[line.gene_id].pop_back();
+                        else cerr << "Assumption failed: A legacy excluded exon (" << line.feature_id << ") was not the latest exon in " << line.gene_id << "'s exon list " << exonsForGene[line.gene_id].back() << endl;
+                    }
                     continue;
                 }
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
@@ -151,13 +154,11 @@ int main(int argc, char* argv[])
 #endif
                     
                 }
-                else if (line.type == "transcript") transcripts[line.feature_id] = line;
             }
         }
 		//ensure that the features are sorted.  This MUST be true for the exon alignment metrics
         for (auto beg = features.begin(); beg != features.end(); ++beg) beg->second.sort(compIntervalStart);
         time(&t1); //record the time taken to parse the GTF
-        if (!transcripts.size()) cerr << "Warning: No transcripts present in GTF" << endl;
         if (!(geneList.size() && exonList.size()))
         {
             cerr << "There were either no genes or no exons in the GTF" << endl;
@@ -200,8 +201,8 @@ int main(int argc, char* argv[])
         SamSequenceDictionary sequences; //for chromosome lookup
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
-        map<string, double> geneCoverage, exonCoverage; //counters for read coverage of genes and exons
-        BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH);
+        
+        BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH, DETECTION_THRESHOLD);
         BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         chrom current_chrom = 0;
@@ -253,6 +254,11 @@ int main(int argc, char* argv[])
                 if (!alignment.IsPrimaryAlignment()) counter.increment("Alternative Alignments");
                 else if (alignment.IsFailedQC()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
+                if (!alignment.IsFailedQC() && alignment.IsMapped())
+                {
+                    if (alignment.IsDuplicate() && !alignment.IsPrimaryAlignment()) counter.increment("Mapped Fraction Duplicates");
+                    counter.increment("Mapped Fraction Total");
+                }
                 if (alignment.IsPrimaryAlignment() && !alignment.IsFailedQC() /*&& alignment.MapQuality >= 255u*/)
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
@@ -386,8 +392,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, geneCoverage, exonCoverage, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -460,7 +466,7 @@ int main(int argc, char* argv[])
             //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
-                geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCoverage[*gene]) << endl;
+                geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
                 
 #ifndef NO_FASTA
                 if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
@@ -468,16 +474,16 @@ int main(int argc, char* argv[])
                 
                 if (useRPKM.Get())
                 {
-                    double RPKM = (1000.0 * geneCoverage[*gene] / scaleRPKM) / static_cast<double>(transcriptCodingLengths[*gene]);
+                    double RPKM = (1000.0 * geneCounts[*gene] / scaleRPKM) / static_cast<double>(geneCodingLengths[*gene]);
                     geneRPKM << *gene << "\t" << geneNames[*gene] << "\t" << RPKM << endl;
                 }
                 else
                 {
-                    double TPM = (1000.0 * geneCoverage[*gene]) / static_cast<double>(transcriptCodingLengths[*gene]);
+                    double TPM = (1000.0 * geneCounts[*gene]) / static_cast<double>(geneCodingLengths[*gene]);
                     tpms[*gene] = TPM;
                     scaleTPM += TPM;
                 }
-                if (geneCoverage[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
+                if (geneCounts[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
 //                genesByRPKM.push_back(*gene);
                 /*/
                 if (gene->second * (double) readLength / (double) geneLengths[gene->first] > 1.0)
@@ -553,14 +559,14 @@ int main(int argc, char* argv[])
         {
             ofstream exonReport(outputDir.Get()+"/"+SAMPLENAME+".exon_reads.gct");
             exonReport << "#1.2" << endl;
-            exonReport << exonCoverage.size() << "\t1" << endl;
+            exonReport << exonCounts.size() << "\t1" << endl;
             exonReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             exonReport << fixed;
             //iterate over every exon with coverage reported
             //for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
             for(auto exon = exonList.begin(); exon != exonList.end(); ++exon)
             {
-                exonReport << *exon << "\t" << geneNames[*exon] << "\t" << exonCoverage[*exon] << endl;
+                exonReport << *exon << "\t" << geneNames[*exon] << "\t" << exonCounts[*exon] << endl;
             }
             exonReport.close();
         }
@@ -572,6 +578,7 @@ int main(int argc, char* argv[])
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
+        output << "Duplicate Fraction\t" << counter.frac("Mapped Fraction Duplicates", "Mapped Fraction Total") << endl;
         output << "Base Mismatch\t" << counter.frac("Mismatched Bases", "Total Bases") << endl;
         output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", "Total Reads") << endl;
         output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Total Reads") << endl;
@@ -655,7 +662,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            list<double> means = baseCoverage.getTranscriptMeans(), stdDevs = baseCoverage.getTranscriptStds(), cvs = baseCoverage.getTranscriptCVs();
+            list<double> means = baseCoverage.getGeneMeans(), stdDevs = baseCoverage.getGeneStds(), cvs = baseCoverage.getGeneCVs();
             unsigned long nTranscripts = means.size();
             means.sort();
             stdDevs.sort();
@@ -777,7 +784,8 @@ int main(int argc, char* argv[])
 template <typename T>
 double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
 {
-    if (size <= 0) throw std::range_error("Cannot compute median of an empty list");
+    if (size <= 0)
+        throw std::range_error("Cannot compute median of an empty list");
     for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
     if (size % 1)
     {
