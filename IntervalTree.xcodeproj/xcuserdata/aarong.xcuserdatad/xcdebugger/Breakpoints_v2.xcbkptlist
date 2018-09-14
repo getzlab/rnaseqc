@@ -103,24 +103,8 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "IntervalTree/GTF.cpp"
-            timestampString = "552858528.2112449"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "97"
-            endingLineNumber = "97"
-            landmarkName = "operator&gt;&gt;(ifstream &amp;in, Feature &amp;out)"
-            landmarkType = "9">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
             filePath = "IntervalTree/Metrics.h"
-            timestampString = "549314000.488106"
+            timestampString = "558638454.422245"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "27"
@@ -136,11 +120,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/GTF.cpp"
-            timestampString = "552858528.211318"
+            timestampString = "558638454.4223239"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "123"
-            endingLineNumber = "123"
+            startingLineNumber = "122"
+            endingLineNumber = "122"
             landmarkName = "parseAttributes(std::string &amp;intake, std::map&lt;std::string,std::string&gt; &amp;attributes)"
             landmarkType = "9">
          </BreakpointContent>
@@ -214,7 +198,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/GTF.cpp"
-            timestampString = "552858528.211408"
+            timestampString = "558638454.422429"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "73"
@@ -470,11 +454,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.898958"
+            timestampString = "558638454.422717"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "167"
-            endingLineNumber = "167"
+            startingLineNumber = "168"
+            endingLineNumber = "168"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -486,11 +470,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.899289"
+            timestampString = "558638454.422809"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "190"
-            endingLineNumber = "190"
+            startingLineNumber = "191"
+            endingLineNumber = "191"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -502,11 +486,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.899513"
+            timestampString = "558638454.42287"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "200"
-            endingLineNumber = "200"
+            startingLineNumber = "201"
+            endingLineNumber = "201"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -551,11 +535,11 @@
             condition = "geneCoverage[*gene]"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.899758"
+            timestampString = "558638454.422947"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "462"
-            endingLineNumber = "462"
+            startingLineNumber = "463"
+            endingLineNumber = "463"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -567,11 +551,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.899973"
+            timestampString = "558638454.422996"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "144"
-            endingLineNumber = "144"
+            startingLineNumber = "147"
+            endingLineNumber = "147"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -583,11 +567,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.900185"
+            timestampString = "558638454.423045"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "141"
-            endingLineNumber = "141"
+            startingLineNumber = "140"
+            endingLineNumber = "140"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -599,12 +583,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/Expression.cpp"
-            timestampString = "558043445.568585"
+            timestampString = "558638454.4230911"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "170"
             endingLineNumber = "170"
-            landmarkName = "legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, map&lt;string, double&gt; &amp;geneCoverage, map&lt;string, double&gt; &amp;exonCoverage, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
+            landmarkName = "legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
@@ -615,12 +599,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/Expression.cpp"
-            timestampString = "558043453.624768"
+            timestampString = "558638454.423133"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "168"
             endingLineNumber = "168"
-            landmarkName = "legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, map&lt;string, double&gt; &amp;geneCoverage, map&lt;string, double&gt; &amp;exonCoverage, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
+            landmarkName = "legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
@@ -631,11 +615,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "IntervalTree/RNASeQC.cpp"
-            timestampString = "558539122.900423"
+            timestampString = "558638454.4231761"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "254"
-            endingLineNumber = "254"
+            startingLineNumber = "255"
+            endingLineNumber = "255"
             landmarkName = "main(int argc, char* argv[])"
             landmarkType = "9">
          </BreakpointContent>
@@ -646,14 +630,189 @@
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "IntervalTree/Metrics.cpp"
-            timestampString = "558539838.560234"
+            filePath = "IntervalTree/RNASeQC.cpp"
+            timestampString = "558638454.423231"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "181"
-            endingLineNumber = "181"
-            landmarkName = "BaseCoverage::compute(const Feature &amp;gene)"
+            startingLineNumber = "788"
+            endingLineNumber = "788"
+            landmarkName = "computeMedian(unsigned long size, T &amp;&amp;iterator, unsigned int offset)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "double computeMedian&lt;std::__1::__wrap_iter&lt;double*&gt; &gt;(unsigned long, std::__1::__wrap_iter&lt;double*&gt;&amp;&amp;, unsigned int)"
+                  moduleName = "IntervalTree"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/aarong/Documents/intervalTree/IntervalTree/IntervalTree/RNASeQC.cpp"
+                  timestampString = "558638454.785599"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "788"
+                  endingLineNumber = "788"
+                  offsetFromSymbolStart = "33">
+               </Location>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "double computeMedian&lt;std::__1::__list_iterator&lt;long long, void*&gt; &gt;(unsigned long, std::__1::__list_iterator&lt;long long, void*&gt;&amp;&amp;, unsigned int)"
+                  moduleName = "IntervalTree"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/aarong/Documents/intervalTree/IntervalTree/IntervalTree/RNASeQC.cpp"
+                  timestampString = "558638454.787598"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "788"
+                  endingLineNumber = "788"
+                  offsetFromSymbolStart = "45">
+               </Location>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "double computeMedian&lt;std::__1::__list_iterator&lt;double, void*&gt; &gt;(unsigned long, std::__1::__list_iterator&lt;double, void*&gt;&amp;&amp;, unsigned int)"
+                  moduleName = "IntervalTree"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/aarong/Documents/intervalTree/IntervalTree/IntervalTree/RNASeQC.cpp"
+                  timestampString = "558638454.790054"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "788"
+                  endingLineNumber = "788"
+                  offsetFromSymbolStart = "45">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.423279"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "235"
+            endingLineNumber = "235"
+            landmarkName = "computeCoverage(std::ofstream &amp;writer, const Feature &amp;gene, const unsigned int mask_size, const std::map&lt;std::string, std::vector&lt;unsigned long&gt; &gt; &amp;coverage, std::list&lt;double&gt; &amp;totalExonCV, BiasCounter &amp;bias)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.423601"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "248"
+            endingLineNumber = "248"
+            landmarkName = "computeCoverage(std::ofstream &amp;writer, const Feature &amp;gene, const unsigned int mask_size, const std::map&lt;std::string, std::vector&lt;unsigned long&gt; &gt; &amp;coverage, std::list&lt;double&gt; &amp;totalExonCV, BiasCounter &amp;bias)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.42383"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "274"
+            endingLineNumber = "274"
+            landmarkName = "computeCoverage(std::ofstream &amp;writer, const Feature &amp;gene, const unsigned int mask_size, const std::map&lt;std::string, std::vector&lt;unsigned long&gt; &gt; &amp;coverage, std::list&lt;double&gt; &amp;totalExonCV, BiasCounter &amp;bias)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.424047"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "160"
+            endingLineNumber = "160"
+            landmarkName = "BaseCoverage::commit(const std::string &amp;gene_id)"
             landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Expression.cpp"
+            timestampString = "558638454.424262"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "315"
+            endingLineNumber = "315"
+            landmarkName = "exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Expression.cpp"
+            timestampString = "558638454.424306"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "350"
+            endingLineNumber = "350"
+            landmarkName = "exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map&lt;chrom, list&lt;Feature&gt;&gt; &amp;features, Metrics &amp;counter, SamSequenceDictionary &amp;sequences, vector&lt;Feature&gt; &amp;blocks, BamAlignment &amp;alignment, unsigned int length, unsigned short stranded, BaseCoverage &amp;baseCoverage)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.424349"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "159"
+            endingLineNumber = "159"
+            landmarkName = "BaseCoverage::commit(const std::string &amp;gene_id)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "IntervalTree/Metrics.cpp"
+            timestampString = "558638454.424557"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "266"
+            endingLineNumber = "266"
+            landmarkName = "computeCoverage(std::ofstream &amp;writer, const Feature &amp;gene, const unsigned int mask_size, const std::map&lt;std::string, std::vector&lt;unsigned long&gt; &gt; &amp;coverage, std::list&lt;double&gt; &amp;totalExonCV, BiasCounter &amp;bias)"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

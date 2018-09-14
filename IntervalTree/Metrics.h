@@ -51,7 +51,7 @@ public:
 struct CoverageEntry {
     coord offset;
     unsigned int length;
-    std::string transcript_id, feature_id;
+    std::string feature_id;
 };
 
 class BiasCounter {
@@ -75,23 +75,23 @@ public:
 };
 
 class BaseCoverage {
-    std::map<std::string, std::vector<CoverageEntry> > coverage, cache;
-    //Coverage and Cache are GID -> Entry<EID>
+    std::map<std::string, std::vector<CoverageEntry> > cache; //GID -> Entry<EID> tmp cache as exon hits are recorded
+    std::map<std::string, std::vector<unsigned long> > coverage; //EID -> Coverage vector for exons still in window
     std::ofstream writer;
     const unsigned int mask_size;
-    std::list<double> exonCVs, transcriptMeans, transcriptStds, transcriptCVs;
+    std::list<double> exonCVs, geneMeans, geneStds, geneCVs;
     BiasCounter &bias;
     std::unordered_set<std::string> seen;
     BaseCoverage(const BaseCoverage&) = delete; //No!
 public:
-    BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile, BiasCounter &biasCounter) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), transcriptMeans(), transcriptStds(), transcriptCVs(), bias(biasCounter), seen()
+    BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile, BiasCounter &biasCounter) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), geneMeans(), geneStds(), geneCVs(), bias(biasCounter), seen()
     {
         if ((!this->writer.is_open()) && openFile) throw std::runtime_error("Unable to open BaseCoverage output file");
-        this->writer << "gene_id\ttranscript_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
+        this->writer << "gene_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
     }
     
     void add(const Feature&, const coord, const coord); //Adds to the cache
-    void commit(const std::string&); //moves one gene out of the cache to permanent storage
+    void commit(const std::string&); //moves one gene out of the cache and adds hits to exon coverage vector
     void reset(); //Empties the cache
 //    void clearCoverage(); //empties out data that won't be used
     void compute(const Feature&); //Computes the per-base coverage for all transcripts in the gene
@@ -99,13 +99,22 @@ public:
     BiasCounter& getBiasCounter() const {
         return this->bias;
     }
-    std::list<double>& getExonCVs();
-    std::list<double>& getTranscriptMeans();
-    std::list<double>& getTranscriptStds();
-    std::list<double>& getTranscriptCVs();
+    std::list<double>& getExonCVs() {
+        return this->exonCVs;
+    }
+    std::list<double>& getGeneMeans() {
+        return this->geneMeans;
+    }
+    std::list<double>& getGeneStds() {
+        return this->geneStds;
+    }
+    std::list<double>& getGeneCVs() {
+        return this->geneCVs;
+    }
 };
 
 
 std::ofstream& operator<<(std::ofstream&, Metrics&);
 
+extern std::map<std::string, double> geneCounts, exonCounts; //counters for read coverage of genes and exons
 #endif /* Metrics_h */

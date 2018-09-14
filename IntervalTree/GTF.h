@@ -27,7 +27,7 @@ struct Feature {
     coord start, end;
     chrom chromosome;
     signed char strand;
-    std::string type, feature_id, gene_id, transcript_type, transcript_id;
+    std::string type, feature_id, gene_id, transcript_type;
     bool ribosomal;
 };
 
@@ -40,9 +40,9 @@ int partialIntersect(const Feature&, const Feature&);
 
 
 extern std::map<std::string, std::string> geneNames, geneSeqs;
-extern std::map<std::string, coord> geneLengths, transcriptCodingLengths, exonLengths;
+extern std::map<std::string, coord> geneLengths, geneCodingLengths, exonLengths;
 extern std::vector<std::string> geneList, exonList;
-extern std::map<std::string, std::vector<std::string>> transcriptExons;
+extern std::map<std::string, std::vector<std::string>> exonsForGene;
 
 std::ifstream& operator>>(std::ifstream&, Feature&);
 std::map<std::string,std::string>& parseAttributes(std::string&, std::map<std::string,std::string>&);
