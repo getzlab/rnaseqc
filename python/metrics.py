@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
 import sklearn.decomposition
+import traceback
 
 
 def setup_figure(aw=4.5, ah=3, xspace=[0.75,0.25], yspace=[0.75,0.25]):
@@ -59,7 +60,11 @@ def metrics_plot(v, cohort_s, ylim, ms=12, alpha=1, title='', cohort_colors=None
             ix = v<threshold
         ax.scatter(xpos[np.where(ix)[0]], v[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
 
-    sns.kdeplot(v, ax=dax, vertical=True, legend=False, shade=True)
+    try:
+        sns.kdeplot(v, ax=dax, vertical=True, legend=False, shade=True)
+    except np.linalg.LinAlgError:
+        print(traceback.format_exc())
+        print("Unable to render KDE for", title)
 
     ax.set_xlim([1-0.02*ns, 1.02*ns])
     if ylim is None:
