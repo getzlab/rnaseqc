@@ -1,2 +1,3 @@
 *.xcodeproj/
 python/__pycache__/
+src/*.o
