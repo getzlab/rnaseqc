@@ -254,11 +254,6 @@ int main(int argc, char* argv[])
                 if (!alignment.IsPrimaryAlignment()) counter.increment("Alternative Alignments");
                 else if (alignment.IsFailedQC()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
-                if (!alignment.IsFailedQC() && alignment.IsMapped())
-                {
-                    if (alignment.IsDuplicate() && !alignment.IsPrimaryAlignment()) counter.increment("Mapped Fraction Duplicates");
-                    counter.increment("Mapped Fraction Total");
-                }
                 if (alignment.IsPrimaryAlignment() && !alignment.IsFailedQC() /*&& alignment.MapQuality >= 255u*/)
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
@@ -578,7 +573,6 @@ int main(int argc, char* argv[])
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
-        output << "Duplicate Fraction\t" << counter.frac("Mapped Fraction Duplicates", "Mapped Fraction Total") << endl;
         output << "Base Mismatch\t" << counter.frac("Mismatched Bases", "Total Bases") << endl;
         output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", "Total Reads") << endl;
         output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Total Reads") << endl;

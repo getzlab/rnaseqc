@@ -135,8 +135,7 @@ The following output files are generated in the output directory you provide:
 {sample}.metrics.tsv contains all metrics recorded by RNASeQC:
 * Mapping Rate: Proportion of all reads in the Bam which are primary alignments, mapped, and have not failed vendor QC (based on flags).
 * Unique Rate of Mapped: Proportion of all mapped, primary reads (see above) which are not marked as duplicates (based on flags).
-* Duplicate Rate of Mapped: Proportion of all mapped, primary reads which have at least one duplicate. This should be 1 - (Unique Rate of Mapped).
-* Duplicate Fraction: Proportion of all reads in the bam which are mapped and have not failed vendor QC, which are marked as duplicate.
+* Duplicate Rate of Mapped: Proportion of all mapped, primary reads (see above), which are marked as duplicate. This should be 1 - (Unique Rate of Mapped).
 * Base Mismatch: Proportion of bases in mapped reads (see "Mapping Rate", above) which are mismatched (based on the value of the NM tag).
 * End 1/2 Mapping Rate: Proportion of mapped reads (see "Mapping Rate", above) which are paired and are the first/second (respectively) mate in the pair.
 * End 1/2 Mismatch Rate: Proportion of bases of all first/second mate reads (see above) which are mismatched (based on the value of the NM tag).
