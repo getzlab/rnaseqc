@@ -229,6 +229,23 @@ def main(args):
         nbe.encode_figure(fig),
         metadata={'scrolled': False}
     )
+    # ---
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.colorbar(ax.scatter(metrics['Duplicate Rate of Mapped'], metrics['Genes Detected'], c=np.log(metrics['Unique Mapping, Vendor QC Passed Reads']))).set_label("log Unique Mapping, Vendor QC Passed Reads")
+    ax.set_xlabel("Duplication Rate")
+    ax.set_ylabel("Genes Detected")
+    nb.add_code_cell(
+        nbe.trim("""
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        plt.colorbar(ax.scatter(metrics['Duplicate Rate of Mapped'], metrics['Genes Detected'], c=np.log(metrics['Unique Mapping, Vendor QC Passed Reads']))).set_label("log Unique Mapping, Vendor QC Passed Reads")
+        ax.set_xlabel("Duplication Rate")
+        ax.set_ylabel("Genes Detected")
+        """),
+        nbe.encode_figure(fig),
+        metadata={'scrolled':False}
+    )
     # ===
     nb.add_code_cell('')
     nb.write(args.output)
