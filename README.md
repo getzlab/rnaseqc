@@ -1,5 +1,5 @@
 # RNA-SeQC
-Version 2.0.1
+Version 2.0.0
 
 The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-cga-aarong-gtex/rnaseqc:latest`
 
