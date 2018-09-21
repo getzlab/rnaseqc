@@ -1,0 +1,16 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - t
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+  - name: ubuntu
+    args:
+      - bash
+      - ls
+images:
+  - gcr.io/broad-cga-aarong-gtex/rnaseqc
