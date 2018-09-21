@@ -57,7 +57,8 @@ test-chr1: rnaseqc
 	diff .test_output/chr1.bam.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct
 	diff .test_output/chr1.bam.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct
 	diff .test_output/chr1.bam.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct
-	diff .test_output/chr1.bam.coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv
+	sed s/-nan/nan/g .test_output/chr1.bam.coverage.tsv > .test_output/coverage.tsv
+	diff .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv
 	rm -rf .test_output
 
 .PHONY: test-downsampled
@@ -68,7 +69,8 @@ test-downsampled: rnaseqc
 	diff .test_output/downsampled.bam.gene_reads.gct test_data/downsampled.output/downsampled.bam.gene_reads.gct
 	diff .test_output/downsampled.bam.gene_tpm.gct test_data/downsampled.output/downsampled.bam.gene_tpm.gct
 	diff .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.output/downsampled.bam.exon_reads.gct
-	diff .test_output/downsampled.bam.coverage.tsv test_data/downsampled.output/downsampled.bam.coverage.tsv
+	sed s/-nan/nan/g .test_output/downsampled.bam.coverage.tsv > .test_output/coverage.tsv
+	diff .test_output/coverage.tsv test_data/downsampled.output/downsampled.bam.coverage.tsv
 	diff .test_output/downsampled.bam.fragmentSizes.txt test_data/downsampled.output/downsampled.bam.fragmentSizes.txt
 	rm -rf .test_output
 
@@ -80,11 +82,12 @@ test-legacy: rnaseqc
 	diff .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/downsampled.bam.gene_reads.gct
 	diff .test_output/downsampled.bam.gene_tpm.gct test_data/legacy.output/downsampled.bam.gene_tpm.gct
 	diff .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/downsampled.bam.exon_reads.gct
-	diff .test_output/downsampled.bam.coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv
+	sed s/-nan/nan/g .test_output/downsampled.bam.coverage.tsv > .test_output/coverage.tsv
+	diff .test_output/coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv
 	diff .test_output/downsampled.bam.fragmentSizes.txt test_data/legacy.output/downsampled.bam.fragmentSizes.txt
-	python test_data/legacy_test.py .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/legacy.gene_reads.gct
-	python python/legacy_exon_remap.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.gtf
-	python test_data/legacy_test.py .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/legacy.exon_reads.gct --approx
+	python3 test_data/legacy_test.py .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/legacy.gene_reads.gct
+	python3 python/legacy_exon_remap.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.gtf > /dev/null
+	python3 test_data/legacy_test.py .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/legacy.exon_reads.gct --approx
 	rm -rf .test_output
 
 .PHONY: test-expected-failures
