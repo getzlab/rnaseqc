@@ -1,17 +1,34 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: gcr.io/cloud-builders/docker
     args:
       - build
       - -t
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
       - .
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: gcr.io/cloud-builders/docker
     args:
       - push
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
-  - name: ubuntu
+  - name: gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
     args:
       - bash
-      - ls
+      - -c
+      - >
+          apt-get update &&
+          apt-get install git wget -y &&
+          wget https://github.com/git-lfs/git-lfs/releases/download/v2.5.2/git-lfs-linux-amd64-v2.5.2.tar.gz &&
+          tar xzf git-lfs-linux-amd64-v2.5.2.tar.gz &&
+          ./install.sh &&
+          git clone https://$$GH_TOKEN:x-oauth-basic@https://github.com/broadinstitute/rnaseqc-dev.git &&
+          mv rnaseqc-dev/test_data /opt/rnaseqc &&
+          cd /opt/rnaseqc &&
+          make test
+    secretEnv:
+      - GH_TOKEN
+      #- "apt-get update && apt-get install git wget -y && wget https://github.com/git-lfs/git-lfs/releases/download/v2.5.2/git-lfs-linux-amd64-v2.5.2.tar.gz && tar xzf git-lfs-linux-amd64-v2.5.2.tar.gz && ./install.sh"
 images:
   - gcr.io/broad-cga-aarong-gtex/rnaseqc
+secrets:
+  - kmsKeyName: /projects/broad-cga-aarong-gtex/locations/global/keyRings/rnaseqc-build/cryptoKeys/rnaseqc
+    secretEnv:
+      GH_TOKEN: CiQAx8BkivZmSX6LmLRbflGWVrJIwCozLUs85moA1/cJXlDOPEcSUQAJKwRzw0DKV5SLpRNDcwNGZFRBMGPaZAm9oHVrPF9H6WH4ICOcdRpkxmdobU+YmB7MqKCy866tCwCw1PFXCLupye0z/kNiXjPisBMZ72pN+w==
