@@ -38,7 +38,7 @@ COPY python /scripts
 COPY Makefile /opt/rnaseqc
 COPY args.hxx /opt/rnaseqc
 COPY bioio.hpp /opt/rnaseqc
-RUN cd /opt/rnaseqc && make && mv rnaseqc /usr/local/bin && make clean
+RUN cd /opt/rnaseqc && make && ln -s /opt/rnaseqc/rnaseqc /usr/local/bin/rnaseqc && make clean
 
 # clean up
 RUN apt-get clean && \

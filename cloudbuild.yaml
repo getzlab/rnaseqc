@@ -1,10 +1,17 @@
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
+      - pull
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+  - name: gcr.io/cloud-builders/docker
+    args:
       - build
       - -t
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+      - --cache-from
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
       - .
+    timeout: 300s
   - name: gcr.io/cloud-builders/docker
     args:
       - push
@@ -25,6 +32,7 @@ steps:
           make test
     secretEnv:
       - GH_TOKEN
+    timeout: 600s
   - name: gcr.io/cloud-builders/docker
     args:
       - tag
@@ -40,3 +48,4 @@ secrets:
   - kmsKeyName: projects/broad-cga-aarong-gtex/locations/global/keyRings/rnaseqc-build/cryptoKeys/rnaseqc
     secretEnv:
       GH_TOKEN: CiQAx8BkivZmSX6LmLRbflGWVrJIwCozLUs85moA1/cJXlDOPEcSUQAJKwRzw0DKV5SLpRNDcwNGZFRBMGPaZAm9oHVrPF9H6WH4ICOcdRpkxmdobU+YmB7MqKCy866tCwCw1PFXCLupye0z/kNiXjPisBMZ72pN+w==
+timeout: 1200s
