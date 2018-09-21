@@ -2,7 +2,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
-      - t
+      - -t
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
       - .
   - name: 'gcr.io/cloud-builders/docker'
