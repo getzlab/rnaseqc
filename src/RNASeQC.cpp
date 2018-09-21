@@ -25,7 +25,7 @@ using namespace args;
 using namespace BamTools;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.1";
+const string VERSION = "RNASeQC 2.0.0";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 map<string, double> tpms;
@@ -657,7 +657,7 @@ int main(int argc, char* argv[])
 
         {
             list<double> means = baseCoverage.getGeneMeans(), stdDevs = baseCoverage.getGeneStds(), cvs = baseCoverage.getGeneCVs();
-            unsigned long nTranscripts = means.size();
+            const unsigned long nTranscripts = means.size();
             means.sort();
             stdDevs.sort();
             auto beg = cvs.begin();
@@ -668,17 +668,19 @@ int main(int argc, char* argv[])
                 else ++beg;
             }
             cvs.sort();
+            const unsigned long nCVS = cvs.size();
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
-            output << "Median of Transcript Coverage CV\t" << computeMedian(cvs.size(), cvs.begin()) << endl;
+            output << "Median of Transcript Coverage CV\t" << (nCVS ? computeMedian(nCVS, cvs.begin()) : 0.0) << endl;
             list<double> totalExonCV = baseCoverage.getExonCVs();
             totalExonCV.sort();
-            double exonMedian = computeMedian(totalExonCV.size(), totalExonCV.begin());
+            const unsigned long nExonCVs = totalExonCV.size();
+            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
             vector<double> exonDeviations;
             for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
             sort(exonDeviations.begin(), exonDeviations.end());
             output << "Median Exon CV\t" << exonMedian << endl;
-            output << "Exon CV MAD\t" << computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR << endl;
+            output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
             
             //                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) tmp_exons << (*cv) << endl;
             //                tmp_exons.close();

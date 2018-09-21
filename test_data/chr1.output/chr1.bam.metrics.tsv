@@ -1,0 +1,67 @@
+Sample	chr1.bam
+Mapping Rate	0.859513
+Unique Rate of Mapped	1
+Duplicate Rate of Mapped	0
+Base Mismatch	0.00968147
+End 1 Mapping Rate	0.872181
+End 2 Mapping Rate	0.846846
+End 1 Mismatch Rate	0.00253608
+End 2 Mismatch Rate	0.0170406
+Expression Profiling Efficiency	0.635448
+Exonic Rate	0.739311
+Intronic Rate	0.0956014
+Intergenic Rate	0.0212749
+Intragenic Rate	0.834912
+Disqualification Rate	0.0282592
+Discard Rate	0.115554
+rRNA Rate	2.32391e-06
+End 1 Sense Rate	0.496448
+End 2 Sense Rate	0.502992
+Avg. Splits per Read	0.130933
+Alternative Alignments	229158
+Chimeric Reads	0
+Duplicate Reads	0
+End 1 Antisense	448580
+End 2 Antisense	433845
+End 1 Bases	82963728
+End 2 Bases	80553844
+End 1 Mapped Reads	1091628
+End 2 Mapped Reads	1059919
+End 1 Mismatches	210403
+End 2 Mismatches	1372688
+End 1 Sense	442252
+End 2 Sense	439068
+Exonic Reads	1590662
+Failed Vendor QC	122510
+Intergenic Reads	45774
+Intragenic Reads	1796353
+Intron/Exon Disqualified Reads	60801
+Intronic Reads	205691
+Low quality reads	186732
+Mapped Duplicate Reads	0
+Mapped Reads	2151547
+Mapped Unique Reads	2151547
+Mismatched Bases	1583091
+Reads excluded from exon counts	248619
+Reads used for Intron/Exon counts	1902928
+rRNA Reads	5
+Split Reads	460949
+Total Bases	163517572
+Total Mapped Pairs	1052544
+Total Reads	2503215
+Unique Mapping, Vendor QC Passed Reads	2151547
+Unpaired Reads	0
+Read Length	76
+Genes Detected	1842
+Estimated Library Complexity	0
+Mean 3' bias	0.614796
+Median 3' bias	1
+3' bias Std	0.486644
+3' bias MAD_Std	0
+3' Bias, 25th Percentile	0
+3' Bias, 75th Percentile	1
+Median of Avg Transcript Coverage	0
+Median of Transcript Coverage Std	0
+Median of Transcript Coverage CV	1.08712
+Median Exon CV	0.322915
+Exon CV MAD	0.319856

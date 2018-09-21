@@ -52,7 +52,7 @@ def run(args):
                         suffix = parts[-1]
                         if exons[features[i]['Name']].length == 1:
                             features[i][reader.fieldnames[-1]] = 0
-                        suffix = str(i+1)
+                        suffix = str(i)
                         features[i]['Name'] = prefix+'_'+suffix
                     writer.writerows(features)
                 current = gene
@@ -84,7 +84,7 @@ def run(args):
             prefix, suffix = features[i]['Name'].split('_')
             if exons[features[i]['Name']].length == 1:
                 features[i]['Counts'] = 0
-            suffix = str(i+1)
+            suffix = str(i)
             features[i]['Name'] = prefix+'_'+suffix
             writer.writerows(features)
     print("Cleaning up")

@@ -26,3 +26,69 @@ rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
 
 clean:
 	rm $(wildcard $(SRCDIR)/*.o)
+
+# The rest of the makefile consists of test cases. Run "make test" to perform all tests
+
+.PHONY: test
+
+test: test-version test-single test-chr1 test-downsampled test-legacy test-expected-failures
+	echo Tests Complete
+
+.PHONY: test-version
+
+test-version: rnaseqc
+	[ ! -z "$(shell ./rnaseqc --version)" ]
+
+.PHONY: test-single
+
+test-single: rnaseqc
+	./rnaseqc test_data/single_pair.gtf test_data/single_pair.bam .test_output
+	diff .test_output/single_pair.bam.metrics.tsv test_data/single_pair.output/single_pair.bam.metrics.tsv
+	diff .test_output/single_pair.bam.gene_reads.gct test_data/single_pair.output/single_pair.bam.gene_reads.gct
+	diff .test_output/single_pair.bam.gene_tpm.gct test_data/single_pair.output/single_pair.bam.gene_tpm.gct
+	diff .test_output/single_pair.bam.exon_reads.gct test_data/single_pair.output/single_pair.bam.exon_reads.gct
+	rm -rf .test_output
+
+.PHONY: test-chr1
+
+test-chr1: rnaseqc
+	./rnaseqc test_data/chr1.gtf test_data/chr1.bam .test_output --coverage
+	diff .test_output/chr1.bam.metrics.tsv test_data/chr1.output/chr1.bam.metrics.tsv
+	diff .test_output/chr1.bam.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct
+	diff .test_output/chr1.bam.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct
+	diff .test_output/chr1.bam.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct
+	diff .test_output/chr1.bam.coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv
+	rm -rf .test_output
+
+.PHONY: test-downsampled
+
+test-downsampled: rnaseqc
+	./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed test_data/downsampled.bed --coverage .test_output
+	diff .test_output/downsampled.bam.metrics.tsv test_data/downsampled.output/downsampled.bam.metrics.tsv
+	diff .test_output/downsampled.bam.gene_reads.gct test_data/downsampled.output/downsampled.bam.gene_reads.gct
+	diff .test_output/downsampled.bam.gene_tpm.gct test_data/downsampled.output/downsampled.bam.gene_tpm.gct
+	diff .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.output/downsampled.bam.exon_reads.gct
+	diff .test_output/downsampled.bam.coverage.tsv test_data/downsampled.output/downsampled.bam.coverage.tsv
+	diff .test_output/downsampled.bam.fragmentSizes.txt test_data/downsampled.output/downsampled.bam.fragmentSizes.txt
+	rm -rf .test_output
+
+.PHONY: test-legacy
+
+test-legacy: rnaseqc
+	./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed test_data/downsampled.bed --coverage .test_output --legacy
+	diff .test_output/downsampled.bam.metrics.tsv test_data/legacy.output/downsampled.bam.metrics.tsv
+	diff .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/downsampled.bam.gene_reads.gct
+	diff .test_output/downsampled.bam.gene_tpm.gct test_data/legacy.output/downsampled.bam.gene_tpm.gct
+	diff .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/downsampled.bam.exon_reads.gct
+	diff .test_output/downsampled.bam.coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv
+	diff .test_output/downsampled.bam.fragmentSizes.txt test_data/legacy.output/downsampled.bam.fragmentSizes.txt
+	python test_data/legacy_test.py .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/legacy.gene_reads.gct
+	python python/legacy_exon_remap.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.gtf
+	python test_data/legacy_test.py .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/legacy.exon_reads.gct --approx
+	rm -rf .test_output
+
+.PHONY: test-expected-failures
+
+test-expected-failures: rnaseqc
+	./rnaseqc test_data/gencode.v26.collapsed.gtf test_data/downsampled.bam .test_output 2>/dev/null; test $$? -eq 11
+	rm -rf .test_output
