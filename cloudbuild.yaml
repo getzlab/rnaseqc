@@ -29,6 +29,6 @@ steps:
 images:
   - gcr.io/broad-cga-aarong-gtex/rnaseqc
 secrets:
-  - kmsKeyName: /projects/broad-cga-aarong-gtex/locations/global/keyRings/rnaseqc-build/cryptoKeys/rnaseqc
+  - kmsKeyName: projects/broad-cga-aarong-gtex/locations/global/keyRings/rnaseqc-build/cryptoKeys/rnaseqc
     secretEnv:
       GH_TOKEN: CiQAx8BkivZmSX6LmLRbflGWVrJIwCozLUs85moA1/cJXlDOPEcSUQAJKwRzw0DKV5SLpRNDcwNGZFRBMGPaZAm9oHVrPF9H6WH4ICOcdRpkxmdobU+YmB7MqKCy866tCwCw1PFXCLupye0z/kNiXjPisBMZ72pN+w==
