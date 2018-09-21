@@ -29,6 +29,7 @@ steps:
           git clone https://$$GH_TOKEN:x-oauth-basic@github.com/broadinstitute/rnaseqc-dev.git &&
           mv rnaseqc-dev/test_data /opt/rnaseqc &&
           cd /opt/rnaseqc &&
+          cp -r /scripts /opt/rnaseqc/python &&
           make test
     secretEnv:
       - GH_TOKEN
