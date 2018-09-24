@@ -1,7 +1,7 @@
 language: cpp
 os:
 - linux
-- osx
+# - osx
 dist: trusty
 sudo: required
 addons:
@@ -15,6 +15,7 @@ addons:
     - libboost-system-dev
     - zlib1g-dev
     - wget
+    - g++-5
 install:
 - echo $TRAVIS_OS_NAME
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
