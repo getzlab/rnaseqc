@@ -21,6 +21,7 @@ install:
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
+- cd $TRAVIS_BUILD_DIR && pwd && ls test_data
 - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
 - python3 -m pip install --upgrade pip setuptools
