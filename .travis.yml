@@ -1,0 +1,50 @@
+language: cpp
+os:
+- linux
+- osx
+addons:
+  apt:
+    packages:
+    - cmake
+    - python3
+    - python3-pip
+    - libboost-filesystem-dev
+    - libboost-regex-dev
+    - libboost-system-dev
+    - zlib1g-dev
+    - wget
+    - libbamtools-dev
+install:
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools boost python@3 zlib curl cmake xz samtools; fi
+- if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
+- ls -la /usr/local/lib
+- ls -la /usr/lib
+- if [[ "${TRAVIS_OS_NAME}" = "linux"]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=/usr/lib/x86_64-linux-gnu/libbamtools.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a"/g Makefile > Makefile.new; fi
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=/usr/local/lib/libbamtools.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_regex.a /usr/local/lib/libboost_system.a $(ls /usr/local/Cellar/zlib/*/lib/libz.a)"/g Makefile > Makefile.new; fi
+- sed s/"LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz"/LIBS=/ Makefile.new > Makefile
+- python3 -m pip install --upgrade pip setuptools
+- python3 -m pip install numpy
+- python3 -m pip install pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
+- make
+before_script:
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
+- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
+- git lfs install
+- git lfs pull
+script:
+- make test
+before_deploy:
+  - mv rnaseqc rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME
+  - gzip rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME
+env:
+  global:
+    secure: HqhxW0zkMoG3F50m8pgDZ/04dgXA9xO+w24tsydleJKDaF8q7llrVostrkL41oCsBtPw3m38ik8ceuXsnzOJiMYAqL7TwIuu3pdbz0PG1RLPdIpLTSoD22x2+Xls6nZQ/BQhwQDrj3W6sdGfWpyAsjSq+1K/dwmcroHbEAghvkYE1bK0nKWq5t0LiwqjTpgERYcLulB3YqpuNh0QUcn29ounwPOawAloUC9ZPo0zkqQjvqTnYttxMFtR6ja6utcjBCjW888Z3/EmLrz8PD3u4d9yPw4xW3cNFdAQmRkdXyLdD7t0chbJnnW3mSeIQCwg8AUbAPfh5zLhCqhTcQd1HIv0UDjtsduwn9CwSRD2isIBx9hHt40RP32wNoKgRO+j78XDaOBNWn6zrDryuCHPHj/x5w1hpNeibQRVmRK/uoRsdipy21/6QCCeBfOIMYmaf/A7/ddCWmE5eJHw8M9NJVhOudEpT2iWJlDy5qw8P/D1rbZlb36PbQEfvLboR3KJoSMp66OccEbOaoo6f7xXIB4cK1hmuP9oz2dnv6W9fg4GAWRGdAJ6AW/VnB34k+U3MkSGuDaTDhzF2DxdzAu4Q6E5MvCm6xfnW2x9FFUS55lwfG2W+Pd5ICM7RX2yTllB6Ao10Aq7OGtQLxrnzJ6J3Dwli65U7NixkTQEIVAfXT8=
+deploy:
+  provider: releases
+  api_key:
+    secure: soN3q+YLqOth8f2ufmlRtFEJHbhlhnehYLOontynJ0p7dQtn/dkyyIfIUOlHL8mPdr++AHE5EYNYJPGkkfa4coEGvNSoWS+WSvOQ6PBE4L+WVG+JqjOCextH2oZHx8Gfs5dBhgfATCYPMuVZ8n9UDNS3rQ44OvRjweK+58LQzcBrAnS/W4qSfbtP062lO+tTTzq6Px6P6hQFIsu3GsnBrPwHn9Pg/6JaTd8RO86TtDVfDaEdz87aHfDnJH1Qju0py6j3u7I3/EF9rK1Ee/xq+ph86uJhWE4u0UsU+g0MxAzdY+Cf/C67YOyM3tUVG2rqIQMbSYoUC3XR4hjD+pregPCAvHbd0qglPYUPk3aUgO3q5rZ8vThtlxVcc7CUkhpqxZaZ4Xxt3rUbWwLoWkBd8/keKNZJSsERBjIwMw3gUlJXe1lgsJNkHkG432q1M/WlQudEbSzoDJrzaMSeXAFAhtO5UrZLY1b2lY7T+VXPBil+SMn8w/lycoRsm6RfLnFo4utkBi5oFhXl1/mq2OjV1cthMvI5bn5Dn8jyo1y2vrVRpjxBTl0P/Yhp0yd5Tzot6JsnJ6J+AO2mcf+FJ07u8+uI+ytJ8jt+7U1Q6csPWXmv55Uy4GaoO0fvwSKSc5jENPESInwdssha78UhJWjKY2XLDyDl2A3vPjpUg8Uanbs=
+  file: rnaseqc*.gz
+  file_glob: true
+  skip_cleanup: true
+  on:
+    tags: true
