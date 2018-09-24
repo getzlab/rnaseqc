@@ -1,7 +1,7 @@
 language: cpp
 os:
 - linux
-# - osx
+- osx
 dist: trusty
 sudo: required
 addons:
@@ -20,9 +20,11 @@ install:
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which gcc-5) CXX=$(which g++-5); fi
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew upgrade && brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
 - cd $TRAVIS_BUILD_DIR && pwd && ls test_data
+- git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b
+- cd ..
 - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
 - sudo python3 -m pip install --user --upgrade pip setuptools
