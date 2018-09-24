@@ -2,6 +2,8 @@ language: cpp
 os:
 - linux
 - osx
+dist: trusty
+sudo: required
 addons:
   apt:
     packages:
@@ -13,15 +15,17 @@ addons:
     - libboost-system-dev
     - zlib1g-dev
     - wget
-    - libbamtools-dev
 install:
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools boost python@3 zlib curl cmake xz samtools; fi
+- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
+  rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && make install && make clean; fi
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools boost zlib curl xz samtools; fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
 - ls -la /usr/local/lib
 - ls -la /usr/lib
-- if [[ "${TRAVIS_OS_NAME}" = "linux"]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=/usr/lib/x86_64-linux-gnu/libbamtools.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a"/g Makefile > Makefile.new; fi
+- if [[ "${TRAVIS_OS_NAME}" = "linux"]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=/usr/local/lib/bamtools/libbamtools.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a"/g Makefile > Makefile.new; fi
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=/usr/local/lib/libbamtools.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_regex.a /usr/local/lib/libboost_system.a $(ls /usr/local/Cellar/zlib/*/lib/libz.a)"/g Makefile > Makefile.new; fi
 - sed s/"LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz"/LIBS=/ Makefile.new > Makefile
+- cat Makefile
 - python3 -m pip install --upgrade pip setuptools
 - python3 -m pip install numpy
 - python3 -m pip install pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
