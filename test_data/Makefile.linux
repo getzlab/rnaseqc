@@ -5,7 +5,7 @@ LIBRARY_PATHS=
 #Set to 0 if you encounter linker errors regarding strings from the bamtools library
 ABI=1
 #Provide full paths here to .a archives for libraries which should be statically linked
-STATIC_LIBS=/usr/local/lib/bamtools/libbamtools.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a
+STATIC_LIBS=/usr/local/lib/libbamtools.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a
 #List of remaining libraries that will be dynamically linked
 LIBS=
 
