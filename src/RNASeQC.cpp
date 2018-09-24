@@ -10,6 +10,7 @@
 #include <iterator>
 #include <stdio.h>
 #include <set>
+#include <cmath>
 #include <regex>
 #include <ctime>
 #include <limits.h>
