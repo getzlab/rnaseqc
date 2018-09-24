@@ -17,7 +17,8 @@ addons:
     - wget
 install:
 - echo $TRAVIS_OS_NAME
-- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-get update && sudo apt-get install g++-5 -y && wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
+- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y; fi
+- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
