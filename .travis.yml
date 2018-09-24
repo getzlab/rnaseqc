@@ -22,13 +22,14 @@ install:
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew upgrade >/dev/null && brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
-- git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd .. && export PYTHONPATH=$(pwd)
 - cd $TRAVIS_BUILD_DIR && pwd && ls && ls test_data
+- git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd .. && export PYTHONPATH=$(pwd)
 - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
 - sudo python3 -m pip install --user --upgrade pip setuptools
 - sudo python3 -m pip install --user numpy
 - sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
+- sudo python3 -c "from rnaseq.annotation import Annotation; print(Annotation)"
 - make
 before_script:
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
