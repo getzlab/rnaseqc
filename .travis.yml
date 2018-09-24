@@ -35,7 +35,7 @@ before_script:
 - git lfs install
 - git lfs pull
 script:
-- make test
+- sudo make test
 before_deploy:
   - mv rnaseqc rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME
   - gzip rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME
