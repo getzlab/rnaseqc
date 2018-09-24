@@ -24,9 +24,9 @@ install:
 - cd $TRAVIS_BUILD_DIR && pwd && ls test_data
 - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
-- python3 -m pip install --upgrade pip setuptools
-- python3 -m pip install numpy
-- python3 -m pip install pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
+- sudo python3 -m pip install --user --upgrade pip setuptools
+- sudo python3 -m pip install --user numpy
+- sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
 - make
 before_script:
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
