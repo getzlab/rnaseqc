@@ -19,11 +19,9 @@ install:
 - echo $TRAVIS_OS_NAME
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools zlib curl samtools > /dev/null; fi
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
-- if [[ "${TRAVIS_OS_NAME}" = "linux"]]; then sed s/STATIC_LIBS=/"STATIC_LIBS=\/usr\/local\/lib\/bamtools\/libbamtools.a \/usr\/lib\/x86_64-linux-gnu\/libboost_filesystem.a \/usr\/lib\/x86_64-linux-gnu\/libboost_regex.a \/usr\/lib\/x86_64-linux-gnu\/libboost_system.a \/usr\/lib\/x86_64-linux-gnu\/libz.a"/g Makefile > Makefile.new; fi
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then export ZLIB_PATH=$(ls \/usr\/local\/Cellar\/zlib\/*\/lib\/libz.a); sed s/STATIC_LIBS=/"STATIC_LIBS=\/usr\/local\/lib\/libbamtools.a \/usr\/local\/lib\/libboost_filesystem.a \/usr\/local\/lib\/libboost_regex.a \/usr\/local\/lib\/libboost_system.a $ZLIB_PATH"/g Makefile > Makefile.new; fi
-- sed s/"LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz"/LIBS=/ Makefile.new > Makefile
+- mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
 - python3 -m pip install --upgrade pip setuptools
 - python3 -m pip install numpy
