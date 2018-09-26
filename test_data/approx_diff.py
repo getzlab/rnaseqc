@@ -18,7 +18,7 @@ def main(args):
         )
     assert len(df[np.abs(df[args.columns[0]] - df[args.columns[1]]) > args.tolerance]) == 0
     if args.mode == 'fragments':
-        assert len({*pd.read_csv(args.input1, sep='\t', index_col=0).index} ^ {*pd.read_csv(args.input2, sep='\t', index_col=0).index}) == 0
+        assert len(set(pd.read_csv(args.input1, sep='\t', index_col=0).index) ^ set(pd.read_csv(args.input2, sep='\t', index_col=0).index)) == 0
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('legacy-test')

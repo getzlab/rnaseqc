@@ -30,6 +30,8 @@ install:
 - sudo python3 -m pip install --user --upgrade pip setuptools
 - sudo python3 -m pip install --user numpy
 - sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
+- ls -lh
+- python3 --version
 - sudo python3 -c "from rnaseq.annotation import Annotation; print(Annotation)"
 - make
 before_script:
