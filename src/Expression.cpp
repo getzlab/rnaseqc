@@ -204,6 +204,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     if (dbg) cout << "\t" << exon.feature_id << " 1.0";
                 }
                 geneCounts[exon.gene_id] += 1.0;
+                if (!alignment.IsDuplicate()) uniqueGeneCounts[exon.gene_id]++;
                 baseCoverage.commit(exon.gene_id);
                 doExonMetrics = true;
             }
@@ -345,7 +346,11 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
         //after the intersection, iterate over the remaining genes and record their coverage
         for (auto gene = last.begin(); gene != last.end(); ++gene)
         {
-            if (exonCoverageCollector.queryGene(*gene)) geneCounts[*gene]++;
+            if (exonCoverageCollector.queryGene(*gene))
+            {
+                geneCounts[*gene]++;
+                if (!alignment.IsDuplicate()) uniqueGeneCounts[*gene]++;
+            }
             exonCoverageCollector.collect(*gene); //collect and keep exon coverage for this gene
             baseCoverage.commit(*gene); //keep the per-base coverage recorded on this gene
             doExonMetrics = true;

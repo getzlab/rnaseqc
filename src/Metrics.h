@@ -116,5 +116,5 @@ public:
 
 std::ofstream& operator<<(std::ofstream&, Metrics&);
 
-extern std::map<std::string, double> geneCounts, exonCounts; //counters for read coverage of genes and exons
+extern std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts; //counters for read coverage of genes and exons
 #endif /* Metrics_h */

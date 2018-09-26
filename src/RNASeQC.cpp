@@ -479,20 +479,9 @@ int main(int argc, char* argv[])
                     tpms[*gene] = TPM;
                     scaleTPM += TPM;
                 }
-                if (geneCounts[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
-//                genesByRPKM.push_back(*gene);
-                /*/
-                if (gene->second * (double) readLength / (double) geneLengths[gene->first] > 1.0)
-                {
-                    double geneBias = bias.getBias(gene->first);
-                    if (geneBias != -1.0) ratios.push_back(geneBias);
-                }
-                /*/
-                //this gets you -.544, E-21
-                //with partials, it's -.534, E-20
+                if (uniqueGeneCounts[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
                 double geneBias = bias.getBias(*gene);
                 if (geneBias != -1.0) ratios.push_back(geneBias);
-                /**/
             }
             geneReport.close();
             if (!useRPKM.Get())

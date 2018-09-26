@@ -12,7 +12,7 @@
 #include <cmath>
 #include <unordered_set>
 
-std::map<std::string, double> geneCounts, exonCounts; //counters for read coverage of genes and exons
+std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts; //counters for read coverage of genes and exons
 
 std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const unsigned int, const std::map<std::string, std::vector<unsigned long> >&, std::list<double>&, BiasCounter&);
 
