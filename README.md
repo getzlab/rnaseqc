@@ -1,4 +1,6 @@
 # RNA-SeQC
+[![Build Status](https://travis-ci.com/broadinstitute/rnaseqc-dev.svg?token=y8NpD4Ye6EkYyigZUZDt&branch=master)](https://travis-ci.com/broadinstitute/rnaseqc-dev)
+
 Version 2.0.0
 
 The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-cga-aarong-gtex/rnaseqc:latest`
