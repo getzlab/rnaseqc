@@ -16,7 +16,6 @@ addons:
     - zlib1g-dev
     - wget
 install:
-- echo $TRAVIS_OS_NAME
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which gcc-5) CXX=$(which g++-5); fi
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
   rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
