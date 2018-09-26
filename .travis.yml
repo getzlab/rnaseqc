@@ -26,7 +26,7 @@ install:
 - git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd .. && export PYTHONPATH=$(pwd)
 - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
 - cat Makefile
-- mkdir -p ~/.config/matplotlib && echo "backend	:	Agg" > ~/.config/matplotlib/matplotlibrc
+- "mkdir -p ~/.config/matplotlib && echo 'backend	:	Agg' > ~/.config/matplotlib/matplotlibrc"
 - sudo python3 -m pip install --user --upgrade pip setuptools
 - sudo python3 -m pip install --user numpy
 - sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
