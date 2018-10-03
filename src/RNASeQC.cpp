@@ -16,14 +16,10 @@
 #include <limits.h>
 #include <math.h>
 #include <unordered_set>
-#include <api/BamReader.h>
-#include <api/BamAlignment.h>
-#include <api/BamConstants.h>
 #include <args.hxx>
 #include <boost/filesystem.hpp>
 using namespace std;
 using namespace args;
-using namespace BamTools;
 
 const string NM = "NM";
 const string VERSION = "RNASeQC 2.0.0";
@@ -198,9 +194,14 @@ int main(int argc, char* argv[])
             boost::filesystem::create_directories(outputDir.Get());
         }
 
-        BamReader bam;
+        
         const string bamFilename = bamFile.Get();
-        SamSequenceDictionary sequences; //for chromosome lookup
+        SeqlibReader bam(bamFilename);
+        if (!bam.isOpen())
+        {
+            cerr << "Unable to open BAM file: " << bamFilename << endl;
+            return 10;
+        }
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
         
@@ -211,20 +212,15 @@ int main(int argc, char* argv[])
 
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
-            BamAlignment alignment; //current bam alignment
+            Alignment alignment; //current bam alignment
+            SeqLib::BamHeader header = bam.getHeader();
             time_t report_time; //used to ensure that stdout isn't spammed if the program runs super fast
-            bam.Open(bamFilename);
-            if (!bam.IsOpen())
-            {
-                cerr << "Unable to open BAM file: " << bamFilename << endl;
-                return 10;
-            }
-            bam.LocateIndex(); //load in the index, if found.  Slightly improves IO perf
-            sequences = bam.GetHeader().Sequences; //read the sequence dictionary from the header
+            auto sequences = header.GetHeaderSequenceVector();
+            const unsigned int nChrs = sequences.size();
             //Check the sequence dictionary for contig overlap with gtf
             if (VERBOSITY > 1) cout<<"Checking bam header..."<<endl;
             bool hasOverlap = false;
-            for(auto sequence = sequences.Begin(); sequence != sequences.End(); ++sequence)
+            for(auto sequence = sequences.begin(); sequence != sequences.end(); ++sequence)
             {
                 chrom chrom = chromosomeMap(sequence->Name);
                 if (features.find(chrom) != features.end())
@@ -241,7 +237,7 @@ int main(int argc, char* argv[])
             if (VERBOSITY) cout<<"Parsing bam..."<<endl;
             time(&report_time);
             time(&t2);
-            while (bam.GetNextAlignmentCore(alignment))
+            while (bam.next(alignment))
             {
                 //try to print an update to stdout every 250,000 reads, but no more than once every 10 seconds
                 ++alignmentCount;
@@ -252,114 +248,71 @@ int main(int argc, char* argv[])
                     if (VERBOSITY > 1) cout << "Time elapsed: " << difftime(t2, t1) << "; Alignments processed: " << alignmentCount << endl;
                 }
                 //count metrics based on basic read data
-
-                if (!alignment.IsPrimaryAlignment()) counter.increment("Alternative Alignments");
-                else if (alignment.IsFailedQC()) counter.increment("Failed Vendor QC");
-                else if (alignment.MapQuality < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
-                if (alignment.IsPrimaryAlignment() && !alignment.IsFailedQC() /*&& alignment.MapQuality >= 255u*/)
+                if (alignment.SecondaryFlag()) counter.increment("Alternative Alignments");
+                else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
+                else if (alignment.MapQuality() < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
+                if (!(alignment.SecondaryFlag() || alignment.QCFailFlag()) /*&& alignment.MapQuality >= 255u*/)
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
                     //raw counts:
-                    if (!alignment.IsPaired()) counter.increment("Unpaired Reads");
-                    if (alignment.IsDuplicate()) counter.increment("Duplicate Reads");
-                    if (alignment.IsMapped())
+                    if (!alignment.PairedFlag()) counter.increment("Unpaired Reads");
+                    if (alignment.DuplicateFlag()) counter.increment("Duplicate Reads");
+                    if (alignment.MappedFlag())
                     {
                         counter.increment("Mapped Reads");
 
-                        if (alignment.IsDuplicate())counter.increment("Mapped Duplicate Reads");
+                        if (alignment.DuplicateFlag())counter.increment("Mapped Duplicate Reads");
                         else counter.increment("Mapped Unique Reads");
                         //check length against max read length
-                        unsigned int alignmentSize = alignment.GetEndPosition() - alignment.Position + 1;
+                        unsigned int alignmentSize = alignment.Length();
                         if (LegacyMode.Get() && alignmentSize > LEGACY_MAX_READ_LENGTH) continue;
-                        if (!readLength) current_chrom = chromosomeMap((sequences.Begin()+alignment.RefID)->Name);
-                        if (alignmentSize > readLength) readLength = alignment.Length;
-                        alignment.BuildCharData(); //Load read name and tags
-                        if (!LegacyMode.Get() && alignment.HasTag(chimeric_tag))
+                        if (!readLength) current_chrom = chromosomeMap(alignment.ChrName(header));
+                        if (alignmentSize > readLength) readLength = alignmentSize;
+                        string trash;
+                        if (!LegacyMode.Get() && alignment.GetZTag(chimeric_tag, trash))
                         {
                             counter.increment("Chimeric Reads_tag");
                             if(excludeChimeric.Get()) continue;
                         }
-                        if (alignment.IsPaired() && alignment.IsMateMapped() )
+                        if (alignment.PairedFlag() && alignment.MateMappedFlag() )
                         {
-                            if (alignment.IsFirstMate()) counter.increment("Total Mapped Pairs");
-                            if (alignment.RefID != alignment.MateRefID || abs(alignment.Position - alignment.MatePosition) > CHIMERIC_DISTANCE || (LegacyMode.Get() && alignment.RefID > 127))
+                            if (alignment.FirstFlag()) counter.increment("Total Mapped Pairs");
+                            if (alignment.ChrID() != alignment.MateChrID() || abs(alignment.Position() - alignment.MatePosition()) > CHIMERIC_DISTANCE || (LegacyMode.Get() && alignment.ChrID() > 127))
                             {
                                 counter.increment("Chimeric Reads_contig");
                                 if(excludeChimeric.Get()) continue;
                             }
                         }
                         //Get tag data
-                        unsigned int mismatches = 0;
-                        if (alignment.HasTag(NM))
+                        int32_t mismatches = 0;
+                        if (alignment.GetIntTag(NM, mismatches))
                         {
-                            char nmType;
-                            alignment.GetTagType(NM, nmType);
-                            //The data type can vary based on the bam, but bamtools is strict about matching data types
-                            //It is often platform-dependent whether or not a tag's data will fit properly into a different type
-                            switch(nmType)
+                            if (alignment.PairedFlag())
                             {
-                                case Constants::BAM_TAG_TYPE_INT8:
-                                    int8_t tmpi8;
-                                    alignment.GetTag(NM, tmpi8);
-                                    mismatches = static_cast<unsigned int>(tmpi8);
-                                    break;
-                                case Constants::BAM_TAG_TYPE_UINT8:
-                                    uint8_t tmpu8;
-                                    alignment.GetTag(NM, tmpu8);
-                                    mismatches = static_cast<unsigned int>(tmpu8);
-                                    break;
-                                case Constants::BAM_TAG_TYPE_INT16:
-                                    int16_t tmpi16;
-                                    alignment.GetTag(NM, tmpi16);
-                                    mismatches = static_cast<unsigned int>(tmpi16);
-                                    break;
-                                case Constants::BAM_TAG_TYPE_UINT16:
-                                    uint16_t tmpu16;
-                                    alignment.GetTag(NM, tmpu16);
-                                    mismatches = static_cast<unsigned int>(tmpu16);
-                                    break;
-                                case Constants::BAM_TAG_TYPE_INT32:
-                                    int32_t tmpi32;
-                                    alignment.GetTag(NM, tmpi32);
-                                    mismatches = static_cast<unsigned int>(tmpi32);
-                                    break;
-                                case Constants::BAM_TAG_TYPE_UINT32:
-                                    uint32_t tmpu32;
-                                    alignment.GetTag(NM, tmpu32);
-                                    mismatches = static_cast<unsigned int>(tmpu32);
-                                    break;
-                                default:
-                                    string msg = "";
-                                    msg += nmType;
-                                    throw std::invalid_argument("Unrecognized bam format: "+msg);
-                            }
-
-                            if (alignment.IsPaired())
-                            {
-                                if (alignment.IsFirstMate())
+                                if (alignment.FirstFlag())
                                 {
                                     counter.increment("End 1 Mapped Reads");
                                     counter.increment("End 1 Mismatches", mismatches);
-                                    counter.increment("End 1 Bases", alignment.Length);
-                                    if (alignment.IsDuplicate())counter.increment("Duplicate Pairs");
+                                    counter.increment("End 1 Bases", alignmentSize);
+                                    if (alignment.DuplicateFlag())counter.increment("Duplicate Pairs");
                                     else counter.increment("Unique Fragments");
                                 }
                                 else
                                 {
                                     counter.increment("End 2 Mapped Reads");
                                     counter.increment("End 2 Mismatches", mismatches);
-                                    counter.increment("End 2 Bases", alignment.Length);
+                                    counter.increment("End 2 Bases", alignmentSize);
                                 }
 
                             }
                             counter.increment("Mismatched Bases", mismatches);
                         }
-                        counter.increment("Total Bases", alignment.Length);
+                        counter.increment("Total Bases", alignmentSize);
                         //generic filter tags:
                         bool discard = false;
                         for (auto tag = tags.begin(); tag != tags.end(); ++tag)
                         {
-                            if (alignment.HasTag(tag->c_str()))
+                            if (alignment.GetTag(tag->c_str(), trash))
                             {
                                 discard = true;
                                 counter.increment("Filtered by tag: "+*tag);
@@ -368,15 +321,15 @@ int main(int argc, char* argv[])
                         if (discard) continue;
 
                         //now record intron/exon metrics by intersecting filtered reads with the list of features
-                        if (alignment.RefID < 0 || alignment.RefID >= sequences.Size())
+                        if (alignment.ChrID() < 0 || alignment.ChrID() >= nChrs)
                         {
                             //The read had an unrecognized RefID (one not defined in the bam's header)
-                            if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Name<<endl;
+                            if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Qname() <<endl;
                         }
-                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.IsProperPair()) && alignment.MapQuality >= MAPPING_QUALITY_THRESHOLD)
+                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.PairedFlag()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD)
                         {
                             vector<Feature> blocks;
-                            string chrName = (sequences.Begin()+alignment.RefID)->Name;
+                            string chrName = alignment.ChrName(header);
                             chrom chr = chromosomeMap(chrName); //parse out a chromosome shorthand
                             if (chr != current_chrom)
                             {
@@ -389,13 +342,13 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, sequences, blocks, alignment, length, STRAND_SPECIFIC, baseCoverage);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, header, length, STRAND_SPECIFIC, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, header, length, STRAND_SPECIFIC, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
-                            if (doFragmentSize && alignment.IsPaired() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
+                            if (doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
-                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, sequences, blocks, alignment);
+                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, header);
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
