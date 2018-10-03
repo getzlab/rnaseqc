@@ -1,5 +1,5 @@
 //
-//  RefSeq.cpp
+//  Fasta.cpp
 //  IntervalTree
 //
 //  Created by Aaron Graubert on 5/23/18.
@@ -23,12 +23,14 @@ chrom chromosomeMap(std::string chr)
     return chromosomes[chr];
 }
 
+//Given an internal chromosome ID, get the name it corresponds to
 std::string getChromosomeName(chrom idx)
 {
     for (auto entry = chromosomes.begin(); entry != chromosomes.end(); ++entry) if (entry->second == idx) return entry->first;
     throw invalidContigException("Invalid chromosome index");
 }
 
+//Get reverse complement of a sequence
 void complement(std::string &sequence)
 {
     std::string tmp = sequence;
@@ -60,6 +62,7 @@ void complement(std::string &sequence)
     sequence.swap(tmp);
 }
 
+//Count GC content in a sequence
 double gc(std::string &sequence)
 {
     double content = 0.0, size = static_cast<double>(sequence.length());
@@ -68,6 +71,7 @@ double gc(std::string &sequence)
     return content;
 }
 
+// Open a fasta file
 void Fasta::open(std::string &filename)
 {
     this->isOpen = true;
@@ -77,48 +81,45 @@ void Fasta::open(std::string &filename)
         throw fileException("Unable to open reference fasta: " +filename);
     }
     std::string index_path = filename + ".fai";
-    if (boost::filesystem::exists(index_path))
-    {
-        std::vector<std::string> contigs = bioio::read_fasta_index_contig_names(index_path);
-        for (auto contig = contigs.begin(); contig != contigs.end(); ++contig) chromosomeMap(*contig);
-        bioio::FastaIndex tmp_index = bioio::read_fasta_index(index_path);
-        for (auto entry = tmp_index.begin(); entry != tmp_index.end(); ++entry) this->contigIndex[chromosomeMap(entry->first)] = entry->second;
-    }
-    else if (boost::filesystem::exists(boost::filesystem::path(filename).replace_extension(".fai")))
-    {
+    // Check if the index exists at filepath.fai
+    if (boost::filesystem::exists(boost::filesystem::path(filename).replace_extension(".fai")))
         index_path = boost::filesystem::path(filename).replace_extension(".fai").string();
-        std::vector<std::string> contigs = bioio::read_fasta_index_contig_names(index_path);
-        for (auto contig = contigs.begin(); contig != contigs.end(); ++contig) chromosomeMap(*contig);
-        bioio::FastaIndex tmp_index = bioio::read_fasta_index(index_path);
-        for (auto entry = tmp_index.begin(); entry != tmp_index.end(); ++entry) this->contigIndex[chromosomeMap(entry->first)] = entry->second;
-    }
-    else throw fileException("Unable to locate fasta index: " + filename);
+    // otherwise fail if the index doesn't exist at filepath.fasta.fai
+    else if (!boost::filesystem::exists(index_path)) throw fileException("Unable to locate fasta index: " + filename);
+    // Import chromosome names from index
+    std::vector<std::string> contigs = bioio::read_fasta_index_contig_names(index_path);
+    for (auto contig = contigs.begin(); contig != contigs.end(); ++contig) chromosomeMap(*contig);
+    // Then allow bioio to parse the index
+    bioio::FastaIndex tmp_index = bioio::read_fasta_index(index_path);
+    for (auto entry = tmp_index.begin(); entry != tmp_index.end(); ++entry) this->contigIndex[chromosomeMap(entry->first)] = entry->second;
     if (!this->contigIndex.size()) throw fileException("No contigs found in fasta index: " + index_path);
-//    this->lru.reserve(CACHE_SIZE);
 }
 
+//Get a forward strand sequence {contig}:{start}-{end}
 std::string Fasta::getSeq(chrom contig, coord start, coord end)
 {
     return this->getSeq(contig, start, end, false);
 }
 
+//Get a sequence {contig}:{start}-{end}, and optionally return its reverse complement
 std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
 {
-    //NOTE: Coordinates must be 0-based, end-exclusive
+    //NOTE: Coordinates must be 0-based, end-exclusive.
     if (!this->isOpen) return "";
     std::string output;
+    // Determine the coordinate for the start of the page which contains the start of this sequence
     coord pageOffset = (floor(start / PAGE_SIZE) * PAGE_SIZE);
-    for (coord i = pageOffset; i < end; i+=PAGE_SIZE)
+    for (coord i = pageOffset; i < end; i+=PAGE_SIZE) //Iterate over pages until we have all the pages required
     {
-        this->calls++;
-        indexType page = this->pageForCoord(contig, i);
-        if (!this->pageCache.count(page))
+        this->calls++; // Increment number of pages that were requested
+        indexType page = this->pageForCoord(contig, i); // Get page index corresponding to this coordinate
+        if (!this->pageCache.count(page)) // If that page isn't cached
         {
-            this->misses++;
-            this->pageCache[page] = this->readSeq(contig, i);
+            this->misses++; // Increment number of pages that were actually read
+            this->pageCache[page] = this->readSeq(contig, i); // Read page from fasta
         }
-        this->updateLRU(page);
-        output += this->pageCache[page];
+        this->updateLRU(page); // Update the cache state
+        output += this->pageCache[page]; // Append this page to the output
     }
     if (start-pageOffset >= output.size())
     {
@@ -128,11 +129,13 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
         std::cerr << "This contig page indices:\t[" << this->pageForContig(contig) << ", " << this->pageForContig(contig+1) << ")" << std::endl;
         std::cerr << "Sequence page indices:\t[" << this->pageForCoord(contig, start) << ", " << this->pageForCoord(contig, end) << "]" << std::endl;
     }
+    // Extract desired sequence from the output (which is complete pages)
     output = output.substr(start-pageOffset, end-start);
     if (revComp) complement(output);
     return output;
 }
 
+// Bump page to top of the LRU, dropping older pages as necessary
 void Fasta::updateLRU(indexType page)
 {
     this->lru.remove(page);
@@ -144,9 +147,10 @@ void Fasta::updateLRU(indexType page)
     this->lru.push_back(page);
 }
 
+// Get page idx for position 0 of a contig
 indexType Fasta::pageForContig(chrom contig)
 {
-    static std::unordered_map<chrom, indexType> pageIndex;
+    static std::unordered_map<chrom, indexType> pageIndex; // Function caches the lookup table to save time
     if (!pageIndex.size()) pageIndex[0] = 0;
     if (pageIndex.count(contig)) return pageIndex[contig];
     if (!this->contigIndex.count(contig)) throw invalidContigException("No such contig: " + getChromosomeName(contig));
@@ -161,6 +165,7 @@ indexType Fasta::pageForContig(chrom contig)
     return idx;
 }
 
+// Read a full page starting at this position
 std::string Fasta::readSeq(chrom contig, coord pos)
 {
     if (!this->contigIndex.count(contig)) throw invalidContigException("No such contig: " + getChromosomeName(contig));

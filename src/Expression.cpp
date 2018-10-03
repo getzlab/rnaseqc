@@ -81,12 +81,14 @@ void trimFeatures(BamAlignment &alignment, list<Feature> &features, BaseCoverage
     }
 }
 
+// After we switch chromosomes, just drop all the remaining features from the previous chromosome
 void dropFeatures(std::list<Feature> &features, BaseCoverage &coverage)
 {
     for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == "gene") coverage.compute(*feat);
     features.clear();
 }
 
+// Get the list of features that this aligned segment intersects
 list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 {
     list<Feature> *output = new list<Feature>();
@@ -100,6 +102,8 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
+// Legacy version of standard alignment metrics
+// This code is really inefficient, but it's a faithful replication of the original code
 void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
@@ -142,7 +146,6 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
             else if (result->strand == -1) transcriptMinus = true;
             for (auto block = blocks.begin(); block != blocks.end(); ++block)
             {
-                //if (block->start == block->end) continue;
                 if (stranded)
                 {
                     bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
@@ -153,13 +156,12 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     }
                 }
 
-//                bool legacyMatchIntron = false;
                 bool firstexon = false;
                 legacyFoundExon = false;
-//                if (intersectInterval(*result, *block))
+                
+                // No condition. just a scope to keep things clean
                 {
                     legacyFoundGene = true;
-//                    bias.checkBias(*result, *block); //bias checking now handled in baseCoverage
                     for (auto ex = results->begin(); ex != results->end() && !firstexon ; ++ex)
                     {
                         if (ex->type == "exon" && ex->gene_id == result->gene_id && intersectInterval(*ex, *block)  )
@@ -185,6 +187,8 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                         else legacyNotSplit = true;
                     }
                 }
+                
+                
             }
             //record gene to collect, probs want to keep a list of single and partial collections
             if (legacyFoundExon)
@@ -209,10 +213,9 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                 doExonMetrics = true;
             }
         }
-        //if (split && !legacyNotSplit && !legacyFoundGene) legacyNotSplit = true;
 
     }
-    delete results;
+    delete results; //clean up dynamic allocation
     if (dbg) cout << endl;
 
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
@@ -255,7 +258,8 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
     baseCoverage.reset();
 }
 
-
+// New version of exon metrics
+// More efficient and less buggy
 void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
@@ -297,7 +301,6 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
                     continue;
                 }
             }
-            //if (stranded && result->strand != (alignment.IsReverseStrand() ^ (stranded == 1 ? alignment.IsFirstMate() : alignment.IsSecondMate()) ? -1 : 1)) continue;
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
             //else...what, exactly?
@@ -323,8 +326,6 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons
 
-                //bias checking now handled in baseCoverage
-//                bias.checkBias(*result, *block);
             }
             if (result->ribosomal) ribosomal = true;
         }
@@ -398,6 +399,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
     baseCoverage.reset();
 }
 
+// Estimate fragment size in a read pair
 unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
 {
     string chrName = (sequences.Begin()+alignment.RefID)->Name;
@@ -448,69 +450,3 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Fe
     //return the remaining count of fragment samples to take
     return doFragmentSize;
 }
-
-
-std::string buildSequence(BamTools::BamAlignment &alignment)
-{
-    if (alignment.HasTag("MD"))
-    {
-        std::string readSeq = alignment.AlignedBases, mdSeq;
-        alignment.GetTag("MD", mdSeq);
-        //Let's assume the CIGAR string matches the MD tag (for now)
-        
-        
-    }
-    return "";
-}
-
-/*unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, chrom chr)
-{
-    unsigned int alignedSize = 0;
-    auto beg = alignment.CigarData.begin();
-    auto end = alignment.CigarData.end();
-    coord start = alignment.Position + 1;
-    Feature block;
-    bool filled = false;
-    while (beg != end)
-    {
-        CigarOp current = *(beg++);
-        switch(current.Type)
-        {
-            case 'M':
-            case '=':
-            case 'X':
-                //M, =, and X blocks are aligned, so push back this block
-                if (!filled) block.start = start;
-                block.chromosome = chr;
-                block.end = start + current.Length; //1-based, closed
-                //blocks.push_back(block);
-                alignedSize += current.Length;
-                filled = true;
-                start += current.Length;
-                break;
-            case 'N':
-                //N blocks push back the previous M block
-                //The goal of splitting this up is that MNM strings produce 2 blocks, but MDM would produce one long block
-                if (filled)
-                {
-                    blocks.push_back(block);
-                    filled = false;
-                }
-            case 'D':
-                //D blocks only advance the start position of the next block
-                start += current.Length;
-            case 'H':
-            case 'P':
-            case 'S':
-            case 'I':
-                break;
-            default:
-                throw std::invalid_argument("Unrecognized Cigar Op");
-        }
-    }
-    if (filled)
-    {
-        blocks.push_back(block);
-    }
-    return alignedSize;
-}*/

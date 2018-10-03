@@ -1,6 +1,6 @@
- // IntervalTree.cpp : Defines the entry point for the console application.
+ // RNASeQC.cpp : Defines the entry point for the console application.
 
-#define NO_FASTA
+#define NO_FASTA // Comment this line then compile to enable fasta features
 
 //Include headers
 #include "BED.h"
@@ -101,9 +101,9 @@ int main(int argc, char* argv[])
         const unsigned int COVERAGE_MASK = coverageMaskSize ? coverageMaskSize.Get() : 500u;
         const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
-        const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 0; //150
+        const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 0;
         const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
-        const unsigned long BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 200u; //600
+        const unsigned long BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 200u;
         const vector<string> tags = filterTags ? filterTags.Get() : vector<string>();
         const string chimeric_tag = chimericTag ? chimericTag.Get() : "mC";
         const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
                 {
                     features[line.chromosome].push_back(line);                    
 #ifndef NO_FASTA
+                    //If fasta features are enabled, read the gene sequence from the fasta 
                     if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand == -1);
 #endif
                     
@@ -457,14 +458,12 @@ int main(int argc, char* argv[])
             geneRPKM << fixed;
             const double scaleRPKM = static_cast<double>(counter.get("Exonic Reads")) / 1000000.0;
             double scaleTPM = 0.0;
-//            vector<string> genesByRPKM;
-            //iterate over every gene with coverage reported.  If it had at leat 5 reads, also count it as 'detected'
-            //for(auto gene = geneCoverage.begin(); gene != geneCoverage.end(); ++gene)
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
                 
 #ifndef NO_FASTA
+                //If fasta features were enabled, get the gc content coverage bias from this gene
                 if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
 #endif
                 
@@ -479,6 +478,7 @@ int main(int argc, char* argv[])
                     tpms[*gene] = TPM;
                     scaleTPM += TPM;
                 }
+                // Gene 'detection' depends only on unique reads, discounting duplicates
                 if (uniqueGeneCounts[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
                 double geneBias = bias.getBias(*gene);
                 if (geneBias != -1.0) ratios.push_back(geneBias);
@@ -500,9 +500,6 @@ int main(int argc, char* argv[])
         {
             vector<double> ratioDeviations;
             sort(ratios.begin(), ratios.end());
-//            auto median = ratios.begin();
-//            for (unsigned long midpoint = ratios.size() / 2; midpoint > 0; --midpoint) ++median;
-//            ratioMedian = *median;
             ratioMedian = computeMedian(ratios.size(), ratios.begin());
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
@@ -511,7 +508,6 @@ int main(int argc, char* argv[])
             }
             sort(ratioDeviations.begin(), ratioDeviations.end());
             ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
-//            ratioMedDev = ratioDeviations[ratioDeviations.size() /2] * MAD_FACTOR;
             for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
             {
                 ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
@@ -547,8 +543,6 @@ int main(int argc, char* argv[])
             exonReport << exonCounts.size() << "\t1" << endl;
             exonReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             exonReport << fixed;
-            //iterate over every exon with coverage reported
-            //for(auto exon = exonCoverage.begin(); exon != exonCoverage.end(); ++exon)
             for(auto exon = exonList.begin(); exon != exonList.end(); ++exon)
             {
                 exonReport << *exon << "\t" << geneNames[*exon] << "\t" << exonCounts[*exon] << endl;
@@ -587,7 +581,6 @@ int main(int argc, char* argv[])
         output << "Estimated Library Complexity\t" << minReads << endl;
         output << "Mean 3' bias\t" << ratioAvg << endl;
         output << "Median 3' bias\t" << ratioMedian << endl;
-        //output << "Median 3' coverage\t" << _medianRatio2 << endl;
         output << "3' bias Std\t" << ratioStd << endl;
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
@@ -600,14 +593,9 @@ int main(int argc, char* argv[])
         if (fragmentSizes.size())
         {
             //If any fragment size samples were taken, also generate a fragment size report
-//            fragmentSizes.sort();
-
-
-
             double fragmentAvg = 0.0, fragmentStd = 0.0, fragmentMedDev = 0.0;
-            //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
-            //using the old implimentation of list which has to walk the entire sequence to determine size
-            
+            // fragments stores {size -> count}
+            // But we need to unpack that into a regular list to get metrics
             list<long long> dumb_fragment_expansion_list;
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
                 for(unsigned long i = 0u; i < fragment->second; ++i) dumb_fragment_expansion_list.push_back(fragment->first);
@@ -615,9 +603,6 @@ int main(int argc, char* argv[])
             double size = static_cast<double>(dumb_fragment_expansion_list.size());
             vector<double> deviations; //list of recorded deviations from the median
             fragmentMed = computeMedian(size, dumb_fragment_expansion_list.begin());
-//            auto median = fragmentSizes.begin(); //reference the median value.  We have to walk the list to get here
-//            for (int midpoint = size / 2; midpoint > 0; --midpoint) ++median;
-//            fragmentMed = (double) *median; //save the median value
             ofstream fragmentList(outputDir.Get()+"/"+SAMPLENAME+".fragmentSizes.txt"); //raw list of each fragment size recorded
             fragmentList << "Fragment Size\tCount" << endl;
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
@@ -630,7 +615,6 @@ int main(int argc, char* argv[])
             fragmentList.close();
             sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
             //now compute the median absolute deviation, an estimator for standard deviation
-//            fragmentMedDev = (double) deviations[deviations.size()/2] * MAD_FACTOR;
             fragmentMedDev = computeMedian(deviations.size(), deviations.begin()) * MAD_FACTOR;
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
@@ -658,6 +642,9 @@ int main(int argc, char* argv[])
                 else ++beg;
             }
             cvs.sort();
+            //You may need to disable _GLIBCXX_USE_CXX11_ABI in order to compile this program, but that ends up
+            //using the old implimentation of list which has to walk the entire sequence to determine size
+            //so we just do it once and store it in a variable
             const unsigned long nCVS = cvs.size();
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
@@ -671,9 +658,6 @@ int main(int argc, char* argv[])
             sort(exonDeviations.begin(), exonDeviations.end());
             output << "Median Exon CV\t" << exonMedian << endl;
             output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
-            
-            //                for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) tmp_exons << (*cv) << endl;
-            //                tmp_exons.close();
         }
 
         output.close();
@@ -770,7 +754,7 @@ int main(int argc, char* argv[])
 template <typename T>
 double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
 {
-    if (size <= 0)
+    if (size <= 0) // Couldn't decide if it would make sense to just report a median of 0. This seemed safer
         throw std::range_error("Cannot compute median of an empty list");
     for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
     if (size % 1)

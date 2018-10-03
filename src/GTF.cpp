@@ -16,8 +16,7 @@ using std::string;
 using std::map;
 
 const string EXON_NAME = "exon";
-//const int U_SHORT_MAX = 65535u;
-const boost::regex ribosomalPattern("(Mt_)?rRNA");
+const boost::regex ribosomalPattern("(Mt_)?rRNA"); //For recognizing features which are rRNAs
 map<string, string> geneNames, geneSeqs;
 map<string, coord> geneLengths, geneCodingLengths, exonLengths;
 std::map<std::string, std::vector<std::string>> exonsForGene;
@@ -71,6 +70,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
             parseAttributes(buffer, attributes);
             if (out.type == "gene" && attributes.find("gene_id") != attributes.end())
             {
+                //Parse gene attributes
                 out.feature_id = attributes["gene_id"];
                 if ( out.end < out.start)  std::cout << "crap" <<std::endl;
                 geneLengths[out.feature_id] = out.end - out.start + 1;
@@ -80,6 +80,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
             if (out.type == "exon")
             {
+                //Parse exon attributes
                 if (attributes.find("exon_id") != attributes.end())
                 {
                     out.feature_id = attributes["exon_id"];

@@ -1,5 +1,5 @@
 //
-//  RefSeq.hpp
+//  Fasta.h
 //  IntervalTree
 //
 //  Created by Aaron Graubert on 5/23/18.
@@ -32,13 +32,16 @@ typedef long long coord;
 typedef unsigned long indexType;
 typedef unsigned short chrom;
 
-static const double PAGE_SIZE = 1e6;
-static const unsigned short CACHE_SIZE = 10u;
+static const double PAGE_SIZE = 1e6; // Size of each cache page (in bases)
+static const unsigned short CACHE_SIZE = 10u; // How many pages are stored in the cache
 
 extern std::map<std::string, chrom> chromosomes;
 chrom chromosomeMap(std::string);
 
 class Fasta {
+    // Represents an entire fasta file
+    // Uses the bioio library for quickly retrieving sequences
+    // Uses an internal LRU cache to minimize required reading
     bool isOpen;
     std::ifstream reader;
     std::unordered_map<indexType, std::string> pageCache;

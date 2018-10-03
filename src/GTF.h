@@ -24,6 +24,7 @@ struct gtfException : public std::exception {
 };
 
 struct Feature {
+    //Represents arbitrary genome features
     coord start, end;
     chrom chromosome;
     signed char strand;
@@ -31,6 +32,7 @@ struct Feature {
     bool ribosomal;
 };
 
+//For comparing features
 bool operator==(const Feature &a, const Feature &b);
 bool compIntervalStart(const Feature&, const Feature&);
 bool compIntervalEnd(const Feature&, const Feature&);

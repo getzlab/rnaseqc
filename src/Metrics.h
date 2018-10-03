@@ -20,6 +20,7 @@
 #include <unordered_set>
 
 class Metrics {
+    // For storing arbitrary counters
     std::map<std::string, unsigned long> counter;
 public:
     Metrics() : counter(){};
@@ -31,6 +32,7 @@ public:
 };
 
 class Collector {
+    // For temporarily holding coverage on a read before we're ready to commit that coverage to a gene
     std::map<std::string, std::vector<std::pair<std::string, double> > > data;
     std::map<std::string, double> *target;
     bool dirty;
@@ -49,12 +51,14 @@ public:
 };
 
 struct CoverageEntry {
+    // Represents a single segment of aligned read bases for base-coverage computation
     coord offset;
     unsigned int length;
     std::string feature_id;
 };
 
 class BiasCounter {
+    // For counting 3'/5' bias coverage
     const int offset;
     const int windowSize;
     const unsigned long geneLength;
@@ -75,6 +79,7 @@ public:
 };
 
 class BaseCoverage {
+    // For computing per-base coverage of genes
     std::map<std::string, std::vector<CoverageEntry> > cache; //GID -> Entry<EID> tmp cache as exon hits are recorded
     std::map<std::string, std::vector<unsigned long> > coverage; //EID -> Coverage vector for exons still in window
     std::ofstream writer;

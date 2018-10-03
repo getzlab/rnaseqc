@@ -54,18 +54,17 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
         "End 2 Mismatches",
         "End 1 Sense",
         "End 2 Sense",
-        "Exonic Reads", //reads
+        "Exonic Reads",
         "Failed Vendor QC",
-        // "Filtered by tag: ", //FIXME
         "Intergenic Reads",
         "Intragenic Reads",
-        "Intron/Exon Disqualified Reads", //capitalize
+        "Intron/Exon Disqualified Reads"
         "Intronic Reads",
         "Low quality reads",
         "Mapped Duplicate Reads",
         "Mapped Reads",
         "Mapped Unique Reads",
-        "Mismatched Bases", //bases
+        "Mismatched Bases",
         "Reads excluded from exon counts",
         "Reads used for Intron/Exon counts",
         "rRNA Reads",
@@ -85,6 +84,7 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
     auto end = counter.counter.end();
     while (beg != end)
     {
+        // Manually dump the counters for reads filtered by user supplied tags
         if( beg->first.length() > 17 && beg->first.substr(0,17) == "Filtered by tag: ")
         {
             stream << beg->first << "\t" << beg->second << std::endl;
@@ -94,6 +94,7 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
     return stream;
 }
 
+// Add coverage to an exon
 void Collector::add(const std::string &gene_id, const std::string &exon_id, const double coverage)
 {
     if (coverage > 0)
@@ -103,6 +104,7 @@ void Collector::add(const std::string &gene_id, const std::string &exon_id, cons
     }
 }
 
+//Commit all the exon coverage from this gene to the global exon coverage counter
 void Collector::collect(const std::string &gene_id)
 {
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
@@ -112,6 +114,7 @@ void Collector::collect(const std::string &gene_id)
     }
 }
 
+//Legacy version of the above function. Ignores the actual coverage and reports a full read count
 void Collector::collectSingle(const std::string &gene_id)
 {
     for (auto entry = this->data[gene_id].begin(); entry != this->data[gene_id].end(); ++entry)
@@ -120,22 +123,26 @@ void Collector::collectSingle(const std::string &gene_id)
     }
 }
 
+//Check if there is any coverage on any exon of this gene
 bool Collector::queryGene(const std::string &gene_id)
 {
     return static_cast<bool>(this->data[gene_id].size());
 }
 
+// Check if any coverage has been reported whatsoever
 bool Collector::isDirty()
 {
     return this->dirty;
 }
 
+//Get the sum of all coverage that was committed for this read (should always be <= 1)
 double Collector::sum()
 {
     return this->total;
 }
 
-void BaseCoverage::add(const Feature &exon, const coord start, const coord end) //Adds to the cache
+//Adds coverage from one aligned segment of a read to this exon. Coverage feeds into cache until gene leaves search window
+void BaseCoverage::add(const Feature &exon, const coord start, const coord end)
 {
     CoverageEntry tmp;
     tmp.offset = start - exon.start;
@@ -144,7 +151,8 @@ void BaseCoverage::add(const Feature &exon, const coord start, const coord end) 
     this->cache[exon.gene_id].push_back(tmp);
 }
 
-void BaseCoverage::commit(const std::string &gene_id) //moves one gene out of the cache to permanent storage
+//Commit the cached coverage to this gene after deciding to count the read towards the gene
+void BaseCoverage::commit(const std::string &gene_id)
 {
     if (this->seen.count(gene_id))
     {
@@ -156,6 +164,9 @@ void BaseCoverage::commit(const std::string &gene_id) //moves one gene out of th
     while (beg != end)
     {
         if (this->coverage.find(beg->feature_id) == this->coverage.end()) this->coverage[beg->feature_id] = std::vector<unsigned long>(exonLengths[beg->feature_id], 0ul);
+        //Add each coverage entry to the per-base coverage vector for the exon
+        //At this stage exons each have their own vectors.
+        //During the compute() step, exons get stiched together
         add_range(this->coverage[beg->feature_id], beg->offset, beg->length);
         ++beg;
     }
@@ -166,13 +177,8 @@ void BaseCoverage::reset() //Empties the cache
     this->cache.clear();
 }
 
-//void BaseCoverage::clearCoverage()
-//{
-//    std::cerr << "Force dump of " << this->coverage.size() << " genes (" << this->coverage.begin()->first << ")" <<std::endl;
-//    this->coverage.clear();
-//}
-
-void BaseCoverage::compute(const Feature &gene) //computes per-base coverage of the gene
+//computes per-base coverage of the gene
+void BaseCoverage::compute(const Feature &gene)
 {
     //Coverage is stored in EID -> coverage vector
     //First iterate over all exons of the gene and ensure they're filled
@@ -196,6 +202,7 @@ void BaseCoverage::close()
     this->writer.close();
 }
 
+//Compute 3'/5' bias based on genes' per-base coverage
 void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &coverage)
 {
     if (coverage.size() < this->geneLength) return; //Must meet minimum length req
@@ -208,6 +215,7 @@ void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &c
     this->fiveEnd[gene.feature_id] += gene.strand == 1 ? lcov : rcov;
 }
 
+//Extract the bias for a gene
 double BiasCounter::getBias(const std::string &geneID)
 {
     double cov5 = this->fiveEnd[geneID];
@@ -219,17 +227,10 @@ double BiasCounter::getBias(const std::string &geneID)
 
 void add_range(std::vector<unsigned long> &coverage, coord offset, unsigned int length)
 {
-    //    if (offset + length >= coverage.size()) coverage.resize(offset + length, 0ul);
-    //    for (coord i = offset; offset < offset + length; ++i) coverage[i] = coverage[i] + 1;
-    //    for (coord i = 0; i < offset + length; ++i)
-    //    {
-    //        unsigned long x = i >= offset ? 1ul : 0ul;
-    //        if (i >= coverage.size()) coverage.push_back(x);
-    //        else coverage[i] = coverage[i] + x;
-    //    }
     for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
 }
 
+//Compute exon coverage metrics, then stich exons together and compute gene coverage metrics
 std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const unsigned int mask_size, const std::map<std::string, std::vector<unsigned long> > &coverage, std::list<double> &totalExonCV, BiasCounter &bias)
 {
     std::vector<std::vector<bool> > coverageMask;
@@ -250,55 +251,35 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
         const std::vector<unsigned long> &exon_coverage = coverage.at(exonsForGene[gene.feature_id][i]); //get the coverage vector for the current exon
         double exonMean = 0.0, exonStd = 0.0, exonSize = 0.0;
         std::vector<bool> mask = coverageMask[i];
-
-//        assert(mask.size() == exon_coverage.size());
-//        assert(exon_coverage.size() == exonLengths[exonsForGene[gene.feature_id][i]]);
-
+        
         for (unsigned int j = 0; j < mask.size(); ++j) if (mask[j]) exonSize += 1.0; //count the remaining unmasked length of the exon
         if (exonSize > 0)
         {
-//            std::list<unsigned int> effective_coverage;
             auto maskIter = mask.begin();
             for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
-                if (*(maskIter++))
-                {
-                    exonMean += static_cast<double>(*start) / exonSize;
-//                    effective_coverage.push_back(*start);
-                }
+                if (*(maskIter++)) exonMean += static_cast<double>(*start) / exonSize;
             maskIter = mask.begin();
             for (auto start = exon_coverage.begin(); start != exon_coverage.end(); ++start)
                 if (*(maskIter++)) exonStd += pow(static_cast<double>(*start) - exonMean, 2.0) / exonSize;
-            exonStd = pow(exonStd, 0.5);// / exonMean; //technically it's a CV now
-//            effective_coverage.sort();
-            //            assert(effective_coverage.size() == exonSize);
+            exonStd = pow(exonStd, 0.5);
             exonStd /= exonMean; //now it's a CV
-            if (!(std::isnan(exonStd) || std::isinf(exonStd)))
-            {
-                totalExonCV.push_back(exonStd);
-                //            exonCV.push_back(log2(exonStd));
-            }
-//            biasCoverage.reserve(biasCoverage.size() + exon_coverage.size());
-//            biasCoverage.insert(biasCoverage.end(), exon_coverage.begin(), exon_coverage.end());
+            if (!(std::isnan(exonStd) || std::isinf(exonStd))) totalExonCV.push_back(exonStd);
         }
+        // Reserve and append the exon vector to the growing gene vector
         geneCoverage.reserve(geneCoverage.size() + exon_coverage.size());
         geneCoverage.insert(geneCoverage.end(), exon_coverage.begin(), exon_coverage.end());
     }
-//    assert(geneCoverage.size() == geneCodingLengths[gene.feature_id]);
-    // if (geneCoverage.size() != geneCodingLengths[gene.feature_id])
-    //     std::cerr << "Coding span mismatch " << gene.feature_id << " " << geneCoverage.size() << " " << geneCodingLengths[gene.feature_id] << std::endl;
-
-    if (geneCounts[gene.feature_id] > bias.getThreshold()) bias.computeBias(gene, geneCoverage);
+    //at this point the gene coverage vector represents an UNMASKED, but complete transcript
+    if (geneCounts[gene.feature_id] > bias.getThreshold()) bias.computeBias(gene, geneCoverage); //no masking in bias
 
     double avg = 0.0, std = 0.0;
-    //    auto median = coverage.begin();
+    // apply the mask to the full gene vector
     if (mask_size)
     {
-//        auto tmp_size = coverage.size();
         //to account for the mask, erase bases from the vector
         //If the mask is larger than the gene, just erase all of it
         //Otherwise, erase from (end-mask) -> end
         geneCoverage.erase((mask_size > geneCoverage.size() ? geneCoverage.begin() : geneCoverage.end() - mask_size), geneCoverage.end());
-//        tmp_size = coverage.size();
         // If there is still coverage area, erase from the front to either the end (if the mask is larger than remaining coverage) or to (front + mask)
         if (geneCoverage.size()) geneCoverage.erase(geneCoverage.begin(), (mask_size > geneCoverage.size() ? geneCoverage.end() : geneCoverage.begin() + mask_size));
     }
