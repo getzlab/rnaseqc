@@ -104,9 +104,9 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 
 // Legacy version of standard alignment metrics
 // This code is really inefficient, but it's a faithful replication of the original code
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     const bool dbg = false;
     if (dbg) cout << "~" << chrName;
@@ -260,9 +260,9 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 
 // New version of exon metrics
 // More efficient and less buggy
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
@@ -399,9 +399,9 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
 }
 
 // Estimate fragment size in a read pair
-unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header)
+unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
 {
-    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
     bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
     string exonName = ""; // the name of the intersected exon from the bed

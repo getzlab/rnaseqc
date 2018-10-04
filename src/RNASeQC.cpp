@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
             Alignment alignment; //current bam alignment
             SeqLib::BamHeader header = bam.getHeader();
             time_t report_time; //used to ensure that stdout isn't spammed if the program runs super fast
-            auto sequences = header.GetHeaderSequenceVector();
+            SeqLib::HeaderSequenceVector sequences = header.GetHeaderSequenceVector();
             const unsigned int nChrs = sequences.size();
             //Check the sequence dictionary for contig overlap with gtf
             if (VERBOSITY > 1) cout<<"Checking bam header..."<<endl;
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
                         //check length against max read length
                         unsigned int alignmentSize = alignment.PositionEnd() - alignment.Position();
                         if (LegacyMode.Get() && alignmentSize > LEGACY_MAX_READ_LENGTH) continue;
-                        if (!readLength) current_chrom = chromosomeMap(header.GetHeaderSequenceVector()[alignment.ChrID()].Name);
+                        if (!readLength) current_chrom = chromosomeMap(sequences[alignment.ChrID()].Name);
                         if (alignmentSize > readLength) readLength = alignment.Length();
                         string trash;
                         if (!LegacyMode.Get() && alignment.GetZTag(chimeric_tag, trash))
@@ -329,7 +329,7 @@ int main(int argc, char* argv[])
                         else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD)
                         {
                             vector<Feature> blocks;
-                            string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
+                            string chrName = sequences[alignment.ChrID()].Name;
                             chrom chr = chromosomeMap(chrName); //parse out a chromosome shorthand
                             if (chr != current_chrom)
                             {
@@ -342,13 +342,13 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, header, length, STRAND_SPECIFIC, baseCoverage);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, header, length, STRAND_SPECIFIC, baseCoverage);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
-                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, header);
+                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences);
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
