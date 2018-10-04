@@ -7,14 +7,15 @@ sudo: required
 addons:
   apt:
     packages:
-      - bzip2
       - cmake
       - python3
       - python3-pip
       - libboost-filesystem-dev
       - libboost-regex-dev
       - libboost-system-dev
-      - lzma
+      - libbz2-dev
+      - liblzma-dev
+      - libpthread-stubs0-dev
       - wget
       - zlib1g-dev
 install:
