@@ -434,6 +434,7 @@ int main(int argc, char* argv[])
                 // Gene 'detection' depends only on unique reads, discounting duplicates
                 if (uniqueGeneCounts[*gene] >= DETECTION_THRESHOLD) ++genesDetected;
                 double geneBias = bias.getBias(*gene);
+                assert(geneBias == -1.0 || (geneBias >= 0.0 && geneBias <= 1.0));
                 if (geneBias != -1.0) ratios.push_back(geneBias);
             }
             geneReport.close();
@@ -448,7 +449,7 @@ int main(int argc, char* argv[])
         }
 
         //3'/5' coverage ratio calculations
-        double ratioAvg = 0.0, ratioMedDev, ratioMedian, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
+        double ratioAvg = 0.0, ratioMedDev = 0.0, ratioMedian = 0.0, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
         if (ratios.size())
         {
             vector<double> ratioDeviations;
