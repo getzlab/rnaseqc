@@ -5,7 +5,7 @@ LIBRARY_PATHS=
 #Set to 0 if you encounter linker errors regarding strings from the bamtools library
 ABI=1
 #Provide full paths here to .a archives for libraries which should be statically linked
-STATIC_LIBS=SeqLib/bin/libseqlib.a
+STATIC_LIBS=
 #List of remaining libraries that will be dynamically linked
 LIBS= -lboost_filesystem -lboost_regex -lboost_system -lz -lhts
 
