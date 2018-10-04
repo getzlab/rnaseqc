@@ -1,26 +1,29 @@
 #Set inclusion paths here (if boost, bamtools, or args are installed outside your path)
-INCLUDE_DIRS=-I/usr/local/include/bamtools
+INCLUDE_DIRS=-ISeqLib -ISeqLib/htslib/
 #Set library paths here (if boost or bamtools are installed outside your path)
 LIBRARY_PATHS=
 #Set to 0 if you encounter linker errors regarding strings from the bamtools library
 ABI=1
 #Provide full paths here to .a archives for libraries which should be statically linked
-STATIC_LIBS=
+STATIC_LIBS=SeqLib/bin/libseqlib.a
 #List of remaining libraries that will be dynamically linked
-LIBS=-lbamtools -lboost_filesystem -lboost_regex -lboost_system -lz
+LIBS= -lboost_filesystem -lboost_regex -lboost_system -lz -lhts
 
 CC=g++
 STDLIB=-std=c++14
 CFLAGS=-Wall $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -O3
-SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp
+SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp BamReader.cpp
 SRCDIR=src
 OBJECTS=$(SOURCES:.cpp=.o)
 
-rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
+rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
+
+SeqLib/SeqLib/libseqlib.a:
+	cd SeqLib && ./configure && make CXXFLAGS=$(STDLIB) && make install
 
 .PHONY: clean
 

@@ -264,10 +264,10 @@ int main(int argc, char* argv[])
                         if (alignment.DuplicateFlag())counter.increment("Mapped Duplicate Reads");
                         else counter.increment("Mapped Unique Reads");
                         //check length against max read length
-                        unsigned int alignmentSize = alignment.Length();
+                        unsigned int alignmentSize = alignment.PositionEnd() - alignment.Position();
                         if (LegacyMode.Get() && alignmentSize > LEGACY_MAX_READ_LENGTH) continue;
-                        if (!readLength) current_chrom = chromosomeMap(alignment.ChrName(header));
-                        if (alignmentSize > readLength) readLength = alignmentSize;
+                        if (!readLength) current_chrom = chromosomeMap(header.GetHeaderSequenceVector()[alignment.ChrID()].Name);
+                        if (alignmentSize > readLength) readLength = alignment.Length();
                         string trash;
                         if (!LegacyMode.Get() && alignment.GetZTag(chimeric_tag, trash))
                         {
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
                                 {
                                     counter.increment("End 1 Mapped Reads");
                                     counter.increment("End 1 Mismatches", mismatches);
-                                    counter.increment("End 1 Bases", alignmentSize);
+                                    counter.increment("End 1 Bases", alignment.Length());
                                     if (alignment.DuplicateFlag())counter.increment("Duplicate Pairs");
                                     else counter.increment("Unique Fragments");
                                 }
@@ -301,13 +301,13 @@ int main(int argc, char* argv[])
                                 {
                                     counter.increment("End 2 Mapped Reads");
                                     counter.increment("End 2 Mismatches", mismatches);
-                                    counter.increment("End 2 Bases", alignmentSize);
+                                    counter.increment("End 2 Bases", alignment.Length());
                                 }
 
                             }
                             counter.increment("Mismatched Bases", mismatches);
                         }
-                        counter.increment("Total Bases", alignmentSize);
+                        counter.increment("Total Bases", alignment.Length());
                         //generic filter tags:
                         bool discard = false;
                         for (auto tag = tags.begin(); tag != tags.end(); ++tag)
@@ -326,10 +326,10 @@ int main(int argc, char* argv[])
                             //The read had an unrecognized RefID (one not defined in the bam's header)
                             if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Qname() <<endl;
                         }
-                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.PairedFlag()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD)
+                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD)
                         {
                             vector<Feature> blocks;
-                            string chrName = alignment.ChrName(header);
+                            string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
                             chrom chr = chromosomeMap(chrName); //parse out a chromosome shorthand
                             if (chr != current_chrom)
                             {

@@ -106,7 +106,7 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 // This code is really inefficient, but it's a faithful replication of the original code
 void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = alignment.ChrName(header);
+    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     const bool dbg = false;
     if (dbg) cout << "~" << chrName;
@@ -262,9 +262,8 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 // More efficient and less buggy
 void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = alignment.ChrName(header);
+    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -402,7 +401,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
 // Estimate fragment size in a read pair
 unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::BamHeader &header)
 {
-    string chrName = alignment.ChrName(header);
+    string chrName = header.GetHeaderSequenceVector()[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
     bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
     string exonName = ""; // the name of the intersected exon from the bed
