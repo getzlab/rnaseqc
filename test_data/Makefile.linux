@@ -5,9 +5,9 @@ LIBRARY_PATHS=
 #Set to 0 if you encounter linker errors regarding strings from the bamtools library
 ABI=1
 #Provide full paths here to .a archives for libraries which should be statically linked
-STATIC_LIBS=SeqLib/bin/libhts.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a /usr/lib/gcc/x86_64-linux-gnu/5.5.0/libstdc++.a /usr/lib/x86_64-linux-gnu/liblzma.a /usr/lib/x86_64-linux-gnu/libbz2.a /usr/lib/x86_64-linux-gnu/libpthread.a
+STATIC_LIBS=SeqLib/bin/libhts.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/lib/x86_64-linux-gnu/libboost_regex.a /usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libz.a /usr/lib/gcc/x86_64-linux-gnu/5.5.0/libstdc++.a /usr/lib/x86_64-linux-gnu/liblzma.a /usr/lib/x86_64-linux-gnu/libbz2.a
 #List of remaining libraries that will be dynamically linked
-LIBS=
+LIBS=-lpthread
 
 CC=g++-5
 STDLIB=-std=c++14
