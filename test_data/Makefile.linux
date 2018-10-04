@@ -1,5 +1,5 @@
 #Set inclusion paths here (if boost, bamtools, or args are installed outside your path)
-INCLUDE_DIRS=-I/usr/local/include/bamtools
+INCLUDE_DIRS=-ISeqLib -ISeqLib/htslib/
 #Set library paths here (if boost or bamtools are installed outside your path)
 LIBRARY_PATHS=
 #Set to 0 if you encounter linker errors regarding strings from the bamtools library
@@ -22,7 +22,7 @@ rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
-SeqLib/SeqLib/libseqlib.a:
+SeqLib/bin/libseqlib.a:
 	cd SeqLib && ./configure && make CXXFLAGS=$(STDLIB) && make install
 
 .PHONY: clean
