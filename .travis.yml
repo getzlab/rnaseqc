@@ -30,6 +30,7 @@ install:
   - sudo python3 -m pip install --user numpy
   - sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
   - make
+  - ls -lh rnaseqc
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
   - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
