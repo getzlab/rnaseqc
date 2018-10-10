@@ -16,7 +16,7 @@ def main(args):
             rsuffix='_',
 
         )
-    assert len(df[np.abs(df[args.columns[0]] - df[args.columns[1]]) > args.tolerance]) == 0
+    assert len(df[np.abs(df[args.columns[0]] - df[args.columns[1]]) > args.tolerance]) == 0, df[np.abs(df[args.columns[0]] - df[args.columns[1]]) > args.tolerance].head()
     if args.mode == 'fragments':
         assert len(set(pd.read_csv(args.input1, sep='\t', index_col=0).index) ^ set(pd.read_csv(args.input2, sep='\t', index_col=0).index)) == 0
 

@@ -58,7 +58,7 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
         "Failed Vendor QC",
         "Intergenic Reads",
         "Intragenic Reads",
-        "Intron/Exon Disqualified Reads"
+        "Intron/Exon Disqualified Reads",
         "Intronic Reads",
         "Low quality reads",
         "Mapped Duplicate Reads",
@@ -79,7 +79,8 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
     stream << "Chimeric Reads\t";
     if (counter.get("Chimeric Reads_tag")) stream << counter.get("Chimeric Reads_tag") << std::endl;
     else stream << counter.get("Chimeric Reads_contig") << std::endl;
-    for (int i = 0; i < keys.size(); ++i) stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;
+    for (int i = 0; i < keys.size(); ++i)
+        stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;
     auto beg = counter.counter.begin();
     auto end = counter.counter.end();
     while (beg != end)

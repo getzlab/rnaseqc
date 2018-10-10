@@ -9,21 +9,20 @@ RUN apt-get update && apt-get install -y software-properties-common && \
         git \
         python3 \
         python3-pip \
-        libboost-all-dev \
+        libboost-filesystem-dev \
+        libboost-regex-dev \
+        libboost-system-dev \
         libbz2-dev \
         libcurl3-dev \
         liblzma-dev \
+        libpthread-stubs0-dev \
         wget \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# bamtools
-RUN cd /opt && \
-    wget --no-check-certificate https://github.com/pezmaster31/bamtools/archive/v2.4.1.tar.gz && \
-    tar -xf v2.4.1.tar.gz && rm v2.4.1.tar.gz && cd bamtools-2.4.1 && mkdir build && cd build && \
-    cmake .. && make && make install && make clean && \
-    cp /usr/local/lib/bamtools/libbamtools.a /usr/local/lib/
-ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib/bamtools
+# SeqLib
+RUN cd /opt && mkdir rnaseqc && cd rnaseqc && git clone --recursive https://github.com/walaj/SeqLib.git && \
+    cd SeqLib && git checkout f19055cefcd8f41f13450080bbcf453f692278b2 && ./configure && make && make install
 
 # python
 RUN cd /opt && git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && \

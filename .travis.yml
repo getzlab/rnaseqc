@@ -7,35 +7,37 @@ sudo: required
 addons:
   apt:
     packages:
-    - cmake
-    - python3
-    - python3-pip
-    - libboost-filesystem-dev
-    - libboost-regex-dev
-    - libboost-system-dev
-    - zlib1g-dev
-    - wget
+      - cmake
+      - python3
+      - python3-pip
+      - libboost-filesystem-dev
+      - libboost-regex-dev
+      - libboost-system-dev
+      - libbz2-dev
+      - liblzma-dev
+      - libpthread-stubs0-dev
+      - wget
+      - zlib1g-dev
 install:
-- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which gcc-5) CXX=$(which g++-5); fi
-- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then wget https://github.com/pezmaster31/bamtools/archive/v2.5.1.tar.gz && tar -xzf v2.5.1.tar.gz &&
-  rm v2.5.1.tar.gz && cd bamtools-2.5.1 && mkdir build && cd build && cmake .. && make && sudo make install && make clean; fi
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew upgrade >/dev/null && brew install bamtools zlib curl samtools > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a); fi
-- if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
-- cd $TRAVIS_BUILD_DIR
-- git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd ..
-- mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
-- "mkdir -p ~/.config/matplotlib && echo 'backend	:	Agg' > ~/.config/matplotlib/matplotlibrc"
-- sudo python3 -m pip install --user --upgrade pip setuptools
-- sudo python3 -m pip install --user numpy
-- sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
-- make
+  - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which gcc-5) CXX=$(which g++-5); fi
+  - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew upgrade >/dev/null && brew install zlib curl samtools bzip2 xz > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a) LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a); fi
+  - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
+  - cd $TRAVIS_BUILD_DIR
+  - git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd ..
+  - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
+  - "mkdir -p ~/.config/matplotlib && echo 'backend	:	Agg' > ~/.config/matplotlib/matplotlibrc"
+  - sudo python3 -m pip install --user --upgrade pip setuptools
+  - sudo python3 -m pip install --user numpy
+  - sudo python3 -m pip install --user pandas matplotlib scipy pyBigWig bx-python agutil nbformat seaborn sklearn
+  - make
+  - ls -lh rnaseqc
 before_script:
-- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
-- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
-- git lfs install
-- git lfs pull
+  - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
+  - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
+  - git lfs install
+  - git lfs pull
 script:
-- sudo bash -c "PYTHONPATH=$(pwd) make test"
+  - sudo bash -c "PYTHONPATH=$(pwd) make test"
 before_deploy:
   - gzip -c rnaseqc > rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME.gz
 env:

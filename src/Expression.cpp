@@ -9,7 +9,6 @@
 #include "Expression.h"
 #include <algorithm>
 
-using namespace BamTools;
 using std::vector;
 using std::list;
 using std::map;
@@ -21,18 +20,18 @@ using std::pair;
 
 
 //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
-unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, chrom chr, bool legacy)
+unsigned int extractBlocks(Alignment &alignment, vector<Feature> &blocks, chrom chr, bool legacy)
 {
     //parse the cigar string and populate the provided vector with each block of the read
-    auto beg = alignment.CigarData.begin();
-    auto end = alignment.CigarData.end();
-    coord start = alignment.Position + 1;
+    const SeqLib::Cigar cigar = alignment.GetCigar();
+    const unsigned long cigarLen = cigar.size();
+    coord start = alignment.Position() + 1;
     unsigned int alignedSize = 0;
-    while (beg != end)
+    for (unsigned int i = 0; i < cigarLen; ++i)
     {
-        CigarOp current = *(beg++);
+        SeqLib::CigarField current = cigar[i];
         Feature block;
-        switch(current.Type)
+        switch(current.Type())
         {
             case 'M':
             case '=':
@@ -40,41 +39,42 @@ unsigned int extractBlocks(BamAlignment &alignment, vector<Feature> &blocks, chr
                 //M, =, and X blocks are aligned, so push back this block
                 block.start = start;
                 block.chromosome = chr;
-                block.end = start + current.Length; //1-based, closed
-                block.strand = alignment.IsReverseStrand() ? -1 : 1;
+                block.end = start + current.Length(); //1-based, closed
+                block.strand = alignment.ReverseFlag() ? -1 : 1;
                 blocks.push_back(block);
-                alignedSize += current.Length;
+                alignedSize += current.Length();
             case 'N':
             case 'D':
                 //M, =, X, N, and D blocks all advance the start position of the next block
-                start += current.Length;
+                start += current.Length();
             case 'H':
             case 'P':
-//            case 'S':
+                //            case 'S':
             case 'I':
                 break;
             case 'S':
-                if (legacy) alignedSize += current.Length;
+                if (legacy) alignedSize += current.Length();
                 break;
             default:
-                throw std::invalid_argument("Unrecognized Cigar Op");
+                std::cerr << "Bad cigar operation: " << current.Type() << " " << alignment.CigarString() <<  endl;
+                throw std::invalid_argument("Unrecognized Cigar Op ");
         }
     }
     return alignedSize;
 }
 
-void trimFeatures(BamAlignment &alignment, list<Feature> &features)
+void trimFeatures(Alignment &alignment, list<Feature> &features)
 {
     //trim intervals upstream of this block
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
-    while (!features.empty() && features.front().end < alignment.Position) features.pop_front();
+    while (!features.empty() && features.front().end < alignment.Position()) features.pop_front();
 }
 
-void trimFeatures(BamAlignment &alignment, list<Feature> &features, BaseCoverage &coverage)
+void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &coverage)
 {
     //trim intervals upstream of this block
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
-    while (!features.empty() && features.front().end < alignment.Position)
+    while (!features.empty() && features.front().end < alignment.Position())
     {
         if (features.front().type == "gene") coverage.compute(features.front()); //Once this gene leaves the search window, compute coverage
         features.pop_front();
@@ -104,12 +104,12 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
 
 // Legacy version of standard alignment metrics
 // This code is really inefficient, but it's a faithful replication of the original code
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = (sequences.Begin()+alignment.RefID)->Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     const bool dbg = false;
-    if (dbg) cout << "~" << alignment.Name;
+    if (dbg) cout << "~" << chrName;
 
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
@@ -125,8 +125,8 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though sams are 1-based
     Feature current; //current block of the alignment (used while iterating)
-    current.start = alignment.Position+1; //0-based + 1 == 1-based
-    current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
+    current.start = alignment.Position()+1; //0-based + 1 == 1-based
+    current.end = alignment.PositionEnd(); //0-based, open == 1-based, closed
 
     list<Feature> *results = intersectBlock(current, features[chr]);
 
@@ -148,7 +148,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
             {
                 if (stranded)
                 {
-                    bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
+                    bool target = alignment.FirstFlag() ^ alignment.FirstFlag();
                     if (stranded == 1) target = !target;
                     if (result->strand != (target ? 1 : -1))
                     {
@@ -182,7 +182,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     {
                         if (legacyFoundExon)
                         {
-                            legacySplitDosage[exon.feature_id] += (float) (block->end - block->start) / (float) alignment.Length;//length;
+                            legacySplitDosage[exon.feature_id] += (float) (block->end - block->start) / (float) alignment.Length();//length;
                         }
                         else legacyNotSplit = true;
                     }
@@ -208,7 +208,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     if (dbg) cout << "\t" << exon.feature_id << " 1.0";
                 }
                 geneCounts[exon.gene_id] += 1.0;
-                if (!alignment.IsDuplicate()) uniqueGeneCounts[exon.gene_id]++;
+                if (!alignment.DuplicateFlag()) uniqueGeneCounts[exon.gene_id]++;
                 baseCoverage.commit(exon.gene_id);
                 doExonMetrics = true;
             }
@@ -242,16 +242,16 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
     }
     if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts
-    if (transcriptMinus ^ transcriptPlus && alignment.IsPaired())
+    if (transcriptMinus ^ transcriptPlus && alignment.PairedFlag())
     {
-        if (alignment.IsFirstMate())
+        if (alignment.FirstFlag())
         {
-            if (alignment.IsReverseStrand()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
+            if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
             else transcriptPlus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
         }
         else
         {
-            if (alignment.IsReverseStrand()) transcriptMinus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
+            if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
             else transcriptPlus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
         }
     }
@@ -260,11 +260,10 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 
 // New version of exon metrics
 // More efficient and less buggy
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
 {
-    string chrName = (sequences.Begin()+alignment.RefID)->Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -278,8 +277,8 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
     counter.increment("Reads used for Intron/Exon counts");
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
-    current.start = alignment.Position+1; //0-based + 1 == 1-based
-    current.end = alignment.GetEndPosition(); //0-based, open == 1-based, closed
+    current.start = alignment.Position()+1; //0-based + 1 == 1-based
+    current.end = alignment.PositionEnd(); //0-based, open == 1-based, closed
 
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCounts); //Collects coverage counts for later (counts may be discarded)
@@ -293,7 +292,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
         {
             if (stranded)
             {
-                bool target = alignment.IsReverseStrand() ^ alignment.IsFirstMate();
+                bool target = alignment.ReverseFlag() ^ alignment.FirstFlag();
                 if (stranded == 1) target = !target;
                 if (result->strand != (target ? 1 : -1))
                 {
@@ -350,7 +349,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
             if (exonCoverageCollector.queryGene(*gene))
             {
                 geneCounts[*gene]++;
-                if (!alignment.IsDuplicate()) uniqueGeneCounts[*gene]++;
+                if (!alignment.DuplicateFlag()) uniqueGeneCounts[*gene]++;
             }
             exonCoverageCollector.collect(*gene); //collect and keep exon coverage for this gene
             baseCoverage.commit(*gene); //keep the per-base coverage recorded on this gene
@@ -383,16 +382,16 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
     if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts
     //TODO: check standing metrics.  Counts are probably off because of null intron/exon calls
-    if (transcriptMinus ^ transcriptPlus && alignment.IsPaired())
+    if (transcriptMinus ^ transcriptPlus && alignment.PairedFlag())
     {
-        if (alignment.IsFirstMate())
+        if (alignment.FirstFlag())
         {
-            if (alignment.IsReverseStrand()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
+            if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
             else transcriptPlus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
         }
         else
         {
-            if (alignment.IsReverseStrand()) transcriptMinus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
+            if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
             else transcriptPlus ? counter.increment("End 2 Sense") : counter.increment("End 2 Antisense");
         }
     }
@@ -400,9 +399,9 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
 }
 
 // Estimate fragment size in a read pair
-unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, SamSequenceDictionary &sequences, vector<Feature> &blocks, BamAlignment &alignment)
+unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
 {
-    string chrName = (sequences.Begin()+alignment.RefID)->Name;
+    string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
     bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
     string exonName = ""; // the name of the intersected exon from the bed
@@ -429,15 +428,15 @@ unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Fe
     if (sameExon && exonName.size()) //if all blocks intersected the same exon, take a fragment size sample
     {
         //both mates in a pair have to intersected the same exon in order for the pair to qualify for the sample
-        auto fragment = fragments.find(alignment.Name);
+        auto fragment = fragments.find(alignment.Qname());
         if (fragment == fragments.end()) //first time we've encountered a read in this pair
         {
-            fragments[alignment.Name] = exonName;
+            fragments[alignment.Qname()] = exonName;
         }
-        else if (exonName == fragments[alignment.Name]) //second time we've encountered a read in this pair
+        else if (exonName == fragments[alignment.Qname()]) //second time we've encountered a read in this pair
         {
             //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
-            fragmentSizes[abs(alignment.InsertSize)] += 1;
+            fragmentSizes[abs(alignment.InsertSize())] += 1;
             fragments.erase(fragment);
             --doFragmentSize;
             if (!doFragmentSize)
