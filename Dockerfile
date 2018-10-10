@@ -21,8 +21,10 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     && rm -rf /var/lib/apt/lists/*
 
 # SeqLib
-RUN cd /opt && mkdir rnaseqc && cd rnaseqc && git clone --recursive https://github.com/walaj/SeqLib.git && \
-    cd SeqLib && git checkout f19055cefcd8f41f13450080bbcf453f692278b2 && ./configure && make && make install
+COPY Makefile /opt/rnaseqc
+RUN cd /opt/rnaseqc && git clone --recursive https://github.com/walaj/SeqLib.git && \
+    cd SeqLib && git checkout f19055cefcd8f41f13450080bbcf453f692278b2 && cd .. && \
+    make SeqLib/bin/libseqlib.a
 
 # python
 RUN cd /opt && git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && \
@@ -34,7 +36,6 @@ ENV PYTHONPATH $PYTHONPATH:/opt/
 #RNASeQC
 COPY src /opt/rnaseqc/src
 COPY python /scripts
-COPY Makefile /opt/rnaseqc
 COPY args.hxx /opt/rnaseqc
 COPY bioio.hpp /opt/rnaseqc
 RUN cd /opt/rnaseqc && make && ln -s /opt/rnaseqc/rnaseqc /usr/local/bin/rnaseqc && make clean

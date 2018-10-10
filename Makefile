@@ -22,7 +22,7 @@ rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a Seq
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
-SeqLib/SeqLib/libseqlib.a SeqLib/bin/libhts.a:
+SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a:
 	cd SeqLib && ./configure && make CXXFLAGS=$(STDLIB) && make install
 
 .PHONY: clean
