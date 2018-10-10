@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     && rm -rf /var/lib/apt/lists/*
 
 # SeqLib
-COPY Makefile /opt/rnaseqc
+COPY Makefile /opt/rnaseqc/Makefile
 RUN cd /opt/rnaseqc && git clone --recursive https://github.com/walaj/SeqLib.git && \
     cd SeqLib && git checkout f19055cefcd8f41f13450080bbcf453f692278b2 && cd .. && \
     make SeqLib/bin/libseqlib.a
