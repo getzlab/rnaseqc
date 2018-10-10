@@ -7,7 +7,7 @@ ABI=1
 #Provide full paths here to .a archives for libraries which should be statically linked
 STATIC_LIBS=
 #List of remaining libraries that will be dynamically linked
-LIBS= -lboost_filesystem -lboost_regex -lboost_system -lz -lhts
+LIBS= -lboost_filesystem -lboost_regex -lboost_system -lz -llzma -lbz2 -lpthread
 
 CC=g++
 STDLIB=-std=c++14
@@ -16,13 +16,13 @@ SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp BamRead
 SRCDIR=src
 OBJECTS=$(SOURCES:.cpp=.o)
 
-rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a
+rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
-SeqLib/SeqLib/libseqlib.a:
+SeqLib/SeqLib/libseqlib.a SeqLib/bin/libhts.a:
 	cd SeqLib && ./configure && make CXXFLAGS=$(STDLIB) && make install
 
 .PHONY: clean
