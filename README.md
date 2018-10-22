@@ -15,6 +15,8 @@ After pulling, please run `git submodule update --init --recursive` or you RNA-S
 
 `rnaseqc [OPTIONS] gtf bam output`
 
+Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed test_data/downsampled.bed --coverage .`
+
 ###### OPTIONS:
       -h, --help                        Display this message and quit
 
