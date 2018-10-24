@@ -1,3 +1,4 @@
+# Author: Aaron Graubert  https://github.com/agraubert
 import nbformat as nbf
 import base64
 import io

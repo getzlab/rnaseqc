@@ -219,17 +219,6 @@ def main(args):
         )
     )
     # ---
-    p_df, pca = met.get_pcs(expression_df)
-    fig = met.plot_pca(p_df, pca)
-    nb.add_code_cell(
-        [
-            'p_df, pca = met.get_pcs(expression_df)',
-            'fig = met.plot_pca(p_df, pca)'
-        ],
-        nbe.encode_figure(fig),
-        metadata={'scrolled': False}
-    )
-    # ---
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.colorbar(ax.scatter(metrics['Duplicate Rate of Mapped'], metrics['Genes Detected'], c=np.log(metrics['Unique Mapping, Vendor QC Passed Reads']))).set_label("log Unique Mapping, Vendor QC Passed Reads")
@@ -245,6 +234,34 @@ def main(args):
         """),
         nbe.encode_figure(fig),
         metadata={'scrolled':False}
+    )
+    # ---
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(metrics['Median Exon CV'], metrics['Genes Detected'])
+    ax.set_xlabel("Median Excon CV")
+    ax.set_ylabel("Genes Detected")
+    nb.add_code_cell(
+        nbe.trim("""
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(metrics['Median Exon CV'], metrics['Genes Detected'])
+        ax.set_xlabel("Median Excon CV")
+        ax.set_ylabel("Genes Detected")
+        """),
+        nbe.encode_figure(fig),
+        metadata={'scrolled':False}
+    )
+    # ---
+    p_df, pca = met.get_pcs(expression_df)
+    fig = met.plot_pca(p_df, pca)
+    nb.add_code_cell(
+        [
+            'p_df, pca = met.get_pcs(expression_df)',
+            'fig = met.plot_pca(p_df, pca)'
+        ],
+        nbe.encode_figure(fig),
+        metadata={'scrolled': False}
     )
     # ===
     nb.add_code_cell('')
