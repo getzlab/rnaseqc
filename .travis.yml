@@ -28,7 +28,7 @@ install:
   - "mkdir -p ~/.config/matplotlib && echo 'backend	:	Agg' > ~/.config/matplotlib/matplotlibrc"
   - sudo python3 -m pip install --user --upgrade pip setuptools
   - sudo python3 -m pip install --user numpy
-  - sudo python3 -m pip install --user pandas pyBigWig bx-python agutilscipy
+  - sudo python3 -m pip install --user pandas pyBigWig bx-python agutil scipy
   - sudo python3 -m pip install --user --force-reinstall --upgrade matplotlib
   - make
 before_script:
