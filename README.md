@@ -7,9 +7,15 @@ The latest build of RNA-SeQC is available as a Docker image from `gcr.io/broad-c
 
 After pulling, please run `git submodule update --init --recursive` or you RNA-SeQC will be missing [SeqLib](https://github.com/walaj/SeqLib)
 
+To run unit tests (`make test`) you'll need to have [Git LFS](https://git-lfs.github.com/) installed.
+If you already have LFS installed when you clone the repository, it will automatically
+pull the test resources. If you install LFS after the fact, just run `git lfs pull` to
+manually download the test data.
+
 ---
 
 **NOTE**: This tool requires that the provided GTF be collapsed in such a way that there are no overlapping transcripts **on the same strand** and that each gene have a single transcript whose id matches the parent gene id. This is **not** a transcript-quantification method. Readcounts and coverage are made towards exons and genes only if *all* aligned segments of a read fully align to exons of a gene, but keep in mind that coverage may be counted towards multiple transcripts (and its exons) if these criteria are met. Beyond this, no attempt will be made to disambiguate which transcript a read belongs to.
+You can collapse an existing GTF using the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/tree/master/gene_model)
 
 ### Command Line Usage:
 
