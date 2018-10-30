@@ -285,6 +285,7 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
         if (geneCoverage.size()) geneCoverage.erase(geneCoverage.begin(), (mask_size > geneCoverage.size() ? geneCoverage.end() : geneCoverage.begin() + mask_size));
     }
     double size = static_cast<double>(geneCoverage.size());
+    writer << gene.feature_id << "\t";
     if (size > 0) //If there's still any coverage after applying the mask
     {
         for (auto beg = geneCoverage.begin(); beg != geneCoverage.end(); ++beg)
@@ -292,8 +293,8 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
         for (auto base = geneCoverage.begin(); base != geneCoverage.end(); ++base)
             std += std::pow(static_cast<double>(*base) - avg, 2.0) / size;
         std = std::pow(std, 0.5);
-        writer << gene.feature_id << "\t";
         writer << avg << "\t" << std << "\t" << (std / avg) << std::endl;
     }
+    else writer << "0\t0\tnan" << std::endl;
     return std::make_tuple(avg, std, (std / avg));
 }

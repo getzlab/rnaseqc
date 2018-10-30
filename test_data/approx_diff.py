@@ -8,11 +8,13 @@ def main(args):
     if args.mode == 'tables':
         df = pd.read_csv(args.input1, index_col=0, header=2, sep='\t').join(
             pd.read_csv(args.input2, index_col=0, header=2, sep='\t'),
+            how='outer',
             rsuffix='_'
         )
     elif args.mode == 'metrics' or args.mode == 'fragments':
         df = pd.read_csv(args.input1, sep='\t', index_col=0).join(
             pd.read_csv(args.input2, sep='\t', index_col=0),
+            how='outer',
             rsuffix='_',
 
         )

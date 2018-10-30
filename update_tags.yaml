@@ -1,0 +1,18 @@
+# Adds a tag for this commit to the latest rnaseqc image
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - pull
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - tag
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+images:
+  - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+timeout: 250s
