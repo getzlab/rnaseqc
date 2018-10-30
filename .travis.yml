@@ -33,16 +33,12 @@ install:
   - make
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
-  - echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
   - git lfs install
   - git lfs pull
 script:
   - sudo bash -c "PYTHONPATH=$(pwd) make test"
 before_deploy:
   - gzip -c rnaseqc > rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME.gz
-env:
-  global:
-    secure: HqhxW0zkMoG3F50m8pgDZ/04dgXA9xO+w24tsydleJKDaF8q7llrVostrkL41oCsBtPw3m38ik8ceuXsnzOJiMYAqL7TwIuu3pdbz0PG1RLPdIpLTSoD22x2+Xls6nZQ/BQhwQDrj3W6sdGfWpyAsjSq+1K/dwmcroHbEAghvkYE1bK0nKWq5t0LiwqjTpgERYcLulB3YqpuNh0QUcn29ounwPOawAloUC9ZPo0zkqQjvqTnYttxMFtR6ja6utcjBCjW888Z3/EmLrz8PD3u4d9yPw4xW3cNFdAQmRkdXyLdD7t0chbJnnW3mSeIQCwg8AUbAPfh5zLhCqhTcQd1HIv0UDjtsduwn9CwSRD2isIBx9hHt40RP32wNoKgRO+j78XDaOBNWn6zrDryuCHPHj/x5w1hpNeibQRVmRK/uoRsdipy21/6QCCeBfOIMYmaf/A7/ddCWmE5eJHw8M9NJVhOudEpT2iWJlDy5qw8P/D1rbZlb36PbQEfvLboR3KJoSMp66OccEbOaoo6f7xXIB4cK1hmuP9oz2dnv6W9fg4GAWRGdAJ6AW/VnB34k+U3MkSGuDaTDhzF2DxdzAu4Q6E5MvCm6xfnW2x9FFUS55lwfG2W+Pd5ICM7RX2yTllB6Ao10Aq7OGtQLxrnzJ6J3Dwli65U7NixkTQEIVAfXT8=
 deploy:
   provider: releases
   api_key:
