@@ -52,12 +52,7 @@ Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed te
                                         computing fragment sizes. Requires the
                                         --bed argument. Default: 1000000
 
-      --low-quality=[QUALITY]           Set the lower bound on read quality.
-                                        Reads below this number are counted as
-                                        low quality BUT ARE STILL USED IN
-                                        COUNTS. See --mapping-quality to discard
-                                        reads based on quality. Default: 255
-
+      -q[QUALITY],
       --mapping-quality=[QUALITY]       Set the lower bound on read quality for
                                         exon coverage counting. Reads below this
                                         number are excluded from coverage
@@ -188,7 +183,7 @@ The **--legacy** flag enables compatibility with RNASeQC 1.1.9. This ensures tha
 * BED.cpp : `extractBED()` function definition
 * BED.h : Declares `extractBED()`
 
-#### Documentation
+#### Code Documentation (outdated)
 
 ##### RNASeQC
 * `int main(int, char**)` : Parses command line arguments then runs RNASeQC.  First it reads and parses the GTF into lists of features (one list per contig).  This accounts for the bulk of the memory overhead.  If a BED file was provided, it will also parse it and store it in similar lists.  Then it iterates over each read in the BAM file, and counts various attributes of the reads.  Reads which pass filtering (must be a primary alignment, be mapped, have an overall read span less than the maximum read length, be in a proper pair, have a mapping quality >= the quality threshold, have no more than the maximum number of mismatches, and cannot fail vendor QC) are run through exon coverage metrics (see Expression.cpp).  If a BED file was provided, each read which passes the same filtering steps is also run through fragment size metrics.  After all reads have been processed, some statistics are caluclated and then a report is generated

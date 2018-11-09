@@ -50,8 +50,7 @@ int main(int argc, char* argv[])
     
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
-    ValueFlag<unsigned int> lowQualityThreshold(parser, "QUALITY", "Set the lower bound on read quality. Reads below this number are counted as low quality BUT ARE STILL USED IN COUNTS. See --mapping-quality to discard reads based on quality. Default: 255", {"low-quality"});
-    ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {"mapping-quality"});
+    ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {'q', "mapping-quality"});
     ValueFlag<unsigned int> baseMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"base-mismatch"});
     ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the minimum distance between aligned blocks of a read for the read to be counted as split. Default: 100 [bp]", {"split-distance"});
     ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150 [bp]", {"offset"});
@@ -91,7 +90,6 @@ int main(int argc, char* argv[])
 
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
         const unsigned int FRAGMENT_SIZE_SAMPLES = fragmentSamples ? fragmentSamples.Get() : 1000000u;
-        const unsigned int LOW_QUALITY_READS_THRESHOLD = lowQualityThreshold ? lowQualityThreshold.Get() : 255u;
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
         const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : 255u;
         const unsigned int COVERAGE_MASK = coverageMaskSize ? coverageMaskSize.Get() : 500u;
@@ -250,7 +248,7 @@ int main(int argc, char* argv[])
                 //count metrics based on basic read data
                 if (alignment.SecondaryFlag()) counter.increment("Alternative Alignments");
                 else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
-                else if (alignment.MapQuality() < LOW_QUALITY_READS_THRESHOLD) counter.increment("Low quality reads");
+                else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low quality reads");
                 if (!(alignment.SecondaryFlag() || alignment.QCFailFlag()) /*&& alignment.MapQuality >= 255u*/)
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
