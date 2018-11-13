@@ -1,45 +1,11 @@
-The [SeqLib library](https://github.com/walaj/SeqLib) is licensed separately
-under the license below (Apache v2, as of f19055c):
+RNA-SeQC third party code notice:
 
-```
-Copyright 2016 Jeremiah A. Wala
+In addition, RNA-SeQC is distributed, in part, under and subject to the licenses for:
+[SeqLib](https://github.com/walaj/SeqLib) - Copyright © 2016 Jeremiah A. Wala. All Rights Reserved.
+[Apache 2.0 License](https://github.com/walaj/SeqLib/blob/master/LICENSE) (as of f19055c).
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Args - Copyright © 2016 – 2017 Taylor C. Richberger and Pavel Belikov. All Rights Reserved.
+[MIT license](https://github.com/Taywee/args/blob/master/LICENSE) (as of 7bf17000).
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
-The file `args.hxx` (from https://github.com/Taywee/args @ 7bf17000) is licensed separately
-under the license below (MIT):
-
-```
-Copyright (c) 2016-2017 Taylor C. Richberger <taywee@gmx.com> and Pavel Belikov
-
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-The file `bioio.hpp` (from https://github.com/dancooke/bioio @ 99978e1) is licensed separately
-under the license below (MIT):
-
-```
-Copyright 2017 Daniel Cooke
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
+BioIO, Copyright © 2017 Daniel Cooke. All Rights Reserved.
+[MIT License](https://github.com/dancooke/bioio/blob/master/LICENSE) (as of 99978e1).
