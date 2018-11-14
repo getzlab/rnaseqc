@@ -7,43 +7,50 @@ sudo: required
 addons:
   apt:
     packages:
-      - cmake
-      - python3
-      - python3-pip
-      - libboost-filesystem-dev
-      - libboost-regex-dev
-      - libboost-system-dev
-      - libbz2-dev
-      - liblzma-dev
-      - libpthread-stubs0-dev
-      - wget
-      - zlib1g-dev
+    - cmake
+    - python3
+    - python3-pip
+    - libboost-filesystem-dev
+    - libboost-regex-dev
+    - libboost-system-dev
+    - libbz2-dev
+    - liblzma-dev
+    - libpthread-stubs0-dev
+    - wget
+    - zlib1g-dev
 install:
-  - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which gcc-5) CXX=$(which g++-5); fi
-  - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew update >/dev/null && brew install zlib curl samtools bzip2 xz > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a) LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a); fi
-  - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
-  - cd $TRAVIS_BUILD_DIR
-  - git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd ..
-  - mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
-  - "mkdir -p ~/.config/matplotlib && echo 'backend	:	Agg' > ~/.config/matplotlib/matplotlibrc"
-  - sudo python3 -m pip install --user --upgrade pip setuptools
-  - sudo python3 -m pip install --user numpy
-  - sudo python3 -m pip install --user pandas pyBigWig bx-python agutil scipy
-  - sudo python3 -m pip install --user --force-reinstall --upgrade matplotlib
-  - make
+- if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+  -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which
+  gcc-5) CXX=$(which g++-5); fi
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew update >/dev/null && brew install
+  zlib curl samtools bzip2 xz > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
+  LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a); fi
+- if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
+- cd $TRAVIS_BUILD_DIR
+- git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git
+  checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd ..
+- mv test_data/Makefile.$TRAVIS_OS_NAME Makefile
+- "mkdir -p ~/.config/matplotlib && echo 'backend\t:\tAgg' > ~/.config/matplotlib/matplotlibrc"
+- sudo python3 -m pip install --user --upgrade pip setuptools
+- sudo python3 -m pip install --user numpy
+- sudo python3 -m pip install --user pandas pyBigWig bx-python agutil scipy
+- sudo python3 -m pip install --user --force-reinstall --upgrade matplotlib
+- make
 before_script:
-  - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
-  - git lfs install
-  - git lfs pull
+- if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew install git-lfs; fi
+- git lfs install
+- git lfs pull
 script:
-  - sudo bash -c "PYTHONPATH=$(pwd) make test"
+- sudo bash -c "PYTHONPATH=$(pwd) make test"
 before_deploy:
-  - gzip -c rnaseqc > rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME.gz
+- gzip -c rnaseqc > rnaseqc.$TRAVIS_TAG.$TRAVIS_OS_NAME.gz
 deploy:
   provider: releases
   api_key:
-    secure: B+tnqtGfN+lu+Ms9jqHqcdI+t3T4uUauy3wc/xKiUAgLLDZzsZFb+AWl2yE1Vdxp7F0pwpPgouCDlXcHxq33rPhx1KTq1QFKkGpo6tpCZuzZkVLK69G6aA0ivc96CwN18IMJ1v32ubM1J481/wOYqcLvfwkWXOC3ogFSCd6mFH2KfuSMZ4CWiPEUea4emstWrTFzni+Y+noc3ML+zHnNqEs2PcNKuZfVJDtENaEP0M7tEvOQm39KCBn8yxXHDfg3nejAgjFRSIRUFMb6eZmkVkzNEyQ8PTIH9pC8cP7mpHOH7wgPKs1VryINQtg62grNH4E23btZYHVUD0BAyUwOB3z6hIC3b7xntiC2uttZuWlGGGzUbPyWQ7n3UA5VFw5eIZOloNgUcFGf19qULqHS6xlcAG72eddN1qwWYUYtwWlxabm5vPJ9NehYYDOT0XckmGuPXcrLBlkmVWpW7XfQLjsVCLh+FJ3CX3dNt8cF5DwHgBuFFKS3c8vmfQMdx0DCbv8jSW2JLoPxsdbkUJR5bXbTpx9rGhbRZ+bAixvrP9BKJ81LKpsb0cxRdtSbrYneoG2pF1rVYXDhEQVr1iHowGIi6s53SajtnKXXfWXbPm+fb3/zoxEgzlT8IyZHRQ1Uz18oC5/HphxEOFOYrIkPnwZOyHpz6BB22F4t/rI2GNc=
+    secure: X8Jfw9SOYDFVxYKVV4C+aUVXYpDSRVxIdIGhNL9Wfe91iGJ2eSyT4o6+wfkH5HmSCHZYebpjN+iw+/JJ+0HZYlPQER/6Uit6EwB63sjwbh8lc5/PTNQhtxN5K9RFFtJD8FssfLNVqLEN+LjEUmKmOJECrgdRH2w5AbP3O0FfKj55pY9Saw+JNCOsnzgE6DMs2wyl0yAWfK6Ft9BpilJ2jU/Eyp+mPBAuyONbJTlX+fgJlAhiHA/B068Xsy28GQnyFWp/Z+tEl7SJZic3RW6Vd/1zU/4UwpMDIm5eNPxf/g8wP4GPZidDWfeRiL2EHU0QgieWV1S0NPEHT4ZJslchf2++nzSbiFYgOXQHao8349HU6enDjQISEKMoNH0/Miqlf0ls6uA+e1qkRZHcPtTmO9lcd1rS7GKDF1TVv4oCXNFhMibUQ153Mn/ibgkWAEhm9wkUBx32p4jjXERVMDnVV+jyhhqxBtCAqdcrBWlcNSiOgZCHy+rGOuO2jxtu8T/I67WtI49NBFyb1uLz/7Eqtp3vyjYrUFxP3LBOfY5wC7JKAcNd/Uyl2+Y6vyzvTsjvq7JWJcmEs00SwDG6H4G1d490Ut2Z8focFHlrsK3ljdGH99QYIskKEWYG30Jgt7T4cyu3OjYa1V+sSrifDq5cpTAIBtVdmW5jBA1k6vH+7ak=
+  file: rnaseqc*.gz
   file_glob: true
   skip_cleanup: true
   on:
+    repo: broadinstitute/rnaseqc
     tags: true
