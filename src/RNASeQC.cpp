@@ -207,6 +207,7 @@ int main(int argc, char* argv[])
         BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         chrom current_chrom = 0;
+        int32_t last_position = 0; // For some reason, htslib has decided that this will be the datatype used for positions
 
         //Begin parsing the bam.  Each alignment is run through various sets of metrics
         {
@@ -334,6 +335,9 @@ int main(int argc, char* argv[])
                                 dropFeatures(features[current_chrom], baseCoverage);
                                 current_chrom = chr;
                             }
+                            else if (last_position > alignment.Position())
+                                cerr << "Warning: The input bam does not appear to be sorted. An unsorted bam will yield incorrect results" << endl;
+                            last_position = alignment.Position();
 
                             //extract each cigar block from the alignment
                             unsigned int length = extractBlocks(alignment, blocks, chr, LegacyMode.Get());
