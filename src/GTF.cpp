@@ -68,11 +68,12 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse attributes. Invalid GTF line: " + line);
             std::map<string, string> attributes;
             parseAttributes(buffer, attributes);
+            if ( out.end < out.start)
+                std::cout << "Bad fead feature range:" << out.start << " - " << out.end << std::endl;
             if (out.type == "gene" && attributes.find("gene_id") != attributes.end())
             {
                 //Parse gene attributes
                 out.feature_id = attributes["gene_id"];
-                if ( out.end < out.start)  std::cout << "crap" <<std::endl;
                 geneLengths[out.feature_id] = out.end - out.start + 1;
                 geneList.push_back(attributes["gene_id"]);
             }
@@ -88,7 +89,7 @@ ifstream& operator>>(ifstream &in, Feature &out)
                 else if (attributes.find("gene_id") != attributes.end())
                 {
                     out.feature_id = attributes["gene_id"] + "_" + std::to_string(++exon_names[attributes["gene_id"]]);
-                    std::cerr << "Unnamed exon: Gene: "<<attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
+                    std::cerr << "Unnamed exon: Gene: " << attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                 }
                 exonList.push_back(out.feature_id);
                 exonsForGene[out.gene_id].push_back(out.feature_id);

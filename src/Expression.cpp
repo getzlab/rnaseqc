@@ -108,9 +108,6 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 {
     string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-    const bool dbg = false;
-    if (dbg) cout << "~" << chrName;
-
     //check for split reads by iterating over all the blocks of this read
     bool split = false;
     long long lastEnd = -1; // used for split read detection
@@ -198,14 +195,12 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     for (auto coverage = legacySplitDosage.begin(); coverage != legacySplitDosage.end(); ++coverage)
                     {
                         exonCounts[coverage->first] += coverage->second;
-                        if (dbg) cout << "\t" << coverage->first << " " << coverage->second;
                     }
                 }
                 else
                 {
                     //If read was not detected as split or the legacy bug changed it to unsplit, only record last exon
                     exonCounts[exon.feature_id] += 1.0;
-                    if (dbg) cout << "\t" << exon.feature_id << " 1.0";
                 }
                 geneCounts[exon.gene_id] += 1.0;
                 if (!alignment.DuplicateFlag()) uniqueGeneCounts[exon.gene_id]++;
@@ -216,7 +211,6 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 
     }
     delete results; //clean up dynamic allocation
-    if (dbg) cout << endl;
 
     if (!exonic) //a.k.a: No exons were detected at all on any block of the read
     {
