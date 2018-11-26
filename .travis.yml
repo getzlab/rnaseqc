@@ -26,6 +26,7 @@ install:
   zlib curl samtools bzip2 xz > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
   LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a); fi
 - if [[ ! $(which python3) ]]; then python3(){ python $@; }; fi
+- gzip -c $TRAVIS_BUILD_DIR > ../rnaseqc.$TRAVIS_TAG.full_source.gz && mv ../rnaseqc.$TRAVIS_TAG.full_source.gz $TRAVIS_BUILD_DIR
 - cd $TRAVIS_BUILD_DIR
 - git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && git
   checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && cd ..

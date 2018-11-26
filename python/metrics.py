@@ -155,7 +155,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, 
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, 'mapped_reads_{}.pdf'.format(name)), dpi=dpi)
 
-    v = metrics_df.loc[date_ix, 'Mapped Unique Reads'].copy()/1e6
+    v = metrics_df.loc[date_ix, 'Unique Mapping, Vendor QC Passed Reads'].copy()/1e6
     v[v>250] = 250
     figure_outputs.append(
         metrics_plot(v, cohort_s, ylim=[0, 250], title='QC-passed reads (millions)', **metrics_args)
