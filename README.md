@@ -97,7 +97,7 @@ Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed te
 
       -t[TAG...], --tag=[TAG...]        Filter out reads with the specified tag.
 
-      --chimeric-tag=[TAG]              Reads maked with the specified tag will
+      --chimeric-tag=[TAG]              Reads marked with the specified tag will
                                         be labeled as Chimeric. Defaults to 'mC'
                                         for compatibility with STAR
 
