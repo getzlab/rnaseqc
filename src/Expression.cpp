@@ -102,13 +102,170 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
+//void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
+//{
+//    bool wasIntragenicRead = false; // if it's ever in a gene, it's tranagenic
+//    bool wasExonicRead = false; // if it's ever an exon, its' an exon
+//    bool wasIntronRead = false; // if it's ever an exon, then it's not an intron
+//    bool wasJunction = true;   // if it's ever not a junction, then it's not a junction
+//    bool transcriptWasPlus = false;
+//    bool transcriptWasMinus = false;
+//    int fragmentLength = 0;
+//
+//    // check block for split read:
+//    bool splitRead = false;
+//    int lastBlockEnd = -1;
+//
+//    for (auto blockLoc = blocks.begin(); blockLoc != blocks.end(); ++blockLoc) {
+//        if (lastBlockEnd > 0 && !splitRead) {
+//            splitRead = ((blockLoc->start - lastBlockEnd) > 100);
+//        }
+//        lastBlockEnd = blockLoc.getStop();
+//    }
+//
+//    for (RefSeqFeature refSeq: refSeqs) {
+//        int intronNumber = -1;
+//        boolean thisTranscriptWasExonicRead = false;
+//        boolean thisTranscriptWasIntronRead = false;
+//
+//        // sanity check:
+//        if (!refSeq.overlapsP(readLoc)){
+//            System.out.println("WHY DOESN'T THIS READ OVERLAP IT'S OWN ROD ENTRY !?!??!!?");
+//            System.out.println("\tReadLoc:"+readLoc);
+//            System.out.println("\trefSeqLoc:"+refSeq.getLocation());
+//            System.out.println("\tRead: " + read);
+//            System.out.println("\tTransc:" + refSeq.getTranscriptId());
+//        }
+//
+//        // calculations for fragmentLength:
+//        if (fragmentLength == 0 && read.getReadPairedFlag() && read.getProperPairFlag() && thisMismatchCount == 0) {
+//            fragmentLength = getFragmentLength(refSeq,read,readLoc);
+//            if (fragmentLength > 0) {
+//                super.fragmentLengths.add(fragmentLength);
+//            }
+//        }
+//
+//        HashMap<Integer,Float> splitDosage = null;
+//        if (splitRead) splitDosage = new HashMap<Integer,Float>();
+//
+//        for (GenomeLoc blockLoc : blocks) {
+//            //                        System.out.println("\trefseq:"+refSeq.getGeneName());
+//            //                        System.out.println("\trefseq:" + refSeq.getTranscriptId());
+//            //                        System.out.println("\trefseq:"+refSeqLoc);
+//
+//            //GenomeLoc readLoc = ref.getLocus();
+//            //intragenic++;// we are in a gene, otherwise, we would be in the ROD
+//            wasIntragenicRead = true;
+//            //Performance overlapps = new Performance("Overlap perf: " , Performance.Resolution.milliseconds);
+//            intronNumber = overlapsIntron(refSeq,blockLoc); // returns intron position if block is on an exon/intron junction
+//
+//            //                System.out.println("\tBLOCK:\t " + blockLoc.toString());
+//            //                System.out.println("\t\tintron:"+ intronNumber);
+//            if (intronNumber < 0) {
+//                thisTranscriptWasExonicRead=true;
+//            } else {
+//                // if we're in a gene but not in an exon ... it must be an intron? it could be UTR :(
+//                //intronOrUTR++;
+//                thisTranscriptWasIntronRead = true;
+//                //                            System.out.println("\tNOT Exonic");
+//            }
+//            if (splitRead && splitDosage !=null) {
+//                if (intronNumber < 0) {
+//                    Float dosage = splitDosage.get(intronNumber);
+//                    if(dosage == null) {
+//                        dosage  = (float)blockLoc.size() / (float)read.getReadLength();
+//                    } else {
+//                        dosage  = dosage + (float)blockLoc.size() / (float)read.getReadLength();
+//                    }
+//                    splitDosage.put(intronNumber, dosage);
+//                } else {
+//                    splitDosage = null;
+//                }
+//            }
+//            //                if (refSeq.overlapsCodingP(blockLoc)){
+//            //                    //coding++;
+//            //                    wasCodingRead = true;
+//            //                            System.out.println("\tIs Coding");
+//            //                }
+//            //overlapps.outputIfTookTime();
+//        }// end of blocks
+//
+//        // to do with this RefSeq entry:
+//        try {
+//            // if a readblock had overlapped an exon/intron junction, it was assigned to the intron
+//            // (both as intron number as well as transcriptWasExonicRead)
+//            // if the read consists of multiple blocks, then the exon/intron chosen is done so arbitrarly: the latter exon will be chosen, because the loop above just erases the previous exon number
+//            // this means that if an exon is not included in this isoform, and the read spans those exons
+//            // it will appear here as an intronic read and be counted as an intron for the individual
+//            // intron metrics. Futhermore, if a read lands completely in the exon from a different isoform
+//            // the same issue will happen - it will be counted as an intronic read.
+//            // HOWEVER, NOTE: that this issue will affect the transcript-specific counts that are saved in the
+//            // exons file, but not the global counts reported in the final metrics.
+//            //todo probably, it's best just to run this on a gene model annotation and not a transcript model annotation
+//
+//            boolean keep = true;
+//            if (super.strictExonReads) {
+//                if(read.getReadPairedFlag()) {
+//                    Short alnDistance = read.getShortAttribute("NM");
+//                    keep = read.getProperPairFlag() && alnDistance!=null && alnDistance <=6 && read.getMappingQuality() >3;
+//                }
+//            }
+//            if (keep) {
+//                addRefSeqToMetrics(refSeq, intronNumber, read.getDuplicateReadFlag(),splitRead, splitDosage);
+//            }
+//        } catch (RuntimeException e) {
+//            System.out.println("Exception adding metrics to linked list");
+//            System.out.println("RefSeq: " + refSeq.toString());
+//            System.out.println("Read: " + read.toString());
+//            System.out.println("Intron number: " + intronNumber);
+//            throw e;
+//        }
+//
+//        //JUNCTION:  if it is ever purely exonic, then it was not a junction
+//        if (thisTranscriptWasExonicRead && !thisTranscriptWasIntronRead){
+//            //                System.out.println("\t\tBlock was junction");
+//            wasJunction = false;
+//        } else {
+//            //                System.out.println("\t\tBlock was NOT a junction");
+//        }
+//        if (thisTranscriptWasExonicRead) wasExonicRead = true;
+//        if (thisTranscriptWasIntronRead) wasIntronRead = true;
+//
+//        shedMetrics(read.getAlignmentStart());
+//
+//        //check for strand specificity:
+//        if (refSeq.getStrand() == 1) {  // end1 reads is sense strand
+//            transcriptWasPlus = true;
+//        } else {
+//            transcriptWasMinus = true;
+//        }
+//    }// end of RefSeq entry iteration
+//    if (wasIntragenicRead) {
+//        intragenic++;
+//        if (wasExonicRead && !wasJunction){
+//            exonic++; // note in this case, we're defining junction reads as intronic
+//            if (splitRead) {
+//                this.splitReads++;
+//            }
+//        } else {
+//            intronOrUTR++; // was an intron or junction
+//        }
+//    }
+//
+//    // count strand specificity metrics:
+//    super.countStrandSpecificMetrics(read, transcriptWasMinus,transcriptWasPlus);
+//    //if (wasCodingRead) coding++;
+//    // junction reads? in this case we're assuming  that they're intronic
+//}
+
 // Legacy version of standard alignment metrics
 // This code is really inefficient, but it's a faithful replication of the original code
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
 {
     string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
     //check for split reads by iterating over all the blocks of this read
+//    cout << "~" << alignment.Qname();
     bool split = false;
     long long lastEnd = -1; // used for split read detection
     for(auto block = blocks.begin(); block != blocks.end(); ++block)
@@ -128,17 +285,17 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
     list<Feature> *results = intersectBlock(current, features[chr]);
 
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
-    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
+    bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false, legacyJunction = false, legacyNotExonic = false; //various booleans for keeping track of the alignment
     bool legacyNotSplit = false; //Legacy bug to override a read being split
     for (auto result = results->begin(); result != results->end(); ++result)
     {
         Feature exon;
-        bool legacyFoundExon = false, legacyFoundGene = false;
+        bool legacyFoundExon = false, legacyFoundGene = false, legacyTranscriptIntron = false, legacyTranscriptExon = false;
         map<string, float> legacySplitDosage;
         legacyNotSplit = false;
         if (result->type == "gene")
         {
-            intragenic = true;
+            
             if (result->strand == 1) transcriptPlus = true;
             else if (result->strand == -1) transcriptMinus = true;
             for (auto block = blocks.begin(); block != blocks.end(); ++block)
@@ -152,6 +309,9 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                         continue;
                     }
                 }
+                intragenic = true;
+                
+                if (block->start > result->end) legacyNotExonic = true;
 
                 bool firstexon = false;
                 legacyFoundExon = false;
@@ -167,10 +327,14 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                             if (partialIntersect(*ex, *block) == (block->end - block->start))
                             {
                                 exon = *ex;
-                                exonic = true;
+                                legacyTranscriptExon = true;
                                 firstexon = true;
                                 legacyFoundExon=true; //should this be part of the loop condition?  look into overlapsIntronp
                                 baseCoverage.add(*ex, block->start, block->end);
+                            }
+                            else if (partialIntersect(*ex, *block) > 0)
+                            {
+                                legacyTranscriptIntron = true;
                             }
                         }
 
@@ -190,29 +354,37 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
             //record gene to collect, probs want to keep a list of single and partial collections
             if (legacyFoundExon)
             {
-                if (split && !legacyNotSplit)
+                if (highQuality)
                 {
-                    for (auto coverage = legacySplitDosage.begin(); coverage != legacySplitDosage.end(); ++coverage)
+                    if (split && !legacyNotSplit)
                     {
-                        exonCounts[coverage->first] += coverage->second;
+                        for (auto coverage = legacySplitDosage.begin(); coverage != legacySplitDosage.end(); ++coverage)
+                        {
+                            exonCounts[coverage->first] += coverage->second;
+                            //                        cout << "\t" << coverage->first << " " << coverage->second;
+                        }
                     }
+                    else
+                    {
+                        //If read was not detected as split or the legacy bug changed it to unsplit, only record last exon
+                        exonCounts[exon.feature_id] += 1.0;
+                        //                    cout << "\t" << exon.feature_id<< " 1.0";
+                    }
+                    geneCounts[exon.gene_id] += 1.0;
+                    if (!alignment.DuplicateFlag()) uniqueGeneCounts[exon.gene_id]++;
+                    baseCoverage.commit(exon.gene_id);
                 }
-                else
-                {
-                    //If read was not detected as split or the legacy bug changed it to unsplit, only record last exon
-                    exonCounts[exon.feature_id] += 1.0;
-                }
-                geneCounts[exon.gene_id] += 1.0;
-                if (!alignment.DuplicateFlag()) uniqueGeneCounts[exon.gene_id]++;
-                baseCoverage.commit(exon.gene_id);
                 doExonMetrics = true;
             }
+            if (legacyTranscriptIntron && legacyTranscriptExon) legacyJunction = true;
+            if (legacyTranscriptExon) exonic = true;
         }
 
     }
+//    cout << endl;
     delete results; //clean up dynamic allocation
 
-    if (!exonic) //a.k.a: No exons were detected at all on any block of the read
+    if (legacyNotExonic || legacyJunction || !exonic) //a.k.a: No exons were detected at all on any block of the read
     {
         if (intragenic)
         {
@@ -221,18 +393,22 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
         }
         else counter.increment("Intergenic Reads");
     }
-    else if (doExonMetrics) //if exons were detected and at least one exon ended up being collected, we count this as exonic
+    else if (doExonMetrics && !legacyJunction && !legacyNotExonic) //if exons were detected and at least one exon ended up being collected, we count this as exonic
     {
+//        if (!highQuality) cout << "~" << alignment.Qname() << endl;
+//        cout << "~" << alignment.Qname() << "\t" << alignment.AlignmentFlag() << "\t" << highQuality << endl;
         counter.increment("Exonic Reads");
         counter.increment("Intragenic Reads");
         if (split && !legacyNotSplit) counter.increment("Split Reads");
     }
-    else
+    else if (intragenic)
     {
         //It's unclear how to properly classify these reads
         //They had exon coverage, but aligned to multiple genes
         //Any exon and gene coverage they had was discarded and not recorded
-        counter.increment("Intron/Exon Disqualified Reads");
+//        counter.increment("Intron/Exon Disqualified Reads");
+        counter.increment("Exonic Reads");
+        counter.increment("Intragenic Reads");
     }
     if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts

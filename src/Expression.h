@@ -28,6 +28,6 @@ unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature
 
 void exonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&);
 
-void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&);
+void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&, bool);
 
 #endif /* Expression_h */

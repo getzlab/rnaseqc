@@ -22,7 +22,7 @@ using namespace std;
 using namespace args;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.0";
+const string VERSION = "RNASeQC 2.0.1";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 map<string, double> tpms;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
         const int CHIMERIC_DISTANCE = chimericDistance ? chimericDistance.Get() : 2000000;
         const unsigned int FRAGMENT_SIZE_SAMPLES = fragmentSamples ? fragmentSamples.Get() : 1000000u;
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
-        const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : 255u;
+        const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : (LegacyMode.Get() ? 4u : 255u);
         const unsigned int COVERAGE_MASK = coverageMaskSize ? coverageMaskSize.Get() : 500u;
         const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
@@ -251,6 +251,7 @@ int main(int argc, char* argv[])
                 else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low quality reads");
                 if (!(alignment.SecondaryFlag() || alignment.QCFailFlag()) /*&& alignment.MapQuality >= 255u*/)
+//                if ((LegacyMode.Get() || !alignment.SecondaryFlag()) && !alignment.QCFailFlag())
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
                     //raw counts:
@@ -318,6 +319,8 @@ int main(int argc, char* argv[])
                             }
                         }
                         if (discard) continue;
+                        
+                        bool highQuality = (mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD);
 
                         //now record intron/exon metrics by intersecting filtered reads with the list of features
                         if (alignment.ChrID() < 0 || alignment.ChrID() >= nChrs)
@@ -325,7 +328,7 @@ int main(int argc, char* argv[])
                             //The read had an unrecognized RefID (one not defined in the bam's header)
                             if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Qname() <<endl;
                         }
-                        else if(mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD)
+                        else if(LegacyMode.Get() || highQuality)
                         {
                             vector<Feature> blocks;
                             string chrName = sequences[alignment.ChrID()].Name;
@@ -344,11 +347,11 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
                             else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
-                            if (doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
+                            if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
                                 doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences);
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
@@ -510,12 +513,12 @@ int main(int argc, char* argv[])
         ofstream output(outputDir.Get()+"/"+SAMPLENAME+".metrics.tsv");
         //output rates and other fractions to the report
         output << "Sample\t" << SAMPLENAME << endl;
-        output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Total Reads") << endl;
+        output << "Mapping Rate\t" << counter.frac("Mapped Reads", LegacyMode.Get() ? "Unique Mapping, Vendor QC Passed Reads": "Total Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
         output << "Base Mismatch\t" << counter.frac("Mismatched Bases", "Total Bases") << endl;
-        output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", "Total Reads") << endl;
-        output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Total Reads") << endl;
+        output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", LegacyMode.Get() ? "Unique Mapping, Vendor QC Passed Reads" : "Total Reads") << endl;
+        output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", LegacyMode.Get() ? "Unique Mapping, Vendor QC Passed Reads" : "Total Reads") << endl;
         output << "End 1 Mismatch Rate\t" << counter.frac("End 1 Mismatches", "End 1 Bases") << endl;
         output << "End 2 Mismatch Rate\t" << counter.frac("End 2 Mismatches", "End 2 Bases") << endl;
         output << "Expression Profiling Efficiency\t" << counter.frac("Exonic Reads", "Total Reads") << endl;
