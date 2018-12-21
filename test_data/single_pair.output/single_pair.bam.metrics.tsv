@@ -8,11 +8,17 @@ End 2 Mapping Rate	1
 End 1 Mismatch Rate	0
 End 2 Mismatch Rate	0
 Expression Profiling Efficiency	1
+High Quality Rate	1
 Exonic Rate	1
 Intronic Rate	0
 Intergenic Rate	0
 Intragenic Rate	1
 Ambiguous Alignment Rate	0
+High Quality Exonic Rate	1
+High Quality Intronic Rate	0
+High Quality Intergenic Rate	0
+High Quality Intragenic Rate	1
+High Quality Ambiguous Alignment Rate	0
 Discard Rate	0
 rRNA Rate	0
 End 1 Sense Rate	1
@@ -33,11 +39,13 @@ End 1 Sense	1
 End 2 Sense	0
 Exonic Reads	2
 Failed Vendor QC	0
+High Quality Reads	2
 Intergenic Reads	0
 Intragenic Reads	2
-Intron/Exon Disqualified Reads	0
+Ambiguous Reads	0
 Intronic Reads	0
-Low quality reads	0
+Low Mapping Quality	0
+Low Quality Reads	0
 Mapped Duplicate Reads	0
 Mapped Reads	2
 Mapped Unique Reads	2

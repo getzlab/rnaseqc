@@ -44,10 +44,6 @@ int main(int argc, char* argv[])
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
     
-#ifndef NO_FASTA
-    ValueFlag<string> fastaFile(parser, "fasta", "Optional input FASTA/FASTQ file containing the reference sequence used for GC-content statistics. Note that using this option will significantly slow the initial startup and adds a memory overhead of ~1Gb", {"fasta"});
-#endif
-    
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {'q', "mapping-quality"});
@@ -249,7 +245,7 @@ int main(int argc, char* argv[])
                 //count metrics based on basic read data
                 if (alignment.SecondaryFlag()) counter.increment("Alternative Alignments");
                 else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
-                else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low quality reads");
+                else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low Mapping Quality");
                 if (!(alignment.SecondaryFlag() || alignment.QCFailFlag()) /*&& alignment.MapQuality >= 255u*/)
 //                if ((LegacyMode.Get() || !alignment.SecondaryFlag()) && !alignment.QCFailFlag())
                 {
@@ -328,8 +324,11 @@ int main(int argc, char* argv[])
                             //The read had an unrecognized RefID (one not defined in the bam's header)
                             if (VERBOSITY) cerr << "Unrecognized RefID on alignment: " << alignment.Qname() <<endl;
                         }
-                        else if(LegacyMode.Get() || highQuality)
+                        else
                         {
+                            if (highQuality) counter.increment("High Quality Reads");
+                            else counter.increment("Low Quality Reads");
+                            counter.increment("Reads used for Intron/Exon counts");
                             vector<Feature> blocks;
                             string chrName = sequences[alignment.ChrID()].Name;
                             chrom chr = chromosomeMap(chrName); //parse out a chromosome shorthand
@@ -344,11 +343,12 @@ int main(int argc, char* argv[])
 
                             //extract each cigar block from the alignment
                             unsigned int length = extractBlocks(alignment, blocks, chr, LegacyMode.Get());
+                            counter.increment("Alignment Blocks", blocks.size());
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
                             if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage);
+                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
-                        else counter.increment("Reads excluded from exon counts");
+//                        else counter.increment("Reads excluded from exon counts");
                     }
 
                 }
@@ -522,11 +522,17 @@ int main(int argc, char* argv[])
         output << "End 1 Mismatch Rate\t" << counter.frac("End 1 Mismatches", "End 1 Bases") << endl;
         output << "End 2 Mismatch Rate\t" << counter.frac("End 2 Mismatches", "End 2 Bases") << endl;
         output << "Expression Profiling Efficiency\t" << counter.frac("Exonic Reads", "Total Reads") << endl;
+        output << "High Quality Rate\t" << counter.frac("High Quality Reads", "Mapped Reads") << endl;
         output << "Exonic Rate\t" << counter.frac("Exonic Reads", "Mapped Reads") << endl;
         output << "Intronic Rate\t" << counter.frac("Intronic Reads", "Mapped Reads") << endl;
         output << "Intergenic Rate\t" << counter.frac("Intergenic Reads", "Mapped Reads") << endl;
         output << "Intragenic Rate\t" << counter.frac("Intragenic Reads", "Mapped Reads") << endl;
         output << "Ambiguous Alignment Rate\t" << counter.frac("Ambiguous Reads", "Mapped Reads") << endl;
+        output << "High Quality Exonic Rate\t" << counter.frac("HQ Exonic Reads", "High Quality Reads") << endl;
+        output << "High Quality Intronic Rate\t" << counter.frac("HQ Intronic Reads", "High Quality Reads") << endl;
+        output << "High Quality Intergenic Rate\t" << counter.frac("HQ Intergenic Reads", "High Quality Reads") << endl;
+        output << "High Quality Intragenic Rate\t" << counter.frac("HQ Intragenic Reads", "High Quality Reads") << endl;
+        output << "High Quality Ambiguous Alignment Rate\t" << counter.frac("HQ Ambiguous Reads", "High Quality Reads") << endl;
         output << "Discard Rate\t" << static_cast<double>(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
         output << "rRNA Rate\t" << counter.frac("rRNA Reads", "Mapped Reads") << endl;
         output << "End 1 Sense Rate\t" << static_cast<double>(counter.get("End 1 Sense")) / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;

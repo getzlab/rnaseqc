@@ -8,11 +8,17 @@ End 2 Mapping Rate	0.34904
 End 1 Mismatch Rate	0.00267648
 End 2 Mismatch Rate	0.017572
 Expression Profiling Efficiency	0.238034
+High Quality Rate	0.881406
 Exonic Rate	0.770301
 Intronic Rate	0.159378
 Intergenic Rate	0.0700237
 Intragenic Rate	0.929679
 Ambiguous Alignment Rate	0
+High Quality Exonic Rate	0.803019
+High Quality Intronic Rate	0.157213
+High Quality Intergenic Rate	0.0397675
+High Quality Intragenic Rate	0.960232
+High Quality Ambiguous Alignment Rate	0
 Discard Rate	0.000297518
 rRNA Rate	0.00747647
 End 1 Sense Rate	0.494116
@@ -20,8 +26,6 @@ End 2 Sense Rate	0.507167
 Avg. Splits per Read	0.256225
 Alternative Alignments	275296
 Chimeric Reads	0
-Junction Reads	0
-Legacy NotExonic Reads	0
 Duplicate Reads	0
 End 1 Antisense	435833
 End 2 Antisense	412263
@@ -35,11 +39,13 @@ End 1 Sense	425694
 End 2 Sense	424254
 Exonic Reads	1519796
 Failed Vendor QC	541350
+High Quality Reads	1739006
 Intergenic Reads	138156
 Intragenic Reads	1834247
-Intron/Exon Disqualified Reads	0
+Ambiguous Reads	0
 Intronic Reads	314451
-Low quality reads	3766708
+Low Mapping Quality	3766708
+Low Quality Reads	233397
 Mapped Duplicate Reads	0
 Mapped Reads	1972990
 Mapped Unique Reads	1972990

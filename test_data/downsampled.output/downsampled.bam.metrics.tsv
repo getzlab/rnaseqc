@@ -7,45 +7,53 @@ End 1 Mapping Rate	0.313531
 End 2 Mapping Rate	0.304499
 End 1 Mismatch Rate	0.00267655
 End 2 Mismatch Rate	0.0175762
-Expression Profiling Efficiency	0.221207
-Exonic Rate	0.715844
-Intronic Rate	0.0987004
-Intergenic Rate	0.0350681
-Intragenic Rate	0.814545
-Ambiguous Alignment Rate	0.0320291
-Discard Rate	0.118358
-rRNA Rate	0.00712168
-End 1 Sense Rate	0.495354
-End 2 Sense Rate	0.505844
-Avg. Splits per Read	0.120121
+Expression Profiling Efficiency	0.24059
+High Quality Rate	0.881642
+Exonic Rate	0.778571
+Intronic Rate	0.114795
+Intergenic Rate	0.0700429
+Intragenic Rate	0.893366
+Ambiguous Alignment Rate	0.0365912
+High Quality Exonic Rate	0.811945
+High Quality Intronic Rate	0.111951
+High Quality Intergenic Rate	0.0397759
+High Quality Intragenic Rate	0.923895
+High Quality Ambiguous Alignment Rate	0.0363289
+Discard Rate	0
+rRNA Rate	0.00747698
+End 1 Sense Rate	0.49428
+End 2 Sense Rate	0.507332
+Avg. Splits per Read	0.256852
 Alternative Alignments	275296
 Chimeric Reads	0
 Duplicate Reads	0
-End 1 Antisense	397560
-End 2 Antisense	380647
+End 1 Antisense	437593
+End 2 Antisense	413825
 End 1 Bases	76069312
 End 2 Bases	73877928
 End 1 Mapped Reads	1000912
 End 2 Mapped Reads	972078
 End 1 Mismatches	203603
 End 2 Mismatches	1298496
-End 1 Sense	390239
-End 2 Sense	389650
-Exonic Reads	1412354
+End 1 Sense	427694
+End 2 Sense	426143
+Exonic Reads	1536112
 Failed Vendor QC	541350
-Intergenic Reads	69189
-Intragenic Reads	1607089
-Intron/Exon Disqualified Reads	63193
-Intronic Reads	194735
-Low quality reads	3766708
+High Quality Reads	1739471
+Intergenic Reads	138194
+Intragenic Reads	1762602
+Ambiguous Reads	72194
+Intronic Reads	226490
+Low Mapping Quality	3766708
+Low Quality Reads	233519
 Mapped Duplicate Reads	0
 Mapped Reads	1972990
 Mapped Unique Reads	1972990
 Mismatched Bases	1502099
-Reads excluded from exon counts	233519
-Reads used for Intron/Exon counts	1739471
-rRNA Reads	14051
-Split Reads	389177
+Reads excluded from exon counts	0
+Reads used for Intron/Exon counts	1972990
+rRNA Reads	14752
+Split Reads	416201
 Total Bases	149947240
 Total Mapped Pairs	963702
 Total Reads	6384776

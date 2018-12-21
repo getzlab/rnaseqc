@@ -26,7 +26,7 @@ void dropFeatures(std::list<Feature>&, BaseCoverage&);
 //Metrics functions
 unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature>>*, std::map<std::string, std::string>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&);
 
-void exonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&);
+void exonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&, bool);
 
 void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, unsigned short, BaseCoverage&, bool);
 
