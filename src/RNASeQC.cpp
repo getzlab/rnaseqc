@@ -358,7 +358,6 @@ int main(int argc, char* argv[])
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
-//                        else counter.increment("Reads excluded from exon counts");
                     }
 
                 }
