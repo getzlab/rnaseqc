@@ -22,7 +22,7 @@ using namespace std;
 using namespace args;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.0.1";
+const string VERSION = "RNASeQC 2.1.0";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 map<string, double> tpms;
@@ -526,7 +526,7 @@ int main(int argc, char* argv[])
         output << "Intronic Rate\t" << counter.frac("Intronic Reads", "Mapped Reads") << endl;
         output << "Intergenic Rate\t" << counter.frac("Intergenic Reads", "Mapped Reads") << endl;
         output << "Intragenic Rate\t" << counter.frac("Intragenic Reads", "Mapped Reads") << endl;
-        output << "Disqualification Rate\t" << counter.frac("Intron/Exon Disqualified Reads", "Mapped Reads") << endl;
+        output << "Ambiguous Alignment Rate\t" << counter.frac("Ambiguous Reads", "Mapped Reads") << endl;
         output << "Discard Rate\t" << static_cast<double>(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
         output << "rRNA Rate\t" << counter.frac("rRNA Reads", "Mapped Reads") << endl;
         output << "End 1 Sense Rate\t" << static_cast<double>(counter.get("End 1 Sense")) / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;

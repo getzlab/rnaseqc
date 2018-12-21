@@ -60,7 +60,7 @@ std::ofstream& operator<<(std::ofstream &stream, Metrics &counter)
         "Failed Vendor QC",
         "Intergenic Reads",
         "Intragenic Reads",
-        "Intron/Exon Disqualified Reads",
+        "Ambiguous Reads",
         "Intronic Reads",
         "Low quality reads",
         "Mapped Duplicate Reads",

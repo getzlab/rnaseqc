@@ -12,7 +12,7 @@ Exonic Rate	1
 Intronic Rate	0
 Intergenic Rate	0
 Intragenic Rate	1
-Disqualification Rate	0
+Ambiguous Alignment Rate	0
 Discard Rate	0
 rRNA Rate	0
 End 1 Sense Rate	1

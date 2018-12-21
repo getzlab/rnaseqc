@@ -12,7 +12,7 @@ Exonic Rate	0.739311
 Intronic Rate	0.0956014
 Intergenic Rate	0.0212749
 Intragenic Rate	0.834912
-Disqualification Rate	0.0282592
+Ambiguous Alignment Rate	0.0282592
 Discard Rate	0.115554
 rRNA Rate	2.32391e-06
 End 1 Sense Rate	0.496448

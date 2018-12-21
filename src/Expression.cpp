@@ -547,7 +547,7 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
         //It's unclear how to properly classify these reads
         //They had exon coverage, but aligned to multiple genes
         //Any exon and gene coverage they had was discarded and not recorded
-        counter.increment("Intron/Exon Disqualified Reads");
+        counter.increment("Ambiguous Reads");
     }
     if (ribosomal) counter.increment("rRNA Reads");
     //also record strandedness counts
