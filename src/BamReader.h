@@ -58,6 +58,10 @@ public:
         return this->bam.IsOpen();
     }
     
+    void addReference(std::string filepath) {
+        this->bam.SetCramReference(filepath);
+    }
+    
 };
 
 typedef SeqLib::BamRecord Alignment;

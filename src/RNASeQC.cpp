@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     Positional<string> outputDir(parser, "output", "Output directory");
     ValueFlag<string> sampleName(parser, "sample", "The name of the current sample.  Default: The bam's filename", {'s', "sample"});
     ValueFlag<string> bedFile(parser, "BEDFILE", "Optional input BED file containing non-overlapping exons used for fragment size calculations", {"bed"});
-    
+    ValueFlag<string> fastaFile(parser, "fasta", "Optional input FASTA/FASTQ file containing the reference sequence used for parsing CRAM files", {"fasta"});
     ValueFlag<int> chimericDistance(parser, "DISTANCE", "Set the maximum accepted distance between read mates.  Mates beyond this distance will be counted as chimeric pairs. Default: 2000000 [bp]", {"chimeric-distance"});
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {'q', "mapping-quality"});
@@ -191,6 +191,7 @@ int main(int argc, char* argv[])
         
         const string bamFilename = bamFile.Get();
         SeqlibReader bam(bamFilename);
+        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.isOpen())
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
