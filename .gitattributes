@@ -1,3 +1,5 @@
 *.bam filter=lfs diff=lfs merge=lfs -text
 *.gtf filter=lfs diff=lfs merge=lfs -text
 *.gct filter=lfs diff=lfs merge=lfs -text
+*.fasta filter=lfs diff=lfs merge=lfs -text
+*.cram filter=lfs diff=lfs merge=lfs -text

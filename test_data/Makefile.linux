@@ -81,6 +81,20 @@ test-downsampled: rnaseqc
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.fragmentSizes.txt test_data/downsampled.output/downsampled.bam.fragmentSizes.txt -m fragments -c Count Count_
 	rm -rf .test_output
 
+.PHONY: test-crams
+
+test-crams: rnaseqc
+	./rnaseqc test_data/chr1.gtf test_data/chr1.cram .test_output --coverage --fasta test_data/chr1.fasta
+	python3 test_data/approx_diff.py .test_output/chr1.cram.metrics.tsv test_data/chr1.output/chr1.bam.metrics.tsv -m metrics -c chr1.cram chr1.bam
+	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct -m tables -c TPM TPM_
+	python3 test_data/approx_diff.py .test_output/chr1.cram.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct -m tables -c Counts Counts_
+	sed s/-nan/nan/g .test_output/chr1.cram.coverage.tsv > .test_output/coverage.tsv
+	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_mean coverage_mean_
+	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_std coverage_std_
+	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_CV coverage_CV_
+	rm -rf .test_output
+
 .PHONY: test-legacy
 
 test-legacy: rnaseqc
