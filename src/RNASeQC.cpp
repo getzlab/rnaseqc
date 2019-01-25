@@ -22,9 +22,10 @@ using namespace std;
 using namespace args;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.1.0";
+const string VERSION = "RNASeQC 2.1.1";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
+const int LEGACY_SPLIT_DISTANCE = 100;
 map<string, double> tpms;
 
 bool compGenes(const string&, const string&);
@@ -48,7 +49,6 @@ int main(int argc, char* argv[])
     ValueFlag<unsigned int> fragmentSamples(parser, "SAMPLES", "Set the number of samples to take when computing fragment sizes.  Requires the --bed argument. Default: 1000000", {"fragment-samples"});
     ValueFlag<unsigned int> mappingQualityThreshold(parser,"QUALITY", "Set the lower bound on read quality for exon coverage counting. Reads below this number are excluded from coverage metrics. Default: 255", {'q', "mapping-quality"});
     ValueFlag<unsigned int> baseMismatchThreshold(parser, "MISMATCHES", "Set the maximum number of allowed mismatches between a read and the reference sequence. Reads with more than this number of mismatches are excluded from coverage metrics. Default: 6", {"base-mismatch"});
-    ValueFlag<int> splitDistance(parser, "DISTANCE", "Set the minimum distance between aligned blocks of a read for the read to be counted as split. Default: 100 [bp]", {"split-distance"});
     ValueFlag<int> biasOffset(parser, "OFFSET", "Set the offset into the gene for the 3' and 5' windows in bias calculation.  A positive value shifts the 3' and 5' windows towards eachother, while a negative value shifts them apart.  Default: 150 [bp]", {"offset"});
     ValueFlag<int> biasWindow(parser, "SIZE", "Set the size of the 3' and 5' windows in bias calculation.  Default: 100 [bp]", {"window-size"});
     ValueFlag<unsigned long> biasGeneLength(parser, "LENGTH", "Set the minimum size of a gene for bias calculation.  Genes below this size are ignored in the calculation.  Default: 600 [bp]", {"gene-length"});
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
         const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : (LegacyMode.Get() ? 4u : 255u);
         const unsigned int COVERAGE_MASK = coverageMaskSize ? coverageMaskSize.Get() : 500u;
-        const int SPLIT_DISTANCE = 100;
+//        const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
         const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 0;
         const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
@@ -190,9 +190,9 @@ int main(int argc, char* argv[])
 
         
         const string bamFilename = bamFile.Get();
-        SeqlibReader bam(bamFilename);
+        SeqlibReader bam;
         if (fastaFile) bam.addReference(fastaFile.Get());
-        if (!bam.isOpen())
+        if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
             return 10;
@@ -348,8 +348,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
-                            else exonAlignmentMetrics(SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
+                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())

@@ -1,7 +1,7 @@
 # RNA-SeQC
 [![Build Status](https://travis-ci.com/broadinstitute/rnaseqc.svg?token=y8NpD4Ye6EkYyigZUZDt&branch=master)](https://travis-ci.com/broadinstitute/rnaseqc)
 
-Version 2.1.0
+Version 2.1.1
 
 ## Installing
 
@@ -18,7 +18,7 @@ If you do not use the `--recursive` flag, you'll need to run `git submodule upda
 If you checkout the RNA-SeQC source and wish to run unit tests, you'll need to have [Git LFS](https://git-lfs.github.com/) installed.
 If you already have LFS installed when you clone the repository, it will automatically
 pull the test resources. If you install LFS after the fact, just run `git lfs pull` to
-manually download the test data. The test resources use **~850 MB** of space.
+manually download the test data. The test resources use **~1.2 GB** of space.
 
 You can run the unit tests with `make test`
 
@@ -73,10 +73,6 @@ Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed te
                                         reference sequence. Reads with more than
                                         this number of mismatches are excluded
                                         from coverage metrics. Default: 6
-
-      --split-distance=[DISTANCE]       Set the minimum distance between aligned
-                                        blocks of a read for the read to be counted
-                                        as split. Default: 100 [bp]
 
       --offset=[OFFSET]                 Set the offset into the gene for the 3'
                                         and 5' windows in bias calculation. A

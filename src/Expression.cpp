@@ -285,18 +285,10 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 
 // New version of exon metrics
 // More efficient and less buggy
-void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
+void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
 {
     string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
-    //check for split reads by iterating over all the blocks of this read
-    bool split = false;
-    long long lastEnd = -1; // used for split read detection
-    for(auto block = blocks.begin(); block != blocks.end(); ++block)
-    {
-        if (lastEnd > 0 && !split) split = (block->start - lastEnd) > SPLIT_DISTANCE;
-        lastEnd = block->end;
-    }
     
     //Bamtools uses 0-based indexing because it's the 'norm' in computer science, even though bams are 1-based
     Feature current; //current block of the alignment (used while iterating)
@@ -319,7 +311,6 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
                 if (stranded == 1) target = !target;
                 if (result->strand != (target ? 1 : -1))
                 {
-
                     continue;
                 }
             }
@@ -408,7 +399,6 @@ void exonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>>
             counter.increment("HQ Exonic Reads");
             counter.increment("HQ Intragenic Reads");
         }
-        if (split) counter.increment("Split Reads");
     }
     else
     {

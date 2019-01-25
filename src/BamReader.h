@@ -44,8 +44,7 @@ public:
 class SeqlibReader : public SynchronizedReader {
     SeqLib::BamReader bam;
 public:
-    SeqlibReader(std::string filepath) : bam() {
-        this->bam.Open(filepath);
+    SeqlibReader() : bam() {
     }
     
     bool next(SeqLib::BamRecord&);
@@ -54,7 +53,8 @@ public:
         return this->bam.Header();
     }
     
-    bool isOpen() const {
+    bool open(std::string filepath) {
+        this->bam.Open(filepath);
         return this->bam.IsOpen();
     }
     
