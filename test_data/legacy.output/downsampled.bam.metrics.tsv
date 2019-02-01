@@ -62,10 +62,10 @@ Unpaired Reads	0
 Read Length	76
 Genes Detected	11614
 Estimated Library Complexity	0
-Mean 3' bias	0.703354
-Median 3' bias	1
-3' bias Std	0.456779
-3' bias MAD_Std	0
+Mean 3' bias	0.378109
+Median 3' bias	0.194444
+3' bias Std	0.42569
+3' bias MAD_Std	0.288283
 3' Bias, 25th Percentile	0
 3' Bias, 75th Percentile	1
 Average Fragment Length	183.993

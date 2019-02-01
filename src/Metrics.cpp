@@ -213,7 +213,7 @@ void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &c
     double lcov = 0.0, rcov = 0.0, windowSize = static_cast<double>(this->windowSize);
     for (unsigned int i = this->offset; i < this->offset + this->windowSize && i < coverage.size(); ++i)
         lcov += static_cast<double>(coverage[i]) / windowSize;
-    for (int i = coverage.size() - (1 + this->offset); i <= 0 && i > coverage.size() - (this->offset + this->windowSize); --i)
+    for (int i = coverage.size() - (1 + this->offset); i >= 0 && i > coverage.size() - (this->offset + this->windowSize); --i)
         rcov += static_cast<double>(coverage[i]) / windowSize;
     this->threeEnd[gene.feature_id] += gene.strand == 1 ? rcov : lcov;
     this->fiveEnd[gene.feature_id] += gene.strand == 1 ? lcov : rcov;
