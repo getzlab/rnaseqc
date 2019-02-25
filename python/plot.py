@@ -46,6 +46,8 @@ def main(args):
         ))
     samples = {os.path.basename(sample):sample for sample in samples}
     print("Detected", len(samples), "samples")
+    if len(samples) < 2:
+        sys.exit("At least 2 samples required for comparison")
 
     nb = nbe.Notebook()
     nb.add_markdown_cell(
@@ -239,14 +241,14 @@ def main(args):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.scatter(metrics['Median Exon CV'], metrics['Genes Detected'])
-    ax.set_xlabel("Median Excon CV")
+    ax.set_xlabel("Median Exon CV")
     ax.set_ylabel("Genes Detected")
     nb.add_code_cell(
         nbe.trim("""
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(metrics['Median Exon CV'], metrics['Genes Detected'])
-        ax.set_xlabel("Median Excon CV")
+        ax.set_xlabel("Median Exon CV")
         ax.set_ylabel("Genes Detected")
         """),
         nbe.encode_figure(fig),
