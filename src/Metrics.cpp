@@ -11,6 +11,7 @@
 #include <math.h>
 #include <cmath>
 #include <unordered_set>
+#include <algorithm>
 
 std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts; //counters for read coverage of genes and exons
 
@@ -209,14 +210,36 @@ void BaseCoverage::close()
 //Compute 3'/5' bias based on genes' per-base coverage
 void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &coverage)
 {
+//    bool fuck = gene.feature_id == "ENSG00000075624.9";
+    while (!coverage.empty() && coverage.back() == 0ul)
+        coverage.pop_back();
+    if (coverage.front() == 0ul)
+    {
+        auto start = coverage.begin();
+        while (start != coverage.end() && *start == 0ul) ++start;
+        coverage.erase(coverage.begin(), start);
+    }
     if (coverage.size() < this->geneLength) return; //Must meet minimum length req
-    double lcov = 0.0, rcov = 0.0, windowSize = static_cast<double>(this->windowSize);
+    double windowSize = static_cast<double>(this->windowSize);
+    std::vector<double> lcov, rcov;
+    lcov.reserve(this->windowSize);
+    rcov.reserve(this->windowSize);
     for (unsigned int i = this->offset; i < this->offset + this->windowSize && i < coverage.size(); ++i)
-        lcov += static_cast<double>(coverage[i]) / windowSize;
-    for (int i = coverage.size() - (1 + this->offset); i >= 0 && i > coverage.size() - (this->offset + this->windowSize); --i)
-        rcov += static_cast<double>(coverage[i]) / windowSize;
-    this->threeEnd[gene.feature_id] += gene.strand == 1 ? rcov : lcov;
-    this->fiveEnd[gene.feature_id] += gene.strand == 1 ? lcov : rcov;
+        lcov.push_back(static_cast<double>(coverage[i]));
+    for (int i = coverage.size() - (this->windowSize + this->offset); i >= 0 && i < coverage.size() - this->offset; ++i)
+        rcov.push_back(static_cast<double>(coverage[i]));
+    std::sort(lcov.begin(), lcov.end());
+    std::sort(rcov.begin(), rcov.end());
+    if (gene.strand == Strand::Forward)
+    {
+        this->threeEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
+        this->fiveEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
+    } else
+    {
+        this->threeEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
+        this->fiveEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
+    }
+    
 }
 
 //Extract the bias for a gene
@@ -275,7 +298,6 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
     }
     //at this point the gene coverage vector represents an UNMASKED, but complete transcript
     if (geneCounts[gene.feature_id] > bias.getThreshold()) bias.computeBias(gene, geneCoverage); //no masking in bias
-
     double avg = 0.0, std = 0.0;
     // apply the mask to the full gene vector
     if (mask_size)
@@ -301,3 +323,4 @@ std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const 
     else writer << "0\t0\tnan" << std::endl;
     return std::make_tuple(avg, std, (std / avg));
 }
+

@@ -36,6 +36,8 @@ static const double PAGE_SIZE = 1e6; // Size of each cache page (in bases)
 static const unsigned short CACHE_SIZE = 10u; // How many pages are stored in the cache
 
 extern std::map<std::string, chrom> chromosomes;
+
+enum Strand {Forward, Reverse, Unknown};
 chrom chromosomeMap(std::string);
 
 class Fasta {
@@ -56,7 +58,7 @@ public:
     ~Fasta();
     void open(std::string&);
     std::string getSeq(chrom, coord, coord);
-    std::string getSeq(chrom, coord, coord, bool);
+    std::string getSeq(chrom, coord, coord, Strand);
     indexType pageForCoord(chrom, coord);
     coord pageOffset(indexType);
     

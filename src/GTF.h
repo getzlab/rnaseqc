@@ -23,11 +23,13 @@ struct gtfException : public std::exception {
     gtfException(std::string msg) : error(msg) {};
 };
 
+enum FeatureType {Gene, Transcript, Exon, Other};
+
 struct Feature {
     //Represents arbitrary genome features
     coord start, end;
     chrom chromosome;
-    signed char strand;
+    Strand strand;
     std::string type, feature_id, gene_id, transcript_type;
     bool ribosomal;
 };

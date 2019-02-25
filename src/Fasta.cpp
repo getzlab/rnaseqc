@@ -98,11 +98,11 @@ void Fasta::open(std::string &filename)
 //Get a forward strand sequence {contig}:{start}-{end}
 std::string Fasta::getSeq(chrom contig, coord start, coord end)
 {
-    return this->getSeq(contig, start, end, false);
+    return this->getSeq(contig, start, end, Strand::Forward);
 }
 
 //Get a sequence {contig}:{start}-{end}, and optionally return its reverse complement
-std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
+std::string Fasta::getSeq(chrom contig, coord start, coord end, Strand strand)
 {
     //NOTE: Coordinates must be 0-based, end-exclusive.
     if (!this->isOpen) return "";
@@ -131,7 +131,7 @@ std::string Fasta::getSeq(chrom contig, coord start, coord end, bool revComp)
     }
     // Extract desired sequence from the output (which is complete pages)
     output = output.substr(start-pageOffset, end-start);
-    if (revComp) complement(output);
+    if (strand == Strand::Reverse) complement(output);
     return output;
 }
 

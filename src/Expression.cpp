@@ -40,7 +40,7 @@ unsigned int extractBlocks(Alignment &alignment, vector<Feature> &blocks, chrom 
                 block.start = start;
                 block.chromosome = chr;
                 block.end = start + current.Length(); //1-based, closed
-                block.strand = alignment.ReverseFlag() ? -1 : 1;
+                block.strand = alignment.ReverseFlag() ? Strand::Reverse : Strand::Forward;
                 blocks.push_back(block);
                 alignedSize += current.Length();
             case 'N':
@@ -102,9 +102,17 @@ list<Feature>* intersectBlock(Feature &block, list<Feature> &features)
     return output;
 }
 
+Strand feature_strand(Alignment &alignment, Strand orientation)
+{
+    if (orientation == Strand::Unknown) return orientation;
+    bool target = alignment.ReverseFlag();
+    if ((orientation == Strand::Forward) ^ alignment.FirstFlag()) target = !target;
+    return target ? Strand::Forward : Strand::Reverse;
+}
+
 // Legacy version of standard alignment metrics
 // This code is really inefficient, but it's a faithful replication of the original code
-void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
+void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, bool highQuality)
 {
     string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -128,6 +136,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false, legacyJunction = false, legacyNotExonic = false; //various booleans for keeping track of the alignment
     bool legacyNotSplit = false; //Legacy bug to override a read being split
+    Strand read_strand = feature_strand(alignment, orientation);
     for (auto result = results->begin(); result != results->end(); ++result)
     {
         Feature exon;
@@ -137,19 +146,11 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
         if (result->type == "gene")
         {
             
-            if (result->strand == 1) transcriptPlus = true;
-            else if (result->strand == -1) transcriptMinus = true;
+            if (result->strand == Strand::Forward) transcriptPlus = true;
+            else if (result->strand == Strand::Reverse) transcriptMinus = true;
             for (auto block = blocks.begin(); block != blocks.end(); ++block)
             {
-                if (stranded)
-                {
-                    bool target = alignment.FirstFlag() ^ alignment.FirstFlag();
-                    if (stranded == 1) target = !target;
-                    if (result->strand != (target ? 1 : -1))
-                    {
-                        continue;
-                    }
-                }
+                if (read_strand != Strand::Unknown && read_strand != result->strand) continue;
                 intragenic = true;
                 
                 if (block->start > result->end) legacyNotExonic = true;
@@ -285,7 +286,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
 
 // New version of exon metrics
 // More efficient and less buggy
-void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, unsigned short stranded, BaseCoverage &baseCoverage, bool highQuality)
+void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, bool highQuality)
 {
     string chrName = sequenceTable[alignment.ChrID()].Name;
     chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -298,6 +299,8 @@ void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter,
     vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
     Collector exonCoverageCollector(&exonCounts); //Collects coverage counts for later (counts may be discarded)
     bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
+    
+    Strand read_strand = feature_strand(alignment, orientation);
 
     for (auto block = blocks.begin(); block != blocks.end(); ++block)
     {
@@ -305,17 +308,9 @@ void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter,
         list<Feature> *results = intersectBlock(*block, features[chr]); //grab the list of intersecting features
         for (auto result = results->begin(); result != results->end(); ++result)
         {
-            if (stranded)
-            {
-                bool target = alignment.ReverseFlag() ^ alignment.FirstFlag();
-                if (stranded == 1) target = !target;
-                if (result->strand != (target ? 1 : -1))
-                {
-                    continue;
-                }
-            }
-            if (result->strand == 1) transcriptPlus = true;
-            else if (result->strand == -1) transcriptMinus = true;
+            if (read_strand != Strand::Unknown && read_strand != result->strand) continue;
+            if (result->strand == Strand::Forward) transcriptPlus = true;
+            else if (result->strand == Strand::Reverse) transcriptMinus = true;
             //else...what, exactly?
             if (result->type == "exon")
             {

@@ -7,7 +7,6 @@
 #include "Expression.h"
 #include <string>
 #include <iostream>
-#include <iterator>
 #include <stdio.h>
 #include <set>
 #include <cmath>
@@ -29,7 +28,6 @@ const int LEGACY_SPLIT_DISTANCE = 100;
 map<string, double> tpms;
 
 bool compGenes(const string&, const string&);
-template <typename T> double computeMedian(unsigned long, T&&, unsigned int=0u);
 void add_range(vector<unsigned long>&, coord, unsigned int);
 double reduceDeltaCV(list<double>&);
 
@@ -75,12 +73,12 @@ int main(int argc, char* argv[])
         if (!bamFile) throw ValidationError("No BAM file provided");
         if (!outputDir) throw ValidationError("No output directory provided");
 
-        unsigned short STRAND_SPECIFIC = 0;
+        Strand STRAND_ORIENTATION = Strand::Unknown;
         if (strandSpecific)
         {
             string tmp_strand = strandSpecific.Get();
-            if (tmp_strand == "RF" || tmp_strand == "rf") STRAND_SPECIFIC = 1;
-            else if(tmp_strand == "FR" || tmp_strand == "fr") STRAND_SPECIFIC = -1;
+            if (tmp_strand == "RF" || tmp_strand == "rf") STRAND_ORIENTATION = Strand::Reverse;
+            else if(tmp_strand == "FR" || tmp_strand == "fr") STRAND_ORIENTATION = Strand::Forward;
             else throw ValidationError("--stranded argument must be in {'RF', 'rf', 'FR', 'fr'}");
         }
 
@@ -142,14 +140,21 @@ int main(int argc, char* argv[])
                     features[line.chromosome].push_back(line);                    
 #ifndef NO_FASTA
                     //If fasta features are enabled, read the gene sequence from the fasta 
-                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand == -1);
+                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
 #endif
                     
                 }
             }
         }
 		//ensure that the features are sorted.  This MUST be true for the exon alignment metrics
-        for (auto beg = features.begin(); beg != features.end(); ++beg) beg->second.sort(compIntervalStart);
+        if (VERBOSITY > 1) cout << "Processing GTF Features..." << endl;
+        for (auto beg = features.begin(); beg != features.end(); ++beg)
+        {
+            beg->second.sort(compIntervalStart);
+            for (auto feat = beg->second.begin(); feat != beg->second.end(); ++feat)
+                if (feat->type == "exon") exonsForGene[feat->gene_id].push_back(feat->feature_id);
+            
+        }
         time(&t1); //record the time taken to parse the GTF
         if (!(geneList.size() && exonList.size()))
         {
@@ -348,8 +353,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
-                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_SPECIFIC, baseCoverage, highQuality);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality);
+                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality);
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
@@ -713,21 +718,6 @@ int main(int argc, char* argv[])
 	}
 
     return 0;
-}
-
-
-template <typename T>
-double computeMedian(unsigned long size, T &&iterator, unsigned int offset)
-{
-    if (size <= 0) // Couldn't decide if it would make sense to just report a median of 0. This seemed safer
-        throw std::range_error("Cannot compute median of an empty list");
-    for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
-    if (size % 1)
-    {
-        double value = static_cast<double>(*(iterator++));
-        return (value + static_cast<double>(*iterator)) / 2.0;
-    }
-    return static_cast<double>(*iterator);
 }
 
 double reduceDeltaCV(list<double> &deltaCV)

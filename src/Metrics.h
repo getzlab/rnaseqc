@@ -18,6 +18,7 @@
 #include <tuple>
 #include <list>
 #include <unordered_set>
+#include <iterator>
 
 class Metrics {
     // For storing arbitrary counters
@@ -120,6 +121,19 @@ public:
 
 
 std::ofstream& operator<<(std::ofstream&, Metrics&);
+
+template <typename T> double computeMedian(unsigned long size, T &&iterator, unsigned int offset=0u)
+{
+    if (size <= 0) // Couldn't decide if it would make sense to just report a median of 0. This seemed safer
+    throw std::range_error("Cannot compute median of an empty list");
+    for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
+    if (size % 1)
+    {
+        double value = static_cast<double>(*(iterator++));
+        return (value + static_cast<double>(*iterator)) / 2.0;
+    }
+    return static_cast<double>(*iterator);
+}
 
 extern std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts; //counters for read coverage of genes and exons
 #endif /* Metrics_h */
