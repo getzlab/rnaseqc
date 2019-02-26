@@ -21,6 +21,7 @@ High Quality Intragenic Rate	0.960232
 High Quality Ambiguous Alignment Rate	0
 Discard Rate	0.000297518
 rRNA Rate	0.00747647
+Chimeric Alignment Rate	0
 End 1 Sense Rate	0.494116
 End 2 Sense Rate	0.507167
 Avg. Splits per Read	0.256225
@@ -62,18 +63,18 @@ Unpaired Reads	0
 Read Length	76
 Genes Detected	11614
 Estimated Library Complexity	0
-Mean 3' bias	0.504381
-Median 3' bias	0.5
-3' bias Std	0.2165
-3' bias MAD_Std	0.0823667
+Mean 3' bias	0.747154
+Median 3' bias	1
+3' bias Std	0.373828
+3' bias MAD_Std	0
 3' Bias, 25th Percentile	0.5
-3' Bias, 75th Percentile	0.597403
+3' Bias, 75th Percentile	1
 Average Fragment Length	183.993
 Fragment Length Median	164
 Fragment Length Std	92.2479
 Fragment Length MAD_Std	0
 Median of Avg Transcript Coverage	0
 Median of Transcript Coverage Std	0
-Median of Transcript Coverage CV	1.56494
+Median of Transcript Coverage CV	1.57755
 Median Exon CV	0.623887
 Exon CV MAD	0.528857

@@ -212,15 +212,6 @@ void BaseCoverage::close()
 //Compute 3'/5' bias based on genes' per-base coverage
 void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &coverage)
 {
-//    bool fuck = gene.feature_id == "ENSG00000075624.9";
-    while (!coverage.empty() && coverage.back() == 0ul)
-        coverage.pop_back();
-    if (coverage.front() == 0ul)
-    {
-        auto start = coverage.begin();
-        while (start != coverage.end() && *start == 0ul) ++start;
-        coverage.erase(coverage.begin(), start);
-    }
     if (coverage.size() < this->geneLength) return; //Must meet minimum length req
     double windowSize = static_cast<double>(this->windowSize);
     std::vector<double> lcov, rcov;
