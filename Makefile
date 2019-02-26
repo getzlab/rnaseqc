@@ -19,6 +19,11 @@ OBJECTS=$(SOURCES:.cpp=.o)
 rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
 
+.PHONY: lib
+
+lib: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
+	ar -rcs rnaseqc.a $^
+
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 

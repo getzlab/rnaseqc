@@ -21,7 +21,7 @@ using namespace std;
 using namespace args;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.1.2";
+const string VERSION = "RNASeQC 2.2.1";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
@@ -545,6 +545,7 @@ int main(int argc, char* argv[])
         output << "High Quality Ambiguous Alignment Rate\t" << counter.frac("HQ Ambiguous Reads", "High Quality Reads") << endl;
         output << "Discard Rate\t" << static_cast<double>(counter.get("Mapped Reads") - counter.get("Reads used for Intron/Exon counts")) / counter.get("Mapped Reads") << endl;
         output << "rRNA Rate\t" << counter.frac("rRNA Reads", "Mapped Reads") << endl;
+        output << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Reads", "Mapped Reads") << endl;
         output << "End 1 Sense Rate\t" << static_cast<double>(counter.get("End 1 Sense")) / (counter.get("End 1 Sense") + counter.get("End 1 Antisense")) << endl;
         output << "End 2 Sense Rate\t" << static_cast<double>(counter.get("End 2 Sense")) / (counter.get("End 2 Sense") + counter.get("End 2 Antisense")) << endl;
         output << "Avg. Splits per Read\t" << counter.frac("Alignment Blocks", "Mapped Reads") - 1.0 << endl;

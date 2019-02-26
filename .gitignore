@@ -2,3 +2,4 @@
 python/__pycache__/
 src/*.o
 rnaseqc
+rnaseqc.a
