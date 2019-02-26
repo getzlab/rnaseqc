@@ -67,7 +67,11 @@ void trimFeatures(Alignment &alignment, list<Feature> &features)
 {
     //trim intervals upstream of this block
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
-    while (!features.empty() && features.front().end < alignment.Position()) features.pop_front();
+    while (!features.empty() && features.front().end < alignment.Position())
+    {
+        if (features.front().type == "gene") fragmentTracker.erase(features.front().feature_id);
+        features.pop_front();
+    }
 }
 
 void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &coverage)
@@ -76,7 +80,11 @@ void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &c
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
     while (!features.empty() && features.front().end < alignment.Position())
     {
-        if (features.front().type == "gene") coverage.compute(features.front()); //Once this gene leaves the search window, compute coverage
+        if (features.front().type == "gene")
+        {
+            coverage.compute(features.front()); //Once this gene leaves the search window, compute coverage
+            fragmentTracker.erase(features.front().feature_id);
+        }
         features.pop_front();
     }
 }
@@ -84,7 +92,10 @@ void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &c
 // After we switch chromosomes, just drop all the remaining features from the previous chromosome
 void dropFeatures(std::list<Feature> &features, BaseCoverage &coverage)
 {
-    for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == "gene") coverage.compute(*feat);
+    for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == "gene") {
+        coverage.compute(*feat);
+        fragmentTracker.erase(feat->feature_id);
+    }
     features.clear();
 }
 
@@ -213,6 +224,11 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                         //                    cout << "\t" << exon.feature_id<< " 1.0";
                     }
                     geneCounts[exon.gene_id] += 1.0;
+                    if (fragmentTracker[exon.gene_id].count(alignment.Qname()) == 0)
+                    {
+                        fragmentTracker[exon.gene_id].insert(alignment.Qname());
+                        geneFragmentCounts[exon.gene_id]++;
+                    }
                     if (!alignment.DuplicateFlag()) uniqueGeneCounts[exon.gene_id]++;
                     baseCoverage.commit(exon.gene_id);
                 }
@@ -359,6 +375,11 @@ void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter,
                 if (exonCoverageCollector.queryGene(*gene))
                 {
                     geneCounts[*gene]++;
+                    if (fragmentTracker[*gene].count(alignment.Qname()) == 0)
+                    {
+                        fragmentTracker[*gene].insert(alignment.Qname());
+                        geneFragmentCounts[*gene]++;
+                    }
                     if (!alignment.DuplicateFlag()) uniqueGeneCounts[*gene]++;
                 }
                 exonCoverageCollector.collect(*gene); //collect and keep exon coverage for this gene

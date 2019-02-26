@@ -412,18 +412,23 @@ int main(int argc, char* argv[])
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
             ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_"+(useRPKM.Get() ? "rpkm" : "tpm")+".gct");
+            ofstream fragmentReport(outputDir.Get()+"/"+SAMPLENAME+".gene_fragments.gct");
             geneReport << "#1.2" << endl;
             geneRPKM << "#1.2" << endl;
+            fragmentReport << "#1.2" << endl;
             geneReport << geneList.size() << "\t1" << endl;
             geneRPKM << geneList.size() << "\t1" << endl;
+            fragmentReport << geneList.size() << "\t1" << endl;
             geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : (useRPKM.Get() ? "RPKM" : "TPM")) << endl;
             geneRPKM << fixed;
+            fragmentReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Fragments") << endl;
             const double scaleRPKM = static_cast<double>(counter.get("Exonic Reads")) / 1000000.0;
             double scaleTPM = 0.0;
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
+                fragmentReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneFragmentCounts[*gene]) << endl;
                 
 #ifndef NO_FASTA
                 //If fasta features were enabled, get the gc content coverage bias from this gene

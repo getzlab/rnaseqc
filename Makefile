@@ -50,6 +50,7 @@ test-single: rnaseqc
 	python3 test_data/approx_diff.py .test_output/single_pair.bam.gene_reads.gct test_data/single_pair.output/single_pair.bam.gene_reads.gct -m tables -c Counts Counts_
 	python3 test_data/approx_diff.py .test_output/single_pair.bam.gene_tpm.gct test_data/single_pair.output/single_pair.bam.gene_tpm.gct -m tables -c TPM TPM_
 	python3 test_data/approx_diff.py .test_output/single_pair.bam.exon_reads.gct test_data/single_pair.output/single_pair.bam.exon_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/single_pair.bam.gene_fragments.gct test_data/single_pair.output/single_pair.bam.gene_fragments.gct -m tables -c Fragments Fragments_
 	rm -rf .test_output
 
 .PHONY: test-chr1
@@ -60,6 +61,7 @@ test-chr1: rnaseqc
 	python3 test_data/approx_diff.py .test_output/chr1.bam.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct -m tables -c Counts Counts_
 	python3 test_data/approx_diff.py .test_output/chr1.bam.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct -m tables -c TPM TPM_
 	python3 test_data/approx_diff.py .test_output/chr1.bam.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/chr1.bam.gene_fragments.gct test_data/chr1.output/chr1.bam.gene_fragments.gct -m tables -c Fragments Fragments_
 	sed s/-nan/nan/g .test_output/chr1.bam.coverage.tsv > .test_output/coverage.tsv
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_mean coverage_mean_
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_std coverage_std_
@@ -74,6 +76,7 @@ test-downsampled: rnaseqc
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_reads.gct test_data/downsampled.output/downsampled.bam.gene_reads.gct -m tables -c Counts Counts_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_tpm.gct test_data/downsampled.output/downsampled.bam.gene_tpm.gct -m tables -c TPM TPM_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.output/downsampled.bam.exon_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_fragments.gct test_data/downsampled.output/downsampled.bam.gene_fragments.gct -m tables -c Fragments Fragments_
 	sed s/-nan/nan/g .test_output/downsampled.bam.coverage.tsv > .test_output/coverage.tsv
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/downsampled.output/downsampled.bam.coverage.tsv -m metrics -c coverage_mean coverage_mean_
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/downsampled.output/downsampled.bam.coverage.tsv -m metrics -c coverage_std coverage_std_
@@ -89,6 +92,7 @@ test-legacy: rnaseqc
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/downsampled.bam.gene_reads.gct -m tables -c Counts Counts_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_tpm.gct test_data/legacy.output/downsampled.bam.gene_tpm.gct -m tables -c TPM TPM_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/downsampled.bam.exon_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_fragments.gct test_data/legacy.output/downsampled.bam.gene_fragments.gct -m tables -c Fragments Fragments_
 	sed s/-nan/nan/g .test_output/downsampled.bam.coverage.tsv > .test_output/coverage.tsv
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv -m metrics -c coverage_mean coverage_mean_
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv -m metrics -c coverage_std coverage_std_
@@ -107,6 +111,7 @@ test-crams: rnaseqc
 	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct -m tables -c Counts Counts_
 	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct -m tables -c TPM TPM_
 	python3 test_data/approx_diff.py .test_output/chr1.cram.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct -m tables -c Counts Counts_
+	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_fragments.gct test_data/chr1.output/chr1.bam.gene_fragments.gct -m tables -c Fragments Fragments_
 	sed s/-nan/nan/g .test_output/chr1.cram.coverage.tsv > .test_output/coverage.tsv
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_mean coverage_mean_
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/chr1.output/chr1.bam.coverage.tsv -m metrics -c coverage_std coverage_std_

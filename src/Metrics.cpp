@@ -13,7 +13,9 @@
 #include <unordered_set>
 #include <algorithm>
 
-std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts; //counters for read coverage of genes and exons
+std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons
+
+std::map<std::string, std::unordered_set<std::string> > fragmentTracker; // tracks fragments encountered by each gene
 
 std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const unsigned int, const std::map<std::string, std::vector<unsigned long> >&, std::list<double>&, BiasCounter&);
 

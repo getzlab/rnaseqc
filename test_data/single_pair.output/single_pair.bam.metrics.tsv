@@ -53,7 +53,6 @@ Mismatched Bases	0
 Reads excluded from exon counts	0
 Reads used for Intron/Exon counts	2
 rRNA Reads	0
-Split Reads	0
 Total Bases	152
 Total Mapped Pairs	1
 Total Reads	2
@@ -68,8 +67,8 @@ Median 3' bias	0
 3' bias MAD_Std	0
 3' Bias, 25th Percentile	0
 3' Bias, 75th Percentile	0
-Median of Avg Transcript Coverage	0
-Median of Transcript Coverage Std	0
-Median of Transcript Coverage CV	0
-Median Exon CV	0
+Median of Avg Transcript Coverage	0.119685
+Median of Transcript Coverage Std	0.354729
+Median of Transcript Coverage CV	2.96386
+Median Exon CV	1.48751
 Exon CV MAD	0

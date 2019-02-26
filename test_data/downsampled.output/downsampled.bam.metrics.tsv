@@ -61,18 +61,18 @@ Unpaired Reads	0
 Read Length	76
 Genes Detected	11590
 Estimated Library Complexity	0
-Mean 3' bias	0.376893
-Median 3' bias	0.181818
-3' bias Std	0.425435
-3' bias MAD_Std	0.269564
-3' Bias, 25th Percentile	0
-3' Bias, 75th Percentile	1
+Mean 3' bias	0.503424
+Median 3' bias	0.5
+3' bias Std	0.215572
+3' bias MAD_Std	0.0823667
+3' Bias, 25th Percentile	0.5
+3' Bias, 75th Percentile	0.571429
 Average Fragment Length	183.993
 Fragment Length Median	164
 Fragment Length Std	92.2479
 Fragment Length MAD_Std	0
 Median of Avg Transcript Coverage	0
 Median of Transcript Coverage Std	0
-Median of Transcript Coverage CV	1.47154
-Median Exon CV	0.594345
-Exon CV MAD	0.50131
+Median of Transcript Coverage CV	1.56628
+Median Exon CV	0.625488
+Exon CV MAD	0.529207
