@@ -18,38 +18,40 @@
 #include <sstream>
 #include "Fasta.h"
 
-struct gtfException : public std::exception {
-    std::string error;
-    gtfException(std::string msg) : error(msg) {};
-};
-
-enum FeatureType {Gene, Transcript, Exon, Other};
-
-struct Feature {
-    //Represents arbitrary genome features
-    coord start, end;
-    chrom chromosome;
-    Strand strand;
-    FeatureType type;
-    std::string feature_id, gene_id, transcript_type;
-    bool ribosomal;
-};
-
-//For comparing features
-bool operator==(const Feature &a, const Feature &b);
-bool compIntervalStart(const Feature&, const Feature&);
-bool compIntervalEnd(const Feature&, const Feature&);
-bool intersectPoint(const Feature&, const coord);
-bool intersectInterval(const Feature&, const Feature&);
-int partialIntersect(const Feature&, const Feature&);
-
-
-extern std::map<std::string, std::string> geneNames, geneSeqs;
-extern std::map<std::string, coord> geneLengths, geneCodingLengths, exonLengths;
-extern std::vector<std::string> geneList, exonList;
-extern std::map<std::string, std::vector<std::string>> exonsForGene;
-
-std::ifstream& operator>>(std::ifstream&, Feature&);
-std::map<std::string,std::string>& parseAttributes(std::string&, std::map<std::string,std::string>&);
+namespace rnaseqc {
+    struct gtfException : public std::exception {
+        std::string error;
+        gtfException(std::string msg) : error(msg) {};
+    };
+    
+    enum FeatureType {Gene, Transcript, Exon, Other};
+    
+    struct Feature {
+        //Represents arbitrary genome features
+        coord start, end;
+        chrom chromosome;
+        Strand strand;
+        FeatureType type;
+        std::string feature_id, gene_id, transcript_type;
+        bool ribosomal;
+    };
+    
+    //For comparing features
+    bool operator==(const Feature &a, const Feature &b);
+    bool compIntervalStart(const Feature&, const Feature&);
+    bool compIntervalEnd(const Feature&, const Feature&);
+    bool intersectPoint(const Feature&, const coord);
+    bool intersectInterval(const Feature&, const Feature&);
+    int partialIntersect(const Feature&, const Feature&);
+    
+    
+    extern std::map<std::string, std::string> geneNames, geneSeqs;
+    extern std::map<std::string, coord> geneLengths, geneCodingLengths, exonLengths;
+    extern std::vector<std::string> geneList, exonList;
+    extern std::map<std::string, std::vector<std::string>> exonsForGene;
+    
+    std::ifstream& operator>>(std::ifstream&, Feature&);
+    std::map<std::string,std::string>& parseAttributes(std::string&, std::map<std::string,std::string>&);
+}
 
 #endif /* GTF_h */

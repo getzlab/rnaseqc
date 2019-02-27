@@ -8,11 +8,13 @@
 
 #include "BamReader.h"
 
-bool SeqlibReader::next(SeqLib::BamRecord &read)
-{
-    // Must uncomment before adding multithreading
-//    std::lock_guard<SeqlibReader> guard(*this);
-    bool ok = this->bam.GetNextRecord(read);
-    if (ok) this->read_count++;
-    return ok;
+namespace rnaseqc {
+    bool SeqlibReader::next(SeqLib::BamRecord &read)
+    {
+        // Must uncomment before adding multithreading
+        //    std::lock_guard<SeqlibReader> guard(*this);
+        bool ok = this->bam.GetNextRecord(read);
+        if (ok) this->read_count++;
+        return ok;
+    }
 }

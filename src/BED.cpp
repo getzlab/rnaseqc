@@ -14,30 +14,33 @@
 using std::ifstream;
 using std::string;
 
-ifstream& extractBED(ifstream &input, Feature &out)
-{
-    try
+namespace rnaseqc {
+    ifstream& extractBED(ifstream &input, Feature &out)
     {
-        string line;
-        while(getline(input, line))
+        try
         {
-            if(line[0] == '#') continue; //Do beds even have comment lines?
-            std::istringstream tokenizer(line);
-            string buffer;
-            tokenizer >> buffer; //chromosome name
-            out.chromosome = chromosomeMap(buffer);
-            tokenizer >> buffer; //start
-            out.start = std::stoull(buffer) + 1;
-            tokenizer >> buffer; //stop
-            out.end = std::stoull(buffer) + 1;
-            out.feature_id = line; // add a dummy exon_id for mapping interval intersections later
-            out.type = FeatureType::Exon;
-            break;
+            string line;
+            while(getline(input, line))
+            {
+                if(line[0] == '#') continue; //Do beds even have comment lines?
+                std::istringstream tokenizer(line);
+                string buffer;
+                tokenizer >> buffer; //chromosome name
+                out.chromosome = chromosomeMap(buffer);
+                tokenizer >> buffer; //start
+                out.start = std::stoull(buffer) + 1;
+                tokenizer >> buffer; //stop
+                out.end = std::stoull(buffer) + 1;
+                out.feature_id = line; // add a dummy exon_id for mapping interval intersections later
+                out.type = FeatureType::Exon;
+                break;
+            }
         }
+        catch (std::exception &e)
+        {
+            throw bedException(std::string("Encountered an unknown error while parsing the BED: ") + e.what());
+        }
+        return input;
     }
-    catch (std::exception &e)
-    {
-        throw bedException(std::string("Encountered an unknown error while parsing the BED: ") + e.what());
-    }
-    return input;
+
 }

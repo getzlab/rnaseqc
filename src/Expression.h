@@ -15,21 +15,23 @@
 #include <set>
 #include <iostream>
 
-//Utility functions
-unsigned int extractBlocks(Alignment&, std::vector<Feature>&, chrom, bool);
-//unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, chrom);
-std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
-void trimFeatures(Alignment&, std::list<Feature>&);
-void trimFeatures(Alignment&, std::list<Feature>&, BaseCoverage&);
-void dropFeatures(std::list<Feature>&, BaseCoverage&);
-
-//Metrics functions
-unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature>>*, std::map<std::string, std::string>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&);
-
-void exonAlignmentMetrics(std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
-
-void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
-
-Strand feature_strand(Alignment&, Strand);
+namespace rnaseqc {
+    //Utility functions
+    unsigned int extractBlocks(Alignment&, std::vector<Feature>&, chrom, bool);
+    //unsigned int legacyExtractBlocks(BamTools::BamAlignment&, std::vector<Feature>&, chrom);
+    std::list<Feature>* intersectBlock(Feature&, std::list<Feature>&);
+    void trimFeatures(Alignment&, std::list<Feature>&);
+    void trimFeatures(Alignment&, std::list<Feature>&, BaseCoverage&);
+    void dropFeatures(std::list<Feature>&, BaseCoverage&);
+    
+    //Metrics functions
+    unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature>>*, std::map<std::string, std::string>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&);
+    
+    void exonAlignmentMetrics(std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
+    
+    void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
+    
+    Strand feature_strand(Alignment&, Strand);
+}
 
 #endif /* Expression_h */

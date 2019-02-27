@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 using namespace std;
 using namespace args;
+using namespace rnaseqc;
 
 const string NM = "NM";
 const string VERSION = "RNASeQC 2.2.1";
