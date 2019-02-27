@@ -21,6 +21,7 @@ High Quality Intragenic Rate	1
 High Quality Ambiguous Alignment Rate	0
 Discard Rate	0
 rRNA Rate	0
+Chimeric Alignment Rate	0
 End 1 Sense Rate	1
 End 2 Sense Rate	0
 Avg. Splits per Read	0
@@ -67,8 +68,8 @@ Median 3' bias	0
 3' bias MAD_Std	0
 3' Bias, 25th Percentile	0
 3' Bias, 75th Percentile	0
-Median of Avg Transcript Coverage	0.119685
-Median of Transcript Coverage Std	0.354729
-Median of Transcript Coverage CV	2.96386
-Median Exon CV	1.48751
+Median of Avg Transcript Coverage	0
+Median of Transcript Coverage Std	0
+Median of Transcript Coverage CV	0
+Median Exon CV	0
 Exon CV MAD	0

@@ -96,7 +96,6 @@ namespace rnaseqc {
                         std::cerr << "Unnamed exon: Gene: " << attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                     }
                     exonList.push_back(out.feature_id);
-                    exonsForGene[out.gene_id].push_back(out.feature_id);
                     geneCodingLengths[out.gene_id] += 1 + (out.end - out.start);
                     exonLengths[out.feature_id] = 1 + (out.end - out.start);
                 }

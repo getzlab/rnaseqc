@@ -22,7 +22,7 @@ using namespace args;
 using namespace rnaseqc;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.2.1";
+const string VERSION = "RNASeQC 2.2.2";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
@@ -128,11 +128,7 @@ int main(int argc, char* argv[])
                 {
                     //legacy code excludes single base exons
                     if (VERBOSITY > 1) cerr<<"Legacy mode excluded feature: " << line.feature_id << endl;
-                    if (line.type == FeatureType::Exon) {
-                        geneCodingLengths[line.gene_id] -= 1;
-                        if (exonsForGene[line.gene_id].back() == line.feature_id) exonsForGene[line.gene_id].pop_back();
-                        else cerr << "Assumption failed: A legacy excluded exon (" << line.feature_id << ") was not the latest exon in " << line.gene_id << "'s exon list " << exonsForGene[line.gene_id].back() << endl;
-                    }
+                    if (line.type == FeatureType::Exon) geneCodingLengths[line.gene_id] -= 1;
                     continue;
                 }
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
