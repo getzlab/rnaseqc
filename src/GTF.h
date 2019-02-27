@@ -30,7 +30,8 @@ struct Feature {
     coord start, end;
     chrom chromosome;
     Strand strand;
-    std::string type, feature_id, gene_id, transcript_type;
+    FeatureType type;
+    std::string feature_id, gene_id, transcript_type;
     bool ribosomal;
 };
 

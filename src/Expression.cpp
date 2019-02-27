@@ -69,7 +69,7 @@ void trimFeatures(Alignment &alignment, list<Feature> &features)
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
     while (!features.empty() && features.front().end < alignment.Position())
     {
-        if (features.front().type == "gene") fragmentTracker.erase(features.front().feature_id);
+        if (features.front().type == FeatureType::Gene) fragmentTracker.erase(features.front().feature_id);
         features.pop_front();
     }
 }
@@ -80,7 +80,7 @@ void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &c
     //Since alignments are sorted, if an alignment occurs beyond any features, these features can be dropped
     while (!features.empty() && features.front().end < alignment.Position())
     {
-        if (features.front().type == "gene")
+        if (features.front().type == FeatureType::Gene)
         {
             coverage.compute(features.front()); //Once this gene leaves the search window, compute coverage
             fragmentTracker.erase(features.front().feature_id);
@@ -92,7 +92,7 @@ void trimFeatures(Alignment &alignment, list<Feature> &features, BaseCoverage &c
 // After we switch chromosomes, just drop all the remaining features from the previous chromosome
 void dropFeatures(std::list<Feature> &features, BaseCoverage &coverage)
 {
-    for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == "gene") {
+    for (auto feat = features.begin(); feat != features.end(); ++feat) if (feat->type == FeatureType::Gene) {
         coverage.compute(*feat);
         fragmentTracker.erase(feat->feature_id);
     }
@@ -154,7 +154,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
         bool legacyFoundExon = false, legacyFoundGene = false, legacyTranscriptIntron = false, legacyTranscriptExon = false;
         map<string, float> legacySplitDosage;
         legacyNotSplit = false;
-        if (result->type == "gene")
+        if (result->type == FeatureType::Gene)
         {
             
             if (result->strand == Strand::Forward) transcriptPlus = true;
@@ -174,7 +174,7 @@ void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Fea
                     legacyFoundGene = true;
                     for (auto ex = results->begin(); ex != results->end() && !firstexon ; ++ex)
                     {
-                        if (ex->type == "exon" && ex->gene_id == result->gene_id && intersectInterval(*ex, *block)  )
+                        if (ex->type == FeatureType::Exon && ex->gene_id == result->gene_id && intersectInterval(*ex, *block)  )
                         {
                             if (result->ribosomal) ribosomal = true;
                             if (partialIntersect(*ex, *block) == (block->end - block->start))
@@ -328,7 +328,7 @@ void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter,
             if (result->strand == Strand::Forward) transcriptPlus = true;
             else if (result->strand == Strand::Reverse) transcriptMinus = true;
             //else...what, exactly?
-            if (result->type == "exon")
+            if (result->type == FeatureType::Exon)
             {
                 exonic = true;
                 int intersectionSize = partialIntersect(*result, *block);
@@ -345,7 +345,7 @@ void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter,
                 }
 
             }
-            else if (result->type == "gene")
+            else if (result->type == FeatureType::Gene)
             {
                 intragenic = true;
                 //we don't record the gene name here because in terms of gene coverage and detection, we only care about exons

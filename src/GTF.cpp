@@ -40,7 +40,10 @@ ifstream& operator>>(ifstream &in, Feature &out)
             if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse track. Invalid GTF line: " + line);
             //get feature type
             if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse feature type. Invalid GTF line: " + line);
-            out.type = buffer;
+            if (buffer == "exon") out.type = FeatureType::Exon;
+            else if (buffer == "gene") out.type = FeatureType::Gene;
+            else if (buffer == "transcript") out.type = FeatureType::Transcript;
+            else out.type = FeatureType::Other;
             //get start pos
             if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse start. Invalid GTF line: " + line);
             out.start = std::stoull(buffer);
@@ -70,16 +73,16 @@ ifstream& operator>>(ifstream &in, Feature &out)
             parseAttributes(buffer, attributes);
             if ( out.end < out.start)
                 std::cout << "Bad fead feature range:" << out.start << " - " << out.end << std::endl;
-            if (out.type == "gene" && attributes.find("gene_id") != attributes.end())
+            if (out.type == FeatureType::Gene && attributes.find("gene_id") != attributes.end())
             {
                 //Parse gene attributes
                 out.feature_id = attributes["gene_id"];
                 geneLengths[out.feature_id] = out.end - out.start + 1;
                 geneList.push_back(attributes["gene_id"]);
             }
-            if (out.type == "transcript" && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
+            if (out.type == FeatureType::Transcript && attributes.find("transcript_id") != attributes.end()) out.feature_id = attributes["transcript_id"];
             if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
-            if (out.type == "exon")
+            if (out.type == FeatureType::Exon)
             {
                 //Parse exon attributes
                 if (attributes.find("exon_id") != attributes.end())

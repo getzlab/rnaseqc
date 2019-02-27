@@ -31,7 +31,7 @@ ifstream& extractBED(ifstream &input, Feature &out)
             tokenizer >> buffer; //stop
             out.end = std::stoull(buffer) + 1;
             out.feature_id = line; // add a dummy exon_id for mapping interval intersections later
-            out.type = "exon";
+            out.type = FeatureType::Exon;
             break;
         }
     }

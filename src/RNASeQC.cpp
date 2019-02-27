@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
                 {
                     //legacy code excludes single base exons
                     if (VERBOSITY > 1) cerr<<"Legacy mode excluded feature: " << line.feature_id << endl;
-                    if (line.type == "exon") {
+                    if (line.type == FeatureType::Exon) {
                         geneCodingLengths[line.gene_id] -= 1;
                         if (exonsForGene[line.gene_id].back() == line.feature_id) exonsForGene[line.gene_id].pop_back();
                         else cerr << "Assumption failed: A legacy excluded exon (" << line.feature_id << ") was not the latest exon in " << line.gene_id << "'s exon list " << exonsForGene[line.gene_id].back() << endl;
@@ -135,12 +135,12 @@ int main(int argc, char* argv[])
                     continue;
                 }
                 //Just keep genes and exons.  We don't care about transcripts or any other feature types
-                if (line.type == "gene" || line.type == "exon")
+                if (line.type == FeatureType::Gene || line.type == FeatureType::Exon)
                 {
-                    features[line.chromosome].push_back(line);                    
+                    features[line.chromosome].push_back(line);
 #ifndef NO_FASTA
                     //If fasta features are enabled, read the gene sequence from the fasta 
-                    if (fastaFile && line.type == "gene") geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
+                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
 #endif
                     
                 }
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
         {
             beg->second.sort(compIntervalStart);
             for (auto feat = beg->second.begin(); feat != beg->second.end(); ++feat)
-                if (feat->type == "exon") exonsForGene[feat->gene_id].push_back(feat->feature_id);
+                if (feat->type == FeatureType::Exon) exonsForGene[feat->gene_id].push_back(feat->feature_id);
             
         }
         time(&t1); //record the time taken to parse the GTF
