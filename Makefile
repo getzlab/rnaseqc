@@ -15,6 +15,7 @@ CFLAGS=-Wall $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -O3
 SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp BamReader.cpp
 SRCDIR=src
 OBJECTS=$(SOURCES:.cpp=.o)
+SEQFLAGS=$(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI)
 
 rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
@@ -28,7 +29,7 @@ lib: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
 SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a:
-	cd SeqLib && ./configure && make CXXFLAGS=$(STDLIB) && make install
+	cd SeqLib && ./configure && make CXXFLAGS="$(SEQFLAGS)" && make install
 
 .PHONY: clean
 
