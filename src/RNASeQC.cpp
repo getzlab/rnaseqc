@@ -516,7 +516,6 @@ int main(int argc, char* argv[])
             exonReport.close();
         }
 
-
         ofstream output(outputDir.Get()+"/"+SAMPLENAME+".metrics.tsv");
         //output rates and other fractions to the report
         output << "Sample\t" << SAMPLENAME << endl;
@@ -552,6 +551,7 @@ int main(int argc, char* argv[])
         output << "Read Length\t" << readLength << endl;
         output << "Genes Detected\t" << genesDetected << endl;
         output << "Estimated Library Complexity\t" << minReads << endl;
+        output << "Genes used in 3' bias\t" << bias.countGenes() << endl;
         output << "Mean 3' bias\t" << ratioAvg << endl;
         output << "Median 3' bias\t" << ratioMedian << endl;
         output << "3' bias Std\t" << ratioStd << endl;
@@ -634,7 +634,6 @@ int main(int argc, char* argv[])
         }
 
         output.close();
-
 	}
     catch (args::Help)
     {

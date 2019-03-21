@@ -71,15 +71,17 @@ namespace rnaseqc {
         const int windowSize;
         const unsigned long geneLength;
         const unsigned int detectionThreshold;
+        unsigned int countedGenes;
         std::map<std::string, unsigned long> fiveEnd;
         std::map<std::string, unsigned long> threeEnd;
     public:
-        BiasCounter(int offset, int windowSize, unsigned long geneLength, unsigned int detectionThreshold) : offset(offset), windowSize(windowSize), geneLength(geneLength), detectionThreshold(detectionThreshold), fiveEnd(), threeEnd()
+        BiasCounter(int offset, int windowSize, unsigned long geneLength, unsigned int detectionThreshold) : offset(offset), windowSize(windowSize), geneLength(geneLength), detectionThreshold(detectionThreshold), countedGenes(0), fiveEnd(), threeEnd()
         {
             
         }
         
         void computeBias(const Feature&, std::vector<unsigned long>&);
+        unsigned int countGenes() const;
         double getBias(const std::string&);
         const unsigned int getThreshold() const {
             return this->detectionThreshold;

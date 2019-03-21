@@ -12,36 +12,37 @@
 #include <cmath>
 #include <unordered_set>
 #include <algorithm>
+#include <iterator>
 
 namespace rnaseqc {
     std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons
-    
+
     std::map<std::string, std::unordered_set<std::string> > fragmentTracker; // tracks fragments encountered by each gene
     
     std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const unsigned int, const std::map<std::string, std::vector<unsigned long> >&, std::list<double>&, BiasCounter&);
-    
+
     void add_range(std::vector<unsigned long>&, coord, unsigned int);
-    
+
     void Metrics::increment(std::string key)
     {
         this->counter[key]++;
     }
-    
+
     void Metrics::increment(std::string key, int n)
     {
         this->counter[key] += n;
     }
-    
+
     unsigned long Metrics::get(std::string key)
     {
         return this->counter[key];
     }
-    
+
     double Metrics::frac(std::string a, std::string b)
     {
         return static_cast<double>(this->get(a)) / this->get(b);
     }
-    
+
     // Add coverage to an exon
     void Collector::add(const std::string &gene_id, const std::string &exon_id, const double coverage)
     {
@@ -51,7 +52,7 @@ namespace rnaseqc {
             this->dirty = true;
         }
     }
-    
+
     //Commit all the exon coverage from this gene to the global exon coverage counter
     void Collector::collect(const std::string &gene_id)
     {
@@ -61,7 +62,7 @@ namespace rnaseqc {
             this->total += entry->second;
         }
     }
-    
+
     //Legacy version of the above function. Ignores the actual coverage and reports a full read count
     void Collector::collectSingle(const std::string &gene_id)
     {
@@ -70,25 +71,25 @@ namespace rnaseqc {
             (*this->target)[entry->first] += 1.0;
         }
     }
-    
+
     //Check if there is any coverage on any exon of this gene
     bool Collector::queryGene(const std::string &gene_id)
     {
         return static_cast<bool>(this->data[gene_id].size());
     }
-    
+
     // Check if any coverage has been reported whatsoever
     bool Collector::isDirty()
     {
         return this->dirty;
     }
-    
+
     //Get the sum of all coverage that was committed for this read (should always be <= 1)
     double Collector::sum()
     {
         return this->total;
     }
-    
+
     //Adds coverage from one aligned segment of a read to this exon. Coverage feeds into cache until gene leaves search window
     void BaseCoverage::add(const Feature &exon, const coord start, const coord end)
     {
@@ -98,7 +99,7 @@ namespace rnaseqc {
         tmp.feature_id = exon.feature_id;
         this->cache[exon.gene_id].push_back(tmp);
     }
-    
+
     //Commit the cached coverage to this gene after deciding to count the read towards the gene
     void BaseCoverage::commit(const std::string &gene_id)
     {
@@ -119,12 +120,12 @@ namespace rnaseqc {
             ++beg;
         }
     }
-    
+
     void BaseCoverage::reset() //Empties the cache
     {
         this->cache.clear();
     }
-    
+
     //computes per-base coverage of the gene
     void BaseCoverage::compute(const Feature &gene)
     {
@@ -143,54 +144,116 @@ namespace rnaseqc {
             this->coverage.erase(*exon_id);
         this->seen.insert(gene.feature_id);
     }
-    
+
     void BaseCoverage::close()
     {
         this->writer.flush();
         this->writer.close();
     }
-    
+
     //Compute 3'/5' bias based on genes' per-base coverage
     void BiasCounter::computeBias(const Feature &gene, std::vector<unsigned long> &coverage)
     {
+
         if (coverage.size() < this->geneLength) return; //Must meet minimum length req
-        double windowSize = static_cast<double>(this->windowSize);
-        std::vector<double> lcov, rcov;
-        lcov.reserve(this->windowSize);
-        rcov.reserve(this->windowSize);
-        for (unsigned int i = this->offset; i < this->offset + this->windowSize && i < coverage.size(); ++i)
-            lcov.push_back(static_cast<double>(coverage[i]));
-        for (int i = coverage.size() - (this->windowSize + this->offset); i >= 0 && i < coverage.size() - this->offset; ++i)
-            rcov.push_back(static_cast<double>(coverage[i]));
-        std::sort(lcov.begin(), lcov.end());
-        std::sort(rcov.begin(), rcov.end());
-        if (gene.strand == Strand::Forward)
+        unsigned long peak = 0ul;
+        unsigned peak_pos = 0;
+        for (unsigned i = 0; i < coverage.size(); ++i) if (coverage[i] > peak)
         {
-            this->threeEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
-            this->fiveEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
-        } else
-        {
-            this->threeEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
-            this->fiveEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
+          peak_pos = i;
+          peak = coverage[i];
+        }
+        auto coverageMedianPos = coverage.begin() + peak_pos;
+        std::list<unsigned long> coveragePeakEntries;
+        //First scroll half a window to the right of the peak (stop if we reach the end)
+        for (int i = 0; i < this->windowSize/2 && coverageMedianPos != coverage.end(); ++i) ++coverageMedianPos;
+        //Then scroll back 1 full window, adding entries to the list
+        for (int i = 0; i < this->windowSize && coverageMedianPos != coverage.begin(); ++i) coveragePeakEntries.push_back(*(coverageMedianPos--));
+        coveragePeakEntries.sort();
+        double coveragePeakMedian = computeMedian(coveragePeakEntries.size(), coverageMedianPos);
+        
+
+        if (coveragePeakMedian >= 100) {
+            std::vector<unsigned long> percentileContainer(coverage);
+            std::sort(percentileContainer.begin(), percentileContainer.end());
+            {
+                auto xcursor = percentileContainer.begin();
+                while (xcursor != percentileContainer.end() && (*xcursor) == 0ul) ++xcursor;
+                percentileContainer.erase(percentileContainer.begin(), xcursor);
+            }
+            unsigned long lowerLimit = percentileContainer[percentileContainer.size()*0.05];
+            unsigned long trimmed_length = 0ul;
+            
+            {
+                auto cursor = coverage.begin();
+                while (cursor != coverage.end() && (*cursor) <= lowerLimit)
+                {
+                    ++trimmed_length;
+                    ++cursor;
+                }
+                coverage.erase(coverage.begin(), cursor);
+            }
+            {
+                while (coverage.size() > 0 && coverage.back() <= lowerLimit) {
+                    coverage.pop_back();
+                    ++trimmed_length;
+                }
+            }
+
+            if (coverage.size() >= this->geneLength)
+            {
+                double windowSize = static_cast<double>(this->windowSize);
+                std::vector<double> lcov, rcov;
+                lcov.reserve(this->windowSize);
+                rcov.reserve(this->windowSize);
+                for (unsigned int i = this->offset; i < this->offset + this->windowSize && i < coverage.size(); ++i)
+                    lcov.push_back(static_cast<double>(coverage[i]));
+                for (int i = coverage.size() - (this->windowSize + this->offset); i >= 0 && i < coverage.size() - this->offset; ++i)
+                    rcov.push_back(static_cast<double>(coverage[i]));
+                std::sort(lcov.begin(), lcov.end());
+                std::sort(rcov.begin(), rcov.end());
+                if (gene.strand == Strand::Forward)
+                {
+                    this->threeEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
+                    this->fiveEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
+                } else
+                {
+                    this->threeEnd[gene.feature_id] += computeMedian(lcov.size(), lcov.begin());
+                    this->fiveEnd[gene.feature_id] += computeMedian(rcov.size(), rcov.begin());
+                }
+                
+            }
+            
         }
         
+
     }
     
+
     //Extract the bias for a gene
     double BiasCounter::getBias(const std::string &geneID)
     {
         double cov5 = this->fiveEnd[geneID];
         double cov3 = this->threeEnd[geneID];
-        if (cov5 + cov3 > 0.0) return cov3 / (cov5 + cov3);
+        if (cov5 + cov3 > 0.0)
+        {
+            this->countedGenes++;
+            return cov3 / (cov5 + cov3);
+        }
         return -1.0;
     }
     
-    
+    unsigned int BiasCounter::countGenes() const
+    {
+        return this->countedGenes;
+    }
+
+
     void add_range(std::vector<unsigned long> &coverage, coord offset, unsigned int length)
     {
         for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
     }
-    
+
     //Compute exon coverage metrics, then stich exons together and compute gene coverage metrics
     std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const unsigned int mask_size, const std::map<std::string, std::vector<unsigned long> > &coverage, std::list<double> &totalExonCV, BiasCounter &bias)
     {
@@ -212,7 +275,7 @@ namespace rnaseqc {
             const std::vector<unsigned long> &exon_coverage = coverage.at(exonsForGene[gene.feature_id][i]); //get the coverage vector for the current exon
             double exonMean = 0.0, exonStd = 0.0, exonSize = 0.0;
             std::vector<bool> mask = coverageMask[i];
-            
+
             for (unsigned int j = 0; j < mask.size(); ++j) if (mask[j]) exonSize += 1.0; //count the remaining unmasked length of the exon
             if (exonSize > 0)
             {
@@ -231,7 +294,7 @@ namespace rnaseqc {
             geneCoverage.insert(geneCoverage.end(), exon_coverage.begin(), exon_coverage.end());
         }
         //at this point the gene coverage vector represents an UNMASKED, but complete transcript
-        if (geneCounts[gene.feature_id] > bias.getThreshold()) bias.computeBias(gene, geneCoverage); //no masking in bias
+        bias.computeBias(gene, geneCoverage); //no masking in bias
         double avg = 0.0, std = 0.0;
         // apply the mask to the full gene vector
         if (mask_size)
@@ -257,7 +320,7 @@ namespace rnaseqc {
         else writer << "0\t0\tnan" << std::endl;
         return std::make_tuple(avg, std, (std / avg));
     }
-    
+
 
 }
 
