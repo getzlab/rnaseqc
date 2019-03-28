@@ -119,7 +119,7 @@ namespace rnaseqc {
         if (orientation == Strand::Unknown) return orientation;
         bool target = alignment.ReverseFlag();
         if ((orientation == Strand::Forward) ^ alignment.FirstFlag()) target = !target;
-        return target ? Strand::Forward : Strand::Reverse;
+        return target ? Strand::Reverse : Strand::Forward;
     }
     
     // Legacy version of standard alignment metrics
