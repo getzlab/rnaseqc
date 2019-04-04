@@ -15,14 +15,14 @@
 #include <limits.h>
 #include <math.h>
 #include <unordered_set>
-#include <args.hxx>
+#include "../args.hxx"
 #include <boost/filesystem.hpp>
 using namespace std;
 using namespace args;
 using namespace rnaseqc;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.3.0";
+const string VERSION = "RNASeQC 2.3.1";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
@@ -522,6 +522,7 @@ int main(int argc, char* argv[])
         output << "Mapping Rate\t" << counter.frac("Mapped Reads", "Unique Mapping, Vendor QC Passed Reads") << endl;
         output << "Unique Rate of Mapped\t" << counter.frac("Mapped Unique Reads", "Mapped Reads") << endl;
         output << "Duplicate Rate of Mapped\t" << counter.frac("Mapped Duplicate Reads", "Mapped Reads") << endl;
+        output << "Duplicate Rate of Mapped, excluding Globins\t" << counter.frac("Non-Globin Duplicate Reads", "Non-Globin Reads") << endl;
         output << "Base Mismatch\t" << counter.frac("Mismatched Bases", "Total Bases") << endl;
         output << "End 1 Mapping Rate\t"<< 2.0 * counter.frac("End 1 Mapped Reads", "Unique Mapping, Vendor QC Passed Reads") << endl;
         output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Unique Mapping, Vendor QC Passed Reads") << endl;

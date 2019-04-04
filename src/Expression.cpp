@@ -20,6 +20,8 @@ using std::pair;
 
 
 namespace rnaseqc {
+    
+    const set<string> blacklistedGlobins = {"HBA1", "HBA2", "HBB", "HBD"};
     //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
     unsigned int extractBlocks(Alignment &alignment, vector<Feature> &blocks, chrom chr, bool legacy)
     {
@@ -370,6 +372,7 @@ namespace rnaseqc {
                 last = tmp;
             }
             //after the intersection, iterate over the remaining genes and record their coverage
+            //at this point, "last" contains the set of genes which were unamgiguously aligned to
             for (auto gene = last.begin(); gene != last.end(); ++gene)
             {
                 if (highQuality) {
@@ -387,6 +390,15 @@ namespace rnaseqc {
                     baseCoverage.commit(*gene); //keep the per-base coverage recorded on this gene
                 }
                 doExonMetrics = true;
+            }
+            //check if this is a globin read
+            set<string> globinIntersection;
+            set_intersection(last.begin(), last.end(), blacklistedGlobins.begin(), blacklistedGlobins.end(), inserter(globinIntersection, globinIntersection.begin()));
+            if (globinIntersection.empty())
+            {
+                // no unambiguous intersections with globins
+                counter.increment("Non-Globin Reads");
+                if (alignment.DuplicateFlag()) counter.increment("Non-Globin Duplicate Reads");
             }
         }
         
