@@ -1,7 +1,7 @@
 # RNA-SeQC
 [![Build Status](https://travis-ci.com/broadinstitute/rnaseqc.svg?token=y8NpD4Ye6EkYyigZUZDt&branch=master)](https://travis-ci.com/broadinstitute/rnaseqc)
 
-Version 2.3.1
+Version 2.3.2
 
 ## Installing
 

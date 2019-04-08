@@ -353,6 +353,8 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
         "Mapped Reads",
         "Mapped Unique Reads",
         "Mismatched Bases",
+        "Non-Globin Reads",
+        "Non-Globin Duplicate Reads",
         "Reads excluded from exon counts",
         "Reads used for Intron/Exon counts",
         "rRNA Reads",

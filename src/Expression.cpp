@@ -392,8 +392,9 @@ namespace rnaseqc {
                 doExonMetrics = true;
             }
             //check if this is a globin read
-            set<string> globinIntersection;
-            set_intersection(last.begin(), last.end(), blacklistedGlobins.begin(), blacklistedGlobins.end(), inserter(globinIntersection, globinIntersection.begin()));
+            set<string> globinIntersection, unambiguousGeneNames;
+            for (const string& gene_id : last) unambiguousGeneNames.insert(geneNames[gene_id]); // translate set of gene_ids to set of gene names
+            set_intersection(unambiguousGeneNames.begin(), unambiguousGeneNames.end(), blacklistedGlobins.begin(), blacklistedGlobins.end(), inserter(globinIntersection, globinIntersection.begin()));
             if (globinIntersection.empty())
             {
                 // no unambiguous intersections with globins

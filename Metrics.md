@@ -8,6 +8,7 @@ In legacy mode, this is the proportion of all reads which were Mapped out
 of all reads which were not Secondary Alignments or Platform/Vendor QC Failing reads.
 * Unique Rate of Mapped: This is the proportion of reads which **were not** marked as PCR/Optical Duplicates out of all "Mapped Reads" (as defined above; excludes Secondary and Vendor QC Failed reads).
 * Duplicate Rate of Mapped: This is the proportion of all reads which **were** marked as PCR/Optical Duplicates out of all "Mapped Reads" (as defined above; excludes Secondary and Vendor QC Failed reads). This is complementary to the "Unique Rate of Mapped".
+* Duplicate Rate of Mapped, excluding Globins: This is similar to the "Duplicate Rate of Mapped" except that it only includes reads which **did not** align to _HBA1_, _HBA2_, _HBB_, or _HBD_. 
 * Base Mismatch: The total number of mismatched bases (as determined by the "NM" tag) of all "Mapped Reads" (as defined above) divided by the total aligned length of all "Mapped Reads".
 * End 1 & 2 Mapping Rate: The proportion of Paired reads which were marked as First or Second in the pair, respectively, out of all "Mapped Reads" (above).
 * End 1 & 2 Mismatch Rate: The proportion of mismatched bases (as determined by the "NM" tag) belonging to First or Second mates, divided by the total aligned length of all "Mapped" (above) First or Second mates, respectively.
