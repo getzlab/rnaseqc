@@ -8,7 +8,7 @@ In legacy mode, this is the proportion of all reads which were Mapped out
 of all reads which were not Secondary Alignments or Platform/Vendor QC Failing reads.
 * Unique Rate of Mapped: This is the proportion of reads which **were not** marked as PCR/Optical Duplicates out of all "Mapped Reads" (as defined above; excludes Secondary and Vendor QC Failed reads).
 * Duplicate Rate of Mapped: This is the proportion of all reads which **were** marked as PCR/Optical Duplicates out of all "Mapped Reads" (as defined above; excludes Secondary and Vendor QC Failed reads). This is complementary to the "Unique Rate of Mapped".
-* Duplicate Rate of Mapped, excluding Globins: This is similar to the "Duplicate Rate of Mapped" except that it only includes reads which **did not** align to _HBA1_, _HBA2_, _HBB_, or _HBD_. 
+* Duplicate Rate of Mapped, excluding Globins: This is similar to the "Duplicate Rate of Mapped" except that it only includes reads which **did not** align to _HBA1_, _HBA2_, _HBB_, or _HBD_.
 * Base Mismatch: The total number of mismatched bases (as determined by the "NM" tag) of all "Mapped Reads" (as defined above) divided by the total aligned length of all "Mapped Reads".
 * End 1 & 2 Mapping Rate: The proportion of Paired reads which were marked as First or Second in the pair, respectively, out of all "Mapped Reads" (above).
 * End 1 & 2 Mismatch Rate: The proportion of mismatched bases (as determined by the "NM" tag) belonging to First or Second mates, divided by the total aligned length of all "Mapped" (above) First or Second mates, respectively.
@@ -34,6 +34,8 @@ Mate reads which intersected with any features, respectively.
 * Median of Transcript Coverage statistics (Mean, Std Deviation, Coefficient of Variation): These statistics are the median of a given aggregate statistic of transcript coverage (for example, the median of mean transcript coverage). Transcript coverage is computed by dropping the first and last 500bp of each gene and measuring the **"High Quality"** (above) coverage over the remainder of the gene.
 * Median Exon CV: The median coefficient of variation of exon coverage. Exon coverage is computed by dropping the first and last 500bp of each gene and measuring the **"High Quality"** (above) coverage over the remainder of the exons. This is considered a good metric for sample quality. A lower value indicates more consistent coverage over exons.
 * Exon CV MAD: The Median Absolute Deviation over all Exon CVs
+
+**Note**: When running in `--unpaired` mode, single-ended bams will report `nan` for all End 1 and End 2 metrics
 
 ### Fragment Sizes File
 
