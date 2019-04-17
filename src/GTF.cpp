@@ -9,6 +9,7 @@
 #include "GTF.h"
 #include <exception>
 #include <stdexcept>
+#include <unordered_set>
 #include <boost/regex.hpp>
 
 using std::ifstream;
@@ -27,6 +28,7 @@ namespace rnaseqc {
     
     ifstream& operator>>(ifstream &in, Feature &out)
     {
+        static std::unordered_set<std::string> geneIds, exonIds;
         try{
             string line;
             while(getline(in, line))
@@ -76,6 +78,8 @@ namespace rnaseqc {
                     std::cout << "Bad fead feature range:" << out.start << " - " << out.end << std::endl;
                 if (out.type == FeatureType::Gene && attributes.find("gene_id") != attributes.end())
                 {
+                    if (geneIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Gene ID: "+out.feature_id));
+                    geneIds.insert(out.feature_id);
                     //Parse gene attributes
                     out.feature_id = attributes["gene_id"];
                     geneLengths[out.feature_id] = out.end - out.start + 1;
@@ -85,6 +89,8 @@ namespace rnaseqc {
                 if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
                 if (out.type == FeatureType::Exon)
                 {
+                    if (exonIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Exon ID: "+out.feature_id));
+                    exonIds.insert(out.feature_id);
                     //Parse exon attributes
                     if (attributes.find("exon_id") != attributes.end())
                     {
@@ -106,6 +112,10 @@ namespace rnaseqc {
                 break;
             }
             
+        }
+        catch(gtfException &e)
+        {
+            throw e;
         }
         catch(std::invalid_argument &e)
         {

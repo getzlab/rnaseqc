@@ -251,7 +251,9 @@ namespace rnaseqc {
 
     void add_range(std::vector<unsigned long> &coverage, coord offset, unsigned int length)
     {
-        for (coord i = offset; i < offset + length; ++i) coverage[i] += 1ul;
+        const size_t size = coverage.size();
+        for (coord i = offset; i < offset + length && i < size; ++i) coverage[i] += 1ul;
+        if (offset + length > size) std::cerr << "Error: Attempted to write more coverage than present on exon. Coverage-based metrics may be inaccurate. This may be a sign of an invalid bam or gtf entry" << std::endl;
     }
 
     //Compute exon coverage metrics, then stich exons together and compute gene coverage metrics
