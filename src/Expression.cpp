@@ -126,7 +126,7 @@ namespace rnaseqc {
     
     // Legacy version of standard alignment metrics
     // This code is really inefficient, but it's a faithful replication of the original code
-    void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, bool highQuality)
+    void legacyExonAlignmentMetrics(unsigned int SPLIT_DISTANCE, map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, const bool highQuality, const bool singleEnd)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -287,9 +287,9 @@ namespace rnaseqc {
         }
         if (ribosomal) counter.increment("rRNA Reads");
         //also record strandedness counts
-        if (transcriptMinus ^ transcriptPlus && alignment.PairedFlag())
+        if ((transcriptMinus ^ transcriptPlus) && (singleEnd || alignment.PairedFlag()))
         {
-            if (alignment.FirstFlag())
+            if (singleEnd || alignment.FirstFlag())
             {
                 if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
                 else transcriptPlus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
@@ -305,7 +305,7 @@ namespace rnaseqc {
     
     // New version of exon metrics
     // More efficient and less buggy
-    void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, bool highQuality)
+    void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, const bool highQuality, const bool singleEnd)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -441,9 +441,9 @@ namespace rnaseqc {
         if (ribosomal) counter.increment("rRNA Reads");
         //also record strandedness counts
         //TODO: check standing metrics.  Counts are probably off because of null intron/exon calls
-        if (transcriptMinus ^ transcriptPlus && alignment.PairedFlag())
+        if ((transcriptMinus ^ transcriptPlus) && (singleEnd || alignment.PairedFlag()))
         {
-            if (alignment.FirstFlag())
+            if (singleEnd || alignment.FirstFlag())
             {
                 if (alignment.ReverseFlag()) transcriptMinus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");
                 else transcriptPlus ? counter.increment("End 1 Sense") : counter.increment("End 1 Antisense");

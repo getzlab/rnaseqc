@@ -27,9 +27,9 @@ namespace rnaseqc {
     //Metrics functions
     unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature>>*, std::map<std::string, std::string>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&);
     
-    void exonAlignmentMetrics(std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
+    void exonAlignmentMetrics(std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, const bool, const bool);
     
-    void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, bool);
+    void legacyExonAlignmentMetrics(unsigned int, std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, const bool, const bool);
     
     Strand feature_strand(Alignment&, Strand);
 }

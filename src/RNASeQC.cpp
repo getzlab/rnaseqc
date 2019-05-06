@@ -350,8 +350,8 @@ int main(int argc, char* argv[])
                             trimFeatures(alignment, features[chr], baseCoverage); //drop features that appear before this read
 
                             //run the read through exon metrics
-                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality);
-                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality);
+                            if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
+                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
