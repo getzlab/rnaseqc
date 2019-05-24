@@ -21,7 +21,7 @@ using std::pair;
 
 namespace rnaseqc {
     
-    const set<string> blacklistedGlobins = {"HBA1", "HBA2", "HBB", "HBD"};
+    const set<string> blacklistedGlobins = {"HBA1", "HBA2", "HBB", "HBD", "HBG1", "HBG2", "HBE1", "HBM", "HBQ1", "HBZ", "HBBP1", "HBZP1"};
     //this actually is the legacy version, but it works out the same and makes alignment size math a little easier
     unsigned int extractBlocks(Alignment &alignment, vector<Feature> &blocks, chrom chr, bool legacy)
     {
