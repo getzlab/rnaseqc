@@ -327,7 +327,6 @@ namespace rnaseqc {
             list<Feature> *results = intersectBlock(*block, features[chr]); //grab the list of intersecting features
             for (auto result = results->begin(); result != results->end(); ++result)
             {
-                if (result->ribosomal) ribosomal = true;
                 if (read_strand != Strand::Unknown && read_strand != result->strand) continue;
                 if (result->strand == Strand::Forward) transcriptPlus = true;
                 else if (result->strand == Strand::Reverse) transcriptMinus = true;
@@ -394,7 +393,6 @@ namespace rnaseqc {
             }
             //check if this is a globin read
             set<string> globinIntersection, unambiguousGeneNames;
-            //Not efficient!
             for (const string& gene_id : last) unambiguousGeneNames.insert(geneNames[gene_id]); // translate set of gene_ids to set of gene names
             set_intersection(unambiguousGeneNames.begin(), unambiguousGeneNames.end(), blacklistedGlobins.begin(), blacklistedGlobins.end(), inserter(globinIntersection, globinIntersection.begin()));
             if (globinIntersection.empty())
