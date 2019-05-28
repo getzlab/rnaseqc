@@ -22,7 +22,7 @@ using namespace args;
 using namespace rnaseqc;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.3.2";
+const string VERSION = "RNASeQC 2.3.3";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
