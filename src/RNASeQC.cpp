@@ -528,7 +528,7 @@ int main(int argc, char* argv[])
         output << "End 2 Mapping Rate\t"<< 2.0 * counter.frac("End 2 Mapped Reads", "Unique Mapping, Vendor QC Passed Reads") << endl;
         output << "End 1 Mismatch Rate\t" << counter.frac("End 1 Mismatches", "End 1 Bases") << endl;
         output << "End 2 Mismatch Rate\t" << counter.frac("End 2 Mismatches", "End 2 Bases") << endl;
-        output << "Expression Profiling Efficiency\t" << counter.frac("Exonic Reads", "Total Reads") << endl;
+        output << "Expression Profiling Efficiency\t" << counter.frac("Exonic Reads", "Unique Mapping, Vendor QC Passed Reads") << endl;
         output << "High Quality Rate\t" << counter.frac("High Quality Reads", "Mapped Reads") << endl;
         output << "Exonic Rate\t" << counter.frac("Exonic Reads", "Mapped Reads") << endl;
         output << "Intronic Rate\t" << counter.frac("Intronic Reads", "Mapped Reads") << endl;

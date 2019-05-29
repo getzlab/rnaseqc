@@ -12,7 +12,8 @@ of all reads which were not Secondary Alignments or Platform/Vendor QC Failing r
 * Base Mismatch: The total number of mismatched bases (as determined by the "NM" tag) of all "Mapped Reads" (as defined above) divided by the total aligned length of all "Mapped Reads".
 * End 1 & 2 Mapping Rate: The proportion of Paired reads which were marked as First or Second in the pair, respectively, out of all "Mapped Reads" (above).
 * End 1 & 2 Mismatch Rate: The proportion of mismatched bases (as determined by the "NM" tag) belonging to First or Second mates, divided by the total aligned length of all "Mapped" (above) First or Second mates, respectively.
-* Expression Profiling Efficiency: The proportion of "Exonic Reads" (see "Exonic Rate", below) out of all "Mapped Reads" (above).
+* Expression Profiling Efficiency: The proportion of "Exonic Reads" (see "Exonic Rate", below) out of all reads which were not Secondary Alignments or
+Platform/Vendor QC Failing reads.
 * High Quality Rate: The proportion of **properly paired** reads with less than 6 mismatched bases and a perfect mapping quality out of all "Mapped Reads" (above).
 * Exonic Rate: The proportion of "Mapped Reads" (above) for which all aligned segments unambiguously aligned to exons of the same gene.
 * Intronic Rate: The proportion of "Mapped Reads" (above) for which all aligned segments unambiguously aligned to the same gene, but none of which _intersected_ any exons of the gene.
@@ -46,3 +47,22 @@ This file contains the raw counts of the observed insert sizes of the sample. Fr
 This file contains coverage data for all genes. Coverage computations are always performed, but this file of per-gene coverage data is not produced unless
 the `--coverage` flag is provided. The first column contains the gene ID as given by the input annotation. The next three columns contain the mean, standard deviation, and coefficient of variation of coverage for each gene, respectively. The first and last 500bp of each gene are dropped and not considered when computing coverage. A value of 0 or `nan` may indicate that the gene's coding length was less than 1kb or that the gene had 0 coverage
 over it's exons.
+
+## Migrating between old and new columns
+
+For users of the legacy tool, several metrics have been renamed, removed, or changed.
+Below is a table of previous metrics and how to access them using the new metrics names:
+
+Old Metric | New Metric | Notes
+-|-|-
+Base Mismatch Rate | Base Mismatch |
+Duplication Rate of Mapped | Duplicate Rate of Mapped |
+End 1/2 % Sense | End 1/2 Sense Rate |
+Estimated Library Size | Esitmated Library Complexity |
+Failed Vendor QC Check | Failed Vendor QC |
+Fragment Length Mean | Average Fragment Length | The fragment length metrics have changed significantly
+Fragment Length StdDev | Fragment Length Std
+Intragenic Rate | Intragenic Rate | Some reads previously classified as `Intragenic` are now classified as `Ambiguous Alignments`. The equivalent of the old `Intragenic Rate` can be computed by summing `Intragenic Rate` + `Ambigous Alignment Rate`
+Mapped | Mapped Reads |
+Mapped Unique | Mapped Unique Reads |
+Total Purity Filtered Reads Sequenced | Unique Mapping, Vendor QC Passed Reads | This counts reads without the Secondary or QC Fail flags set. For a true count of total alignments use `Total Reads`
