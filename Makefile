@@ -17,7 +17,7 @@ SRCDIR=src
 OBJECTS=$(SOURCES:.cpp=.o)
 SEQFLAGS=$(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI)
 
-rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a
+rnaseqc: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file)) SeqLib/lib/libseqlib.a SeqLib/lib/libhts.a
 	$(CC) -O3 $(LIBRARY_PATHS) -o $@ $^ $(STATIC_LIBS) $(LIBS)
 
 .PHONY: lib
@@ -28,7 +28,7 @@ lib: $(foreach file,$(OBJECTS),$(SRCDIR)/$(file))
 %.o: %.cpp
 	$(CC) $(CFLAGS) -I. $(INCLUDE_DIRS) -c -o $@ $<
 
-SeqLib/bin/libseqlib.a SeqLib/bin/libhts.a:
+SeqLib/lib/libseqlib.a SeqLib/lib/libhts.a:
 	cd SeqLib && ./configure && make CXXFLAGS="$(SEQFLAGS)" && make install
 
 .PHONY: clean
