@@ -271,11 +271,11 @@ def main(args):
     )
     # ---
     p_df, pca = met.get_pcs(expression_df)
-    fig = met.plot_pca(p_df, pca)
+    fig = met.plot_pca(p_df, pca, cohort_s=cohorts)
     nb.add_code_cell(
         [
             'p_df, pca = met.get_pcs(expression_df)',
-            'fig = met.plot_pca(p_df, pca)'
+            'fig = met.plot_pca(p_df, pca, cohort_s=cohorts)'
         ],
         nbe.encode_figure(fig),
         metadata={'scrolled': False}
