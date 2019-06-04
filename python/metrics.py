@@ -94,6 +94,7 @@ def metrics_plot(v, cohort_s, ylim, ms=12, alpha=1, title='', cohort_colors=None
 
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, ms=12, output_dir=None,
         intergenic_rate=None, exonic_rate=None, million_mapped_reads=None,
+        million_mapped_reads_qc=None,
         mapping_rate=None, end1_mismatch_rate=None, end2_mismatch_rate=None,
         rrna_rate=None, unique_rate=None, dpi=300, name='', alpha=0.8, show_legend=False,
         show_xticklabels=False):
@@ -158,7 +159,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, 
     v = metrics_df.loc[date_ix, 'Unique Mapping, Vendor QC Passed Reads'].copy()/1e6
     v[v>250] = 250
     figure_outputs.append(
-        metrics_plot(v, cohort_s, ylim=[0, 250], title='QC-passed reads (millions)', **metrics_args)
+        metrics_plot(v, cohort_s, ylim=[0, 250], title='QC-passed reads (millions)', threshold=million_mapped_reads_qc, threshold_dir='lt', **metrics_args)
     )
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, 'qc_passed_reads_{}.pdf'.format(name)), dpi=dpi)

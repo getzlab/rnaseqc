@@ -143,33 +143,48 @@ def main(args):
     )
     # ---
     print("Generating QC figures")
+    cohorts = pd.read_csv(args.cohorts, sep='\t', index_col=0, header=None, squeeze=True) if args.cohorts is not None else None
+    dates = pd.to_datetime(pd.read_csv(args.dates, sep='\t', index_col=0, header=None, squeeze=True)) if args.dates is not None else None
     figures = met.plot_qc_figures(
         metrics,
         mapping_rate=0.95,
-        million_mapped_reads=40,
+        million_mapped_reads=50,
+        million_mapped_reads_qc=45,
         rrna_rate=0.15,
         end1_mismatch_rate=0.005,
         end2_mismatch_rate=0.02,
         intergenic_rate=0.05,
         exonic_rate=0.7,
         alpha=0.5,
-        ms=16
+        ms=16,
+        cohort_s=cohorts,
+        date_s=dates,
+        show_legend=cohorts is not None
     )
     nb.add_code_cell(
         nbe.trim("""
+        cohorts = pd.read_csv({0}, sep='\\t', index_col=0, header=None, squeeze=True) if os.path.isfile({0}) else None
+        dates = pd.to_datetime(pd.read_csv({1}, sep='\\t', index_col=0, header=None, squeeze=True) if os.path.isfile({1}) else None
         figures = met.plot_qc_figures(
             metrics,
             mapping_rate=0.95,
-            million_mapped_reads=40,
+            million_mapped_reads=50,
+            million_mapped_reads_qc=45,
             rrna_rate=0.15,
             end1_mismatch_rate=0.005,
             end2_mismatch_rate=0.02,
             intergenic_rate=0.05,
             exonic_rate=0.7,
             alpha=0.5,
-            ms=16
+            ms=16,
+            cohort_s=cohorts,
+            date_s=dates,
+            show_legend=cohorts is not None
         )
-        """),
+        """.format(
+            repr(args.cohorts),
+            repr(args.dates)
+        )),
         *[
             nbe.encode_figure(fig)
             for fig, ax in figures
@@ -283,5 +298,17 @@ if __name__ == '__main__':
         'output',
         type=argparse.FileType('w'),
         help="Output python notebook"
+    )
+    parser.add_argument(
+        '-c', '--cohorts',
+        help="Path to a tsv file. First column should be sample names"
+        ", second column should be cohort names",
+        default=None
+    )
+    parser.add_argument(
+        '-d', '--dates',
+        help="Path to a tsv file. First column should be sample names"
+        ", second column should be sequencing dates",
+        default=None
     )
     main(parser.parse_args())
