@@ -22,7 +22,7 @@ using namespace args;
 using namespace rnaseqc;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.3.3";
+const string VERSION = "RNASeQC 2.3.4";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         //fragment size variables
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
         map<chrom, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
-        map<string, string> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
+        map<string, FragmentMateEntry> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
         map<long long, unsigned long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
         {

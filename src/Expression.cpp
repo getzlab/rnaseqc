@@ -458,7 +458,7 @@ namespace rnaseqc {
     }
     
     // Estimate fragment size in a read pair
-    unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, string> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
+    unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
@@ -490,10 +490,19 @@ namespace rnaseqc {
             auto fragment = fragments.find(alignment.Qname());
             if (fragment == fragments.end()) //first time we've encountered a read in this pair
             {
-                fragments[alignment.Qname()] = exonName;
+                // Record the exon we aligned to and the actual end of the read
+                fragments[alignment.Qname()] = {exonName, alignment.PositionEnd()};
             }
-            else if (exonName == fragments[alignment.Qname()]) //second time we've encountered a read in this pair
+            else if (exonName == std::get<EXON>(fragment->second)) //second time we've encountered a read in this pair
             {
+                //Quick test: Does the mate startP occur inside the aligned range of this read?
+//                if (alignment.PositionEndMate() >= alignment.Position() && alignment.PositionEndMate() <= alignment.PositionEnd()) return doFragmentSize;
+                // Check 4 conditions:
+                // 1) This read must always be reverse. If the + strand read occurs AFTER the - read, there has been a mapping error or genomic translocation
+                // 2) The mate must always be +. If both reads are on the - strand, there has been a mapping error or genomic inversion
+                // 3) The this read ends after the mate does. If this read is contained by the mate, there has been some weird clipping errors with the cDNA adapters
+                // 4) This read must not start at the same point as the mate. If so, without this check, the pair may be arbitrarily discarded or kept depending on sort order
+                if (alignment.MateReverseFlag() || !alignment.ReverseFlag() || alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second)  || alignment.Position() == alignment.MatePosition()) return doFragmentSize;
                 //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
                 fragmentSizes[abs(alignment.InsertSize())] += 1;
                 fragments.erase(fragment);
