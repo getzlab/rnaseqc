@@ -491,7 +491,7 @@ namespace rnaseqc {
             if (fragment == fragments.end()) //first time we've encountered a read in this pair
             {
                 // Record the exon we aligned to and the actual end of the read
-                fragments[alignment.Qname()] = {exonName, alignment.PositionEnd()};
+                fragments[alignment.Qname()] = std::make_tuple(exonName, alignment.PositionEnd());
             }
             else if (exonName == std::get<EXON>(fragment->second)) //second time we've encountered a read in this pair
             {
