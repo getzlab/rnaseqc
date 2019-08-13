@@ -408,6 +408,7 @@ int main(int argc, char* argv[])
         vector<double> ratios;
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
+            ofstream duplicateReport(outputDir.Get()+"/"+SAMPLENAME+".gene_duplicates.gct");
             ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_"+(useRPKM.Get() ? "rpkm" : "tpm")+".gct");
             ofstream fragmentReport(outputDir.Get()+"/"+SAMPLENAME+".gene_fragments.gct");
             geneReport << "#1.2" << endl;
@@ -417,6 +418,7 @@ int main(int argc, char* argv[])
             geneRPKM << geneList.size() << "\t1" << endl;
             fragmentReport << geneList.size() << "\t1" << endl;
             geneReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
+            duplicateReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Counts") << endl;
             geneRPKM << "Name\tDescription\t" << (sampleName ? sampleName.Get() : (useRPKM.Get() ? "RPKM" : "TPM")) << endl;
             geneRPKM << fixed;
             fragmentReport << "Name\tDescription\t" << (sampleName ? sampleName.Get() : "Fragments") << endl;
@@ -425,6 +427,7 @@ int main(int argc, char* argv[])
             for(auto gene = geneList.begin(); gene != geneList.end(); ++gene)
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
+                duplicateReport << *gene << "\t" << geneNames[*gene] << "\t" << geneDuplication[*gene] << endl;
                 fragmentReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneFragmentCounts[*gene]) << endl;
                 
 #ifndef NO_FASTA

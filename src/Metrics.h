@@ -143,6 +143,7 @@ namespace rnaseqc {
     }
     
     extern std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons
+    extern std::map<std::string, unsigned long> geneDuplication; // counters for per-gene duplication
     extern std::map<std::string, std::unordered_set<std::string> > fragmentTracker; // tracks fragments encountered by each gene
 }
 

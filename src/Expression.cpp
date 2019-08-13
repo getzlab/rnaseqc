@@ -391,6 +391,10 @@ namespace rnaseqc {
                 }
                 doExonMetrics = true;
             }
+            if (last.size() == 1 && alignment.DuplicateFlag()) // only one gene
+            {
+                geneDuplication[*last.begin()] += 1;
+            }
             //check if this is a globin read
             set<string> globinIntersection, unambiguousGeneNames;
             for (const string& gene_id : last) unambiguousGeneNames.insert(geneNames[gene_id]); // translate set of gene_ids to set of gene names
