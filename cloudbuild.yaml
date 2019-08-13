@@ -26,7 +26,7 @@ steps:
           wget https://github.com/git-lfs/git-lfs/releases/download/v2.5.2/git-lfs-linux-amd64-v2.5.2.tar.gz &&
           tar xzf git-lfs-linux-amd64-v2.5.2.tar.gz &&
           ./install.sh &&
-          git clone --recursive https://github.com/broadinstitute/rnaseqc.git &&
+          git clone https://github.com/broadinstitute/rnaseqc.git &&
           mv rnaseqc/test_data /opt/rnaseqc &&
           cd /opt/rnaseqc &&
           cp -r /scripts /opt/rnaseqc/python &&
