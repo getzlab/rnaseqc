@@ -71,17 +71,17 @@ namespace rnaseqc {
                 //get frame
                 if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse frame. Invalid GTF line: " + line);
                 //get attributes
-                if(!getline(tokenizer, buffer, '\t')) throw gtfException("Unable to parse attributes. Invalid GTF line: " + line);
+                if(!getline(tokenizer, buffer)) throw gtfException("Unable to parse attributes. Invalid GTF line: " + line);
                 std::map<string, string> attributes;
                 parseAttributes(buffer, attributes);
                 if ( out.end < out.start)
                     std::cout << "Bad fead feature range:" << out.start << " - " << out.end << std::endl;
                 if (out.type == FeatureType::Gene && attributes.find("gene_id") != attributes.end())
                 {
-                    if (geneIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Gene ID: "+out.feature_id));
-                    geneIds.insert(out.feature_id);
                     //Parse gene attributes
                     out.feature_id = attributes["gene_id"];
+                    if (geneIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Gene ID: "+out.feature_id));
+                    geneIds.insert(out.feature_id);
                     geneLengths[out.feature_id] = out.end - out.start + 1;
                     geneList.push_back(attributes["gene_id"]);
                 }
@@ -89,8 +89,6 @@ namespace rnaseqc {
                 if (attributes.find("gene_id") != attributes.end()) out.gene_id = attributes["gene_id"];
                 if (out.type == FeatureType::Exon)
                 {
-                    if (exonIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Exon ID: "+out.feature_id));
-                    exonIds.insert(out.feature_id);
                     //Parse exon attributes
                     if (attributes.find("exon_id") != attributes.end())
                     {
@@ -101,6 +99,9 @@ namespace rnaseqc {
                         out.feature_id = attributes["gene_id"] + "_" + std::to_string(++exon_names[attributes["gene_id"]]);
                         std::cerr << "Unnamed exon: Gene: " << attributes["gene_id"] << " Position: [" << out.start << ", " << out.end <<  "] Inferred Exon Name: " << out.feature_id << std::endl;
                     }
+                    else throw gtfException(std::string("Exon missing exon_id and gene_id fields: " + line));
+                    if (exonIds.count(out.feature_id)) throw gtfException(std::string("Detected non-unique Exon ID: "+out.feature_id));
+                    exonIds.insert(out.feature_id);
                     exonList.push_back(out.feature_id);
                     geneCodingLengths[out.gene_id] += 1 + (out.end - out.start);
                     exonLengths[out.feature_id] = 1 + (out.end - out.start);
@@ -138,7 +139,7 @@ namespace rnaseqc {
             string current;
             getline(splitter, current, '"');
             string key = current.substr(0, current.length()-1);
-            while (key[0] == ' ') key = key.substr(1);
+            while (key[0] == ' ' or key[0] == '\t') key = key.substr(1);
             getline(splitter, current, '"');
             attributes[key] = current;
         }
