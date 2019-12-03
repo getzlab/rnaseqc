@@ -110,9 +110,8 @@ Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed te
       --exclude-chimeric                Exclude chimeric reads from the read
                                         counts
 
-      -u, --unpaired                    Treat all reads as unpaired, ignoring
-                                        filters which require properly paired
-                                        reads
+      -u, --unpaired                    Allow unpaired reads to be quantified.
+                                        Required for single-end libraries
 
       --rpkm                            Output gene RPKM values instead of TPMs
 

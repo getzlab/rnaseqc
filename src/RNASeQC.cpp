@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
     ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be labeled as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
     Flag excludeChimeric(parser, "exclude-chimeric", "Exclude chimeric reads from the read counts", {"exclude-chimeric"});
-    Flag unpaired(parser, "unparied", "Treat all reads as unpaired, ignoring filters which require properly paired reads", {'u', "unpaired"});
+    Flag unpaired(parser, "unparied", "Allow unpaired reads to be quantified. Required for single-end libraries", {'u', "unpaired"});
     Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
     Flag outputTranscriptCoverage(parser, "coverage", "If this flag is provided, coverage statistics for each transcript will be written to a table. Otherwise, only summary coverage statistics are generated and added to the metrics table", {"coverage"});
     ValueFlag<unsigned int> coverageMaskSize(parser, "SIZE", "Sets how many bases at both ends of a transcript are masked out when computing per-base exon coverage. Default: 500bp", {"coverage-mask"});

@@ -75,7 +75,7 @@ namespace rnaseqc {
                 std::map<string, string> attributes;
                 parseAttributes(buffer, attributes);
                 if ( out.end < out.start)
-                    std::cout << "Bad fead feature range:" << out.start << " - " << out.end << std::endl;
+                    std::cerr << "Bad feature range:" << out.start << " - " << out.end << std::endl;
                 if (out.type == FeatureType::Gene && attributes.find("gene_id") != attributes.end())
                 {
                     //Parse gene attributes
