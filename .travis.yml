@@ -2,8 +2,7 @@ language: cpp
 os:
 - linux
 - osx
-dist: trusty
-sudo: required
+dist: bionic
 addons:
   apt:
     packages:
