@@ -30,7 +30,7 @@ RUN cd /opt/rnaseqc && git clone --recursive https://github.com/walaj/SeqLib.git
 RUN cd /opt && git clone https://github.com/francois-a/rnaseq-utils rnaseq && cd rnaseq && \
   git checkout f1c6a5677bbca465ea1edd06c2293a5d1078a18b && python3 -m pip install --upgrade pip setuptools && \
   python3 -m pip install numpy && python3 -m pip install pandas matplotlib scipy pyBigWig bx-python \
-  agutil nbformat seaborn sklearn && mkdir -p /root/.config/matplotlib && echo "backend	:	Agg" > /root/.config/matplotlib/matplotlibrc
+  agutil nbformat seaborn sklearn qtl && mkdir -p /root/.config/matplotlib && echo "backend	:	Agg" > /root/.config/matplotlib/matplotlibrc
 ENV PYTHONPATH $PYTHONPATH:/opt/
 
 #RNASeQC
