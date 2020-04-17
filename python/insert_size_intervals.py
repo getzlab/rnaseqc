@@ -45,10 +45,19 @@ def intersect_overlap(intervals):
 
 def parse_intervals(annot, mappability_bw, output_dir, prefix, min_length=1000, min_mappability=0.95):
     """Write intervals to BED format"""
+
+    exclude = set(['retained_intron', 'readthrough_transcript'])
+
     bw = pyBigWig.open(mappability_bw)
     gintervals = {}
     for c in annot.chr_list:
-        exon_coords = [(e.start_pos, e.end_pos) for g in annot.chr_genes[c] for t in g.transcripts for e in t.exons]
+        exon_coords = []
+        for g in annot.chr_genes[c]:
+            for t in g.transcripts:
+                if (t.type!='retained_intron') and (('tags' not in t.attributes) or len(set(t.attributes['tags']).intersection(exclude))==0):
+                    for e in t.exons:
+                        exon_coords.append((e.start_pos, e.end_pos))
+
         v = np.array(intersect_overlap(exon_coords))  # intersect all exons on current chr
         l = v[:,1]-v[:,0]+1
         gintervals[c] = v[l >= min_length, :]
