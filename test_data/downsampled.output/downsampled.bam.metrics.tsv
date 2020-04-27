@@ -2,6 +2,7 @@ Sample	downsampled.bam
 Mapping Rate	0.354336
 Unique Rate of Mapped	1
 Duplicate Rate of Mapped	0
+Duplicate Rate of Mapped, excluding Globins	0
 Base Mismatch	0.0100175
 End 1 Mapping Rate	0.359515
 End 2 Mapping Rate	0.349158
@@ -21,12 +22,12 @@ High Quality Intragenic Rate	0.923895
 High Quality Ambiguous Alignment Rate	0.0363289
 Discard Rate	0
 rRNA Rate	0.00747698
-Chimeric Alignment Rate	0
 End 1 Sense Rate	0.49428
 End 2 Sense Rate	0.507332
 Avg. Splits per Read	0.256852
 Alternative Alignments	275296
 Chimeric Reads	0
+Chimeric Alignment Rate	0
 Duplicate Reads	0
 End 1 Antisense	437593
 End 2 Antisense	413825
@@ -51,7 +52,8 @@ Mapped Duplicate Reads	0
 Mapped Reads	1972990
 Mapped Unique Reads	1972990
 Mismatched Bases	1502099
-Reads excluded from exon counts	0
+Non-Globin Reads	1961273
+Non-Globin Duplicate Reads	0
 Reads used for Intron/Exon counts	1972990
 rRNA Reads	14752
 Total Bases	149947240
@@ -69,12 +71,12 @@ Median 3' bias	0.578947
 3' bias MAD_Std	0.447569
 3' Bias, 25th Percentile	0.354943
 3' Bias, 75th Percentile	0.931034
-Average Fragment Length	184.6670
-Fragment Length Median	165.0000
-Fragment Length Std	91.4838
-Fragment Length MAD_Std	0
-Median of Avg Transcript Coverage	0
-Median of Transcript Coverage Std	0
+Average Fragment Length	182.276
+Fragment Length Median	164
+Fragment Length Std	69.7425
+Fragment Length MAD_Std	56.3388
+Median of Avg Transcript Coverage	0.0201351
+Median of Transcript Coverage Std	0.141667
 Median of Transcript Coverage CV	1.4431
 Median Exon CV	0.587035
 Exon CV MAD	0.495332

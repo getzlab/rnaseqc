@@ -41,7 +41,7 @@ if __name__ == '__main__':
         " which is usually good for checking modern vs legacy counts (which vary"
         " slightly within Java's default precision). You can also provide a floating"
         " point number to manually specify tolerance",
-        default=0,
+        default=0.000001,
         const=0.01
     )
     parser.add_argument(

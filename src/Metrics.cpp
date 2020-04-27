@@ -136,9 +136,12 @@ namespace rnaseqc {
             if (this->coverage.find(*exon_id) == this->coverage.end()) this->coverage[*exon_id] = std::vector<unsigned long>(exonLengths[*exon_id], 0ul);
         //then compute coverage for the gene
         std::tuple<double, double, double> results = computeCoverage(this->writer, gene, this->mask_size, this->coverage, this->exonCVs, this->bias);
-        this->geneMeans.push_back(std::get<0>(results));
-        this->geneStds.push_back(std::get<1>(results));
-        this->geneCVs.push_back(std::get<2>(results));
+        if (std::get<0>(results) != -1)
+        {
+            this->geneMeans.push_back(std::get<0>(results));
+            this->geneStds.push_back(std::get<1>(results));
+            this->geneCVs.push_back(std::get<2>(results));
+        }
         //Now clean out the coverage map to save memory
         for (auto exon_id = exonsForGene[gene.feature_id].begin(); exon_id != exonsForGene[gene.feature_id].end(); ++exon_id)
             this->coverage.erase(*exon_id);
@@ -318,9 +321,10 @@ namespace rnaseqc {
                 std += std::pow(static_cast<double>(*base) - avg, 2.0) / size;
             std = std::pow(std, 0.5);
             writer << avg << "\t" << std << "\t" << (std / avg) << std::endl;
+            return std::make_tuple(avg, std, (std / avg));
         }
-        else writer << "0\t0\tnan" << std::endl;
-        return std::make_tuple(avg, std, (std / avg));
+        writer << "0\t0\tnan" << std::endl;
+        return std::make_tuple(-1, -1, -1);
     }
 
 
@@ -357,7 +361,6 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
         "Mismatched Bases",
         "Non-Globin Reads",
         "Non-Globin Duplicate Reads",
-        "Reads excluded from exon counts",
         "Reads used for Intron/Exon counts",
         "rRNA Reads",
         "Split Reads",
@@ -369,8 +372,17 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
     };
     stream << "Alternative Alignments\t" << counter.get("Alternative Alignments") << std::endl;
     stream << "Chimeric Reads\t";
-    if (counter.get("Chimeric Reads_tag")) stream << counter.get("Chimeric Reads_tag") << std::endl;
-    else stream << counter.get("Chimeric Reads_contig") << std::endl;
+    if (counter.get("Chimeric Reads_tag"))
+    {
+        stream << counter.get("Chimeric Reads_tag") << std::endl;
+        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Reads_tag", "Mapped Reads") << std::endl;
+    }
+    else
+    {
+        stream << counter.get("Chimeric Reads_contig") << std::endl;
+        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Reads_contig", "Mapped Reads") << std::endl;
+
+    }
     for (int i = 0; i < keys.size(); ++i)
         if (keys[i] != "Split Reads" || counter.get("Split Reads"))
             stream << keys[i] << "\t" << counter.get(keys[i]) << std::endl;

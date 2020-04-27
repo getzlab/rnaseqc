@@ -470,7 +470,7 @@ namespace rnaseqc {
         {
             //for each block, intersect it with the bed file features
             list<Feature> *results = intersectBlock(*block, (*bedFeatures)[chr]);
-            if (results->size() == 1) //if the block intersected more than one exon, it's immediately disqualified
+            if (results->size() == 1 && (partialIntersect(results->front(), *block) == (block->end - block->start))) //if the block intersected more than one exon, it's immediately disqualified
             {
                 if (firstBlock) exonName = results->begin()->feature_id; //record the exon name on the first pass
                 else if (exonName != results->begin()->feature_id) //ensure the same exon name on subsequent passes
