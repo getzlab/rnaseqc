@@ -2,6 +2,7 @@ Sample	chr1.bam
 Mapping Rate	1
 Unique Rate of Mapped	1
 Duplicate Rate of Mapped	0
+Duplicate Rate of Mapped, excluding Globins	0
 Base Mismatch	0.00968147
 End 1 Mapping Rate	1.01474
 End 2 Mapping Rate	0.985262
@@ -21,12 +22,12 @@ High Quality Intragenic Rate	0.943994
 High Quality Ambiguous Alignment Rate	0.0319513
 Discard Rate	0
 rRNA Rate	4.18304e-06
-Chimeric Alignment Rate	0
 End 1 Sense Rate	0.495471
 End 2 Sense Rate	0.503206
 Avg. Splits per Read	0.261769
 Alternative Alignments	229158
 Chimeric Reads	0
+Chimeric Alignment Rate	0
 Duplicate Reads	0
 End 1 Antisense	498854
 End 2 Antisense	477326
@@ -51,7 +52,8 @@ Mapped Duplicate Reads	0
 Mapped Reads	2151547
 Mapped Unique Reads	2151547
 Mismatched Bases	1583091
-Reads excluded from exon counts	0
+Non-Globin Reads	2151547
+Non-Globin Duplicate Reads	0
 Reads used for Intron/Exon counts	2151547
 rRNA Reads	9
 Total Bases	163517572
@@ -62,15 +64,15 @@ Unpaired Reads	0
 Read Length	76
 Genes Detected	1842
 Estimated Library Complexity	0
-Genes used in 3' bias	240
-Mean 3' bias	0.506582
+Genes used in 3' bias	236
+Mean 3' bias	0.511031
 Median 3' bias	0.5
-3' bias Std	0.291286
-3' bias MAD_Std	0.354535
-3' Bias, 25th Percentile	0.269663
-3' Bias, 75th Percentile	0.743056
-Median of Avg Transcript Coverage	0.634557
+3' bias Std	0.293274
+3' bias MAD_Std	0.353802
+3' Bias, 25th Percentile	0.264706
+3' Bias, 75th Percentile	0.75
+Median of Avg Transcript Coverage	0.629976
 Median of Transcript Coverage Std	0.905514
-Median of Transcript Coverage CV	1.06126
-Median Exon CV	0.313862
-Exon CV MAD	0.309033
+Median of Transcript Coverage CV	1.06256
+Median Exon CV	0.313763
+Exon CV MAD	0.308991

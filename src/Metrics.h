@@ -129,12 +129,12 @@ namespace rnaseqc {
     };
     
     
-    template <typename T> double computeMedian(unsigned long size, T &&iterator, unsigned int offset=0u)
+    template <typename T> double computeMedian(unsigned long size, T &&iterator)
     {
         if (size <= 0) // Couldn't decide if it would make sense to just report a median of 0. This seemed safer
             throw std::range_error("Cannot compute median of an empty list");
-        for (unsigned long midpoint = size / 2; midpoint > offset; --midpoint) ++iterator;
-        if (size % 1)
+        for (unsigned long midpoint = (size - 1) / 2; midpoint > 0; --midpoint) ++iterator;
+        if (size % 2)
         {
             double value = static_cast<double>(*(iterator++));
             return (value + static_cast<double>(*iterator)) / 2.0;

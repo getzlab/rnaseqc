@@ -255,12 +255,11 @@ int main(int argc, char* argv[])
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
                     //raw counts:
                     if (!alignment.PairedFlag()) counter.increment("Unpaired Reads");
-                    if (alignment.DuplicateFlag()) counter.increment("Duplicate Reads");
                     if (alignment.MappedFlag())
                     {
                         counter.increment("Mapped Reads");
 
-                        if (alignment.DuplicateFlag())counter.increment("Mapped Duplicate Reads");
+                        if (alignment.DuplicateFlag()) counter.increment("Mapped Duplicate Reads");
                         else counter.increment("Mapped Unique Reads");
                         //check length against max read length
                         unsigned int alignmentSize = alignment.PositionEnd() - alignment.Position();
