@@ -1,16 +1,16 @@
 # RNA-SeQC
 
-[![Version](https://img.shields.io/github/release/broadinstitute/rnaseqc.svg?label=Version)](https://github.com/broadinstitute/rnaseqc/releases)
-[![Build Status](https://travis-ci.com/broadinstitute/rnaseqc.svg?token=y8NpD4Ye6EkYyigZUZDt&branch=master)](https://travis-ci.com/broadinstitute/rnaseqc)
+[![Version](https://img.shields.io/github/release/getzlab/rnaseqc.svg?label=Version)](https://github.com/getzlab/rnaseqc/releases)
+[![Build Status](https://travis-ci.com/getzlab/rnaseqc.svg?token=y8NpD4Ye6EkYyigZUZDt&branch=master)](https://travis-ci.com/getzlab/rnaseqc)
 
 ## Installing
 
-The latest stable build of RNA-SeQC is available on the [GitHub Releases](https://github.com/broadinstitute/rnaseqc/releases) page, and contains static binaries for Linux and OSX.
+The latest stable build of RNA-SeQC is available on the [GitHub Releases](https://github.com/getzlab/rnaseqc/releases) page, and contains static binaries for Linux and OSX.
 
 RNA-SeQC is also available as a docker image: `gcr.io/broad-cga-aarong-gtex/rnaseqc:latest` which is automatically updated with any code change.
 Older versions of the docker image are tagged using the full commit SHA of any commit which introduced a code change.
 
-To checkout the source of RNA-SeQC run `git clone --recursive https://github.com/broadinstitute/rnaseqc.git`.
+To checkout the source of RNA-SeQC run `git clone --recursive https://github.com/getzlab/rnaseqc.git`.
 If you do not use the `--recursive` flag, you'll need to run `git submodule update --init --recursive` or you will be missing [SeqLib](https://github.com/walaj/SeqLib).
 
 #### Unit Tests
