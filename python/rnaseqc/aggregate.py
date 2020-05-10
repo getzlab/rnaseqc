@@ -104,34 +104,34 @@ if __name__ == '__main__':
         insertsize_df = combine_insert_sizes(insertsize_files)
         insertsize_df.to_csv(os.path.join(args.output_dir, '{}.insert_size_hists.txt.gz'.format(args.prefix)), sep='\t')
 
-    # if len(gene_reads_gcts) > 0:
-    #     print('Aggregating read count GCTs')
-    #     gct_df = combine_gcts(gene_reads_gcts)
-    #     if args.parquet:
-    #         gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_reads.parquet'.format(args.prefix)))
-    #     else:
-    #         write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_reads.gct.gz'.format(args.prefix)))
-    #
-    # if len(gene_fragm_gcts) > 0:
-    #     print('Aggregating fragment count GCTs')
-    #     gct_df = combine_gcts(gene_fragm_gcts)
-    #     if args.parquet:
-    #         gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_fragments.parquet'.format(args.prefix)))
-    #     else:
-    #         write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_fragments.gct.gz'.format(args.prefix)))
-    #
-    # if len(gene_tpm_gcts) > 0:
-    #     print('Aggregating TPM GCTs')
-    #     gct_df = combine_gcts(gene_tpm_gcts)
-    #     if args.parquet:
-    #         gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_tpm.parquet'.format(args.prefix)))
-    #     else:
-    #         write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_tpm.gct.gz'.format(args.prefix)))
-    #
-    # if len(exon_reads_gcts) > 0:
-    #     print('Aggregating exon read count GCTs')
-    #     gct_df = combine_gcts(exon_reads_gcts)
-    #     if args.parquet:
-    #         gct_df.to_parquet(os.path.join(args.output_dir, '{}.exon_reads.parquet'.format(args.prefix)))
-    #     else:
-    #         write_gct(gct_df, os.path.join(args.output_dir, '{}.exon_reads.gct.gz'.format(args.prefix)))
+    if len(gene_reads_gcts) > 0:
+        print('Aggregating read count GCTs')
+        gct_df = combine_gcts(gene_reads_gcts)
+        if args.parquet:
+            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_reads.parquet'.format(args.prefix)))
+        else:
+            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_reads.gct.gz'.format(args.prefix)))
+
+    if len(gene_fragm_gcts) > 0:
+        print('Aggregating fragment count GCTs')
+        gct_df = combine_gcts(gene_fragm_gcts)
+        if args.parquet:
+            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_fragments.parquet'.format(args.prefix)))
+        else:
+            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_fragments.gct.gz'.format(args.prefix)))
+
+    if len(gene_tpm_gcts) > 0:
+        print('Aggregating TPM GCTs')
+        gct_df = combine_gcts(gene_tpm_gcts)
+        if args.parquet:
+            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_tpm.parquet'.format(args.prefix)))
+        else:
+            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_tpm.gct.gz'.format(args.prefix)))
+
+    if len(exon_reads_gcts) > 0:
+        print('Aggregating exon read count GCTs')
+        gct_df = combine_gcts(exon_reads_gcts)
+        if args.parquet:
+            gct_df.to_parquet(os.path.join(args.output_dir, '{}.exon_reads.parquet'.format(args.prefix)))
+        else:
+            write_gct(gct_df, os.path.join(args.output_dir, '{}.exon_reads.gct.gz'.format(args.prefix)))
