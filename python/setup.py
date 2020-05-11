@@ -6,8 +6,8 @@ with open("rnaseqc/__init__.py") as reader:
         r'__version__ ?= ?[\'\"]([\w.]+)[\'\"]',
         reader.read()
     ).group(1)
-# _README           = os.path.join(os.path.dirname(__file__), 'README.md')
-# _LONG_DESCRIPTION = open(_README).read()
+with open(os.path.join(os.path.dirname(__file__), 'README.md')) as r:
+    long_description = r.read()
 
 # Setup information
 setup(
@@ -15,19 +15,16 @@ setup(
     version = __version__,
     packages = find_packages(),
     description = 'Multi-sample visualization of metrics from RNA-SeQC',
-    # long_description = _LONG_DESCRIPTION,
-    # long_description_content_type='text/markdown',
-    # entry_points = {
-    #     'console_scripts': [
-    #         'rnaseqc = rnaseqc:__main__'
-    #     ]
-    # },
+    long_description = long_description,
+    long_description_content_type='text/markdown',
     install_requires = [
         'numpy',
         'pandas',
         'matplotlib',
         'seaborn',
-        'qtl'
+        'qtl',
+        'agutil',
+        'nbformat'
     ],
     classifiers = [
         "Programming Language :: Python :: 3",

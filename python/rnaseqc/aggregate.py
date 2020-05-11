@@ -14,7 +14,7 @@ def combine_gcts(path_dict, verbose=True):
 
     # load first sample and determine dtype
     sample_id = sample_ids[0]
-    df = pd.read_csv(path_dict[sample_id], sep='\t', skiprows=3, header=None, 
+    df = pd.read_csv(path_dict[sample_id], sep='\t', skiprows=3, header=None,
                      index_col=0, names=['Name','Description', sample_id])
     if df[sample_id].dtype == np.float64:
         dtype = np.float32
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('results_dir', help='Directory containing RNA-SeQC outputs for all samples to be combined.')
     parser.add_argument('prefix', help='Prefix for output files, e.g., <prefix>.gct.gz')
     parser.add_argument('--parquet', action='store_true', help='Write to parquet format instead of GCT')
-    parser.add_argument('-o', '--output_dir', default='.', help='Output directory')
+    parser.add_argument('-o', '--output-dir', default='.', help='Output directory')
     args = parser.parse_args()
 
     # if os.path.isdir(args.results):

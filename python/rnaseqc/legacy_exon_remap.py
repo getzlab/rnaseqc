@@ -3,7 +3,7 @@ from agutil import status_bar
 import subprocess
 import csv
 import shutil
-from rnaseq.annotation import Annotation
+from qtl.annotation import Annotation
 import tempfile
 
 def run(args):

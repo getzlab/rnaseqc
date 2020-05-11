@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import qtl.io
 
 sys.path.insert(1, os.path.dirname(__file__))
-from plot import *
+from .plot import *
 
 
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
@@ -172,9 +172,9 @@ if __name__ == '__main__':
     parser.add_argument('metrics', help='Aggregated QC metrics from RNA-SeQC.')
     parser.add_argument('prefix', help='Name for output files.')
     parser.add_argument('--tpm', default=None, help='Aggregated TPM matrix from RNA-SeQC.')
-    parser.add_argument('--insert_size', default=None, help='Aggregated insert sizes from RNA-SeQC.')
+    parser.add_argument('--insert-size', default=None, help='Aggregated insert sizes from RNA-SeQC.')
     parser.add_argument('--cohort', default=None, help='Cohort or batch annotation. TSV file mapping sample IDs to annotation.')
-    parser.add_argument('--output_dir', default='.', help='If specified, figures are saved here.')
+    parser.add_argument('--output-dir', default='.', help='If specified, figures are saved here.')
     parser.add_argument('--dpi', type=int, default=300, help='Figure resolution.')
     args = parser.parse_args()
 

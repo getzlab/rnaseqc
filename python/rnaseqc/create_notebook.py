@@ -1,4 +1,4 @@
-import nb_encode as nbe
+from . import nb_encode as nbe
 import argparse
 import subprocess
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('output', type=argparse.FileType('w'),
                         help="Output python notebook")
     parser.add_argument('-t', '--tpm', default=None, help='Aggregated TPM')
-    parser.add_argument('-i', '--insert_size', default=None, 
+    parser.add_argument('-i', '--insert-size', default=None,
                         help='Aggregated insert size distributions')
     parser.add_argument('-c', '--cohort', default=None,
                         help='TSV file mapping sample IDs to cohort/batch IDs')
