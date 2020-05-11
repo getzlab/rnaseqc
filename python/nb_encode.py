@@ -97,7 +97,7 @@ class Notebook(object):
             with open(dest, 'w') as w:
                 nbf.write(self.nb, w)
         else:
-            nbf.write(self.nb, dest)
+            nbf.write(self.nb, dest.name)
 
 def encode_plot_cell(cell, source, result, figure):
     img = io.BytesIO()

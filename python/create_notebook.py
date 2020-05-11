@@ -55,4 +55,4 @@ if __name__ == '__main__':
     main(args)
 
     # execute notebook
-    # subprocess.check_call('jupyter nbconvert --execute --inplace {}'.format(args.output.name), shell=True)
+    subprocess.check_call('jupyter nbconvert --execute --inplace {}'.format(args.output.name), shell=True)
