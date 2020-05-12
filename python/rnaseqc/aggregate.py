@@ -84,13 +84,16 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output-dir', default='.', help='Output directory')
     args = parser.parse_args()
 
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
     # if os.path.isdir(args.results):
-    gene_reads_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*gene_reads.gct*'))}
-    gene_fragm_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*gene_fragments.gct*'))}
-    gene_tpm_gcts =    {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*gene_tpm.gct*'))}
-    exon_reads_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*exon_reads.gct*'))}
-    metrics_files =    {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*metrics.tsv*'))}
-    insertsize_files = {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '*fragmentSizes.txt*'))}
+    gene_reads_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*gene_reads.gct*'), recursive=True)}
+    gene_fragm_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*gene_fragments.gct*'), recursive=True)}
+    gene_tpm_gcts =    {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*gene_tpm.gct*'), recursive=True)}
+    exon_reads_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*exon_reads.gct*'), recursive=True)}
+    metrics_files =    {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*metrics.tsv*'), recursive=True)}
+    insertsize_files = {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*fragmentSizes.txt*'), recursive=True)}
     # coverage files don't get aggregated
     # coverage_files =   {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results, '*coverage.tsv*'))}
 
