@@ -105,7 +105,7 @@ test-legacy: rnaseqc
 	python3 test_data/approx_diff.py .test_output/coverage.tsv test_data/legacy.output/downsampled.bam.coverage.tsv -m metrics -c coverage_CV coverage_CV_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.fragmentSizes.txt test_data/legacy.output/downsampled.bam.fragmentSizes.txt -m fragments -c Count Count_
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.gene_reads.gct test_data/legacy.output/legacy.gene_reads.gct -m tables -c Counts RNA-SeQC
-	python3 python/legacy_exon_remap.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.gtf > /dev/null
+	python3 python/rnaseqc/legacy_exon_remap.py .test_output/downsampled.bam.exon_reads.gct test_data/downsampled.gtf > /dev/null
 	python3 test_data/approx_diff.py .test_output/downsampled.bam.exon_reads.gct test_data/legacy.output/legacy.exon_reads.gct -m tables -c Counts RNA-SeQC -t
 	rm -rf .test_output
 

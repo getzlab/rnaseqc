@@ -35,10 +35,10 @@ ENV PYTHONPATH $PYTHONPATH:/opt/
 
 #RNASeQC
 COPY src /opt/rnaseqc/src
-COPY python /scripts
+COPY python /opt/rnaseqc/python
 COPY args.hxx /opt/rnaseqc
 COPY bioio.hpp /opt/rnaseqc
-RUN cd /opt/rnaseqc && make && ln -s /opt/rnaseqc/rnaseqc /usr/local/bin/rnaseqc && make clean
+RUN cd /opt/rnaseqc && make && ln -s /opt/rnaseqc/rnaseqc /usr/local/bin/rnaseqc && make clean && python3 -m pip install -e /opt/rnaseqc/python
 
 # clean up
 RUN apt-get clean && \
