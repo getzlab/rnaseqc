@@ -29,8 +29,8 @@ if __name__ == '__main__':
 
     notebook_parser = subparsers.add_parser(
         'notebook',
-        help='Generate a notebook with figures to compare outputs from multiple samples',
-        description='Generate a notebook with figures to compare outputs from multiple samples',
+        help='Generate a notebook with figures comparing outputs from multiple samples',
+        description='Generate a notebook with figures comparing outputs from multiple samples',
         add_help=False
     )
 
@@ -43,15 +43,15 @@ if __name__ == '__main__':
 
     intervals_parser = subparsers.add_parser(
         'insert-size',
-        help='Generate a BED file containing "good" intervals for RNA-SeQC\'s insert-size estimation metrics',
-        description='Generate a BED file containing "good" intervals for RNA-SeQC\'s insert-size estimation metrics',
+        help='Generate a BED file with long (>1000bp), high-mappability intervals for estimating insert sizes',
+        description='Generate a BED file with long (>1000bp), high-mappability intervals for estimating insert sizes',
         add_help=False
     )
 
     legacy_parser = subparsers.add_parser(
         'legacy-exons',
-        help='Renames exons in exon_reads.gct file from RNA-SeQC 2.X.X to use exon names as reported by RNA-SeQC 1.1.9',
-        description='Renames exons in exon_reads.gct file from RNA-SeQC 2.X.X to use exon names as reported by RNA-SeQC 1.1.9',
+        help='Renames exons in exon_reads.gct file from RNA-SeQC 2 to use naming convention from RNA-SeQC 1.1.x',
+        description='Renames exons in exon_reads.gct file from RNA-SeQC 2 to use naming convention from RNA-SeQC 1.1.x',
         add_help=False
     )
 
@@ -60,4 +60,4 @@ if __name__ == '__main__':
         os.execvp(sys.executable, [sys.executable, '-m', commands[args.command]] + remainder)
     else:
         parser.print_usage()
-        sys.exit("You must provide a valid subcommand")
+        sys.exit('A valid subcommand must be provided.')
