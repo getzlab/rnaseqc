@@ -1,5 +1,8 @@
 *.xcodeproj/
-python/__pycache__/
+__pycache__/
 src/*.o
 rnaseqc
+!python/rnaseqc
 rnaseqc.a
+build/
+*.egg-info/

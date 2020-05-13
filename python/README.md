@@ -1,110 +1,62 @@
-# Python Scripts
+# RNA-SeQC Python utilities
 
-This directory contains several helper scripts for `RNA-SeQC`.
+This module contains utility code for RNA-SeQC
 
-## Plotting Code
+## Installing
 
-The script `plot.py` can be used to generate a report with summary figures for one or more runs of RNA-SeQC.
+* From pip: `pip install rnaseqc`
+* From the git repo: `pip install -e python` (Invoke from root of git repo)
 
-`metrics.py` and `nb_encode.py` are both dependencies of `plot.py`.
+## Usage
 
-### Requirements
+This does not install a console entrypoint. You can invoke the utilities in one of three ways:
 
-`plot.py` requires the following python packages:
+* From the main module: `python3 -m rnaseqc ...`
+* Calling the target module: `python3 -m rnaseqc.example ...`
+* Calling scripts directly: `python3 python/rnaseqc/example.py`
 
-* numpy
-* pandas
-* matplotlib
-* scipy
-* pyBigWig
-* bx-python
-* agutil
-* nbformat
-* seaborn
-* sklearn
+## Utilities
 
-### Usage
+The `rnaseqc` module contains 5 main utilities. To get more help with each utility,
+invoke the utility with the `-h` or `--help` option
 
-```
-python plot.py [-h] samples [samples ...] output
+### Aggregation
 
-positional arguments:
-samples     Directory path(s) to RNA-SeQC output. Each directory should
-            contain the output files from RNA-SeQC for a single sample
-output      Output python notebook
-
-optional arguments:
--h, --help  show this help message and exit
-```
-
-Plot.py takes a variable number of arguments. The first and subsequent arguments (excluding the final argument) should be paths to directories where RNA-SeQC output files are located. Each directory should contain output friles from a single run of RNA-SeQC. The final argument should be a filepath to an `.ipynb` file where Plot.py will write its output. The output will contain code cells and pre-rendered output of various summary plots, including  KDE plots of the insert size distributions of each sample and gene expression PCAs.
-
-## Insert size distribution
-
-The script `insert_size_intervals.py` generates a list of intervals in BED format for estimating insert size distributions.
-
-### Requirements
-
-`insert_size_intervals.py` requires the following python packages:
-
-* numpy
-* pyBigWig
-* qtl
-
-### Usage
+Aggregates RNA-SeQC outputs from multiple samples
 
 ```
-python3 insert_size_intervals.py [-h] [--min_length MIN_LENGTH]
-                                 [--min_mappability MIN_MAPPABILITY]
-                                 [--output_dir OUTPUT_DIR]
-                                 gtf_path mappability_bigwig prefix
-
-positional arguments:
-  gtf_path              Reference annotation in GTF format.
-  mappability_bigwig    Mappability track in bigWig format.
-  prefix                Prefix for output file names.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --min_length MIN_LENGTH
-                        Minimum exon/UTR length for computing insert sizes.
-                        Default: 1000bp
-  --min_mappability MIN_MAPPABILITY
-                        Minimum mappability for retained intervals. 
-                        Default: 0.95
-  --output_dir OUTPUT_DIR
-                        Output directory.
-```
-Mappability tracks can be obtained from [UCSC](https://genome.ucsc.edu/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability) for GRCh37/hg19 and at [gs://gtex-resources/mappability](https://console.cloud.google.com/storage/browser/gtex-resources/mappability) for GRCh38/hg38.
-
-## Legacy Exon Naming
-
-The script `legacy_exon_remap.py` can be used to translate exon numbers into exon numbers that would have been reported by `RNA-SeQC 1.1.9`. It takes a GTF and Exon GCT and modifies the GCT in place to assign legacy compatible exon names.
-
-### Requirements
-
-`legacy_exon_remap.py` requires the following python packages:
-
-* `https://github.com/francois-a/rnaseq-utils`
-* numpy
-* pandas
-* matplotlib
-* scipy
-* pyBigWig
-* bx-python
-* agutil
-
-### Usage
-
-```
-python legacy_exon_remap.py [-h] gct gtf
-
-positional arguments:
-gct         RNA-SeQC 2 Exon reads gct file
-gtf         Reference GTF for the exons
-
-optional arguments:
--h, --help  show this help message and exit
+python3 -m rnaseqc aggregate [-h] [--parquet] [-o OUTPUT_DIR] results_dir prefix
 ```
 
-Legacy_exon_remap.py takes exactly two arguments. The first should be the filepath to an `exon_reads.gct` file from RNA-SeQC 2. The second should be the same GTF used by RNA-SeQC when the given Exon Reads file was produced. The GCT will be modified in-place to assign RNA-SeQC 1.1.9 compliant exon names.
+### Jupyter Notebooks
+
+Creates a jupyter notebook with several figures for comparing samples
+
+```
+python3 -m rnaseqc notebook [-h] [-t TPM] [-i INSERT_SIZE] [-c COHORT] [-d DATE] metrics output
+```
+
+### Figures
+
+Generates figures from an aggregated RNA-SeQC metrics table
+
+```
+python3 -m rnaseqc report [-h] [--tpm TPM] [--insert-size INSERT_SIZE] [--cohort COHORT] [--output-dir OUTPUT_DIR] [--dpi DPI] metrics prefix
+```
+
+### Insert Size distributions
+
+Generates a BED file with intervals used by RNA-SeQC for estimating a sample's insert size distribution
+
+```
+python3 -m rnaseqc insert-size [-h] [--min-length MIN_LENGTH] [--min-mappability MIN_MAPPABILITY] [--output-dir OUTPUT_DIR] gtf_path mappability_bigwig prefix
+```
+
+### Exon remapping
+
+Convert exon names in an `*.exon_reads.gct` file from RNA-SeQC 2.X.X to match names
+as reported by RNA-SeQC 1.1.9
+
+```
+python3 -m rnaseqc legacy-exons gct gtf
+```

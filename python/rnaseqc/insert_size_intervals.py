@@ -98,9 +98,9 @@ if __name__=='__main__':
     parser.add_argument('gtf_path', help='Reference annotation in GTF format.')
     parser.add_argument('mappability_bigwig', help='Mappability track in bigWig format.')
     parser.add_argument('prefix', help='Prefix for output file names.')
-    parser.add_argument('--min_length', type=np.int32, default=1000, help='Minimum exon/UTR length for computing insert sizes. Default: 1000bp')
-    parser.add_argument('--min_mappability', type=np.float64, default=0.95, help='Minimum mappability for retained intervals. Default: 0.95')
-    parser.add_argument('--output_dir', default='.', help='Output directory.')
+    parser.add_argument('--min-length', type=np.int32, default=1000, help='Minimum exon/UTR length for computing insert sizes. Default: 1000bp')
+    parser.add_argument('--min-mappability', type=np.float64, default=0.95, help='Minimum mappability for retained intervals. Default: 0.95')
+    parser.add_argument('--output-dir', default='.', help='Output directory.')
     args = parser.parse_args()
 
     annot = annotation.Annotation(args.gtf_path, verbose=True)
