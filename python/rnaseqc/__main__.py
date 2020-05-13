@@ -17,8 +17,16 @@ if __name__ == '__main__':
         'notebook': get_filepath('create_notebook'),
         'insert-size': get_filepath('insert_size_intervals'),
         'legacy-exons': get_filepath('legacy_exon_remap'),
-        'report': get_filepath('report')
+        'report': get_filepath('report'),
+        'run': get_filepath('run'),
     }
+
+    run_parser = subparsers.add_parser(
+        'run',
+        help='A light wrapper with some convenience functions to run RNA-SeQC',
+        description='A light wrapper with some convenience functions to run RNA-SeQC',
+        add_help=False
+    )
 
     aggregate_parser = subparsers.add_parser(
         'aggregate',
