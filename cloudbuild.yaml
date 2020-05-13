@@ -29,7 +29,6 @@ steps:
           git clone https://github.com/getzlab/rnaseqc.git &&
           mv rnaseqc/test_data /opt/rnaseqc &&
           cd /opt/rnaseqc &&
-          cp -r /scripts /opt/rnaseqc/python &&
           make test
     timeout: 450s
   - name: gcr.io/cloud-builders/docker
