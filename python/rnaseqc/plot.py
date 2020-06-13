@@ -324,8 +324,8 @@ def insert_sizes(insertsize_df, cohort_s=None, cohort_colors=None, sort_order='m
     n = df.sum(1).sort_values()
     si = n[n<100000].index.tolist() + mu.loc[n[n>=100000].index].sort_values().index.tolist()
 
-    size_s = cohort_s.value_counts()
-    if sort_order == 'cohort':
+    if cohort_s is not None and sort_order == 'cohort':  # sort within each cohort
+        size_s = cohort_s.value_counts()
         sort_s = pd.Series(cohort_s[si], index=si)
         si = []
         for c in size_s.index:
