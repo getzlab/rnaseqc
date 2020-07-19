@@ -17,8 +17,9 @@ def get_cohort_colors(cohorts):
     return cohort_colors
 
 
-def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1,
-                   aw=2, end1_threshold=None, end2_threshold=None):
+def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1, aw=2,
+                   end1_threshold=None, end2_threshold=None,
+                   end1_limit=0.01, end2_limit=0.025):
     """Plot base mismatch rates ('NM' tag) for read mate 1 vs read mate 2."""
 
     if cohort_s is not None:
@@ -30,8 +31,8 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
 
     x = metrics_df['End 1 Mismatch Rate'].copy()
     y = metrics_df['End 2 Mismatch Rate'].copy()
-    x[x>0.01] = 0.01
-    y[y>0.025] = 0.025
+    x[x>end1_limit] = end1_limit
+    y[y>end2_limit] = end2_limit
 
     cohorts = cohort_s.unique()
     if cohort_colors is None:
@@ -50,13 +51,13 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
         ix = (x > end1_threshold) | (y > end2_threshold)
         ax.scatter(x[ix], y[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
 
-    ax.set_xlim([0, 0.01])
-    ax.set_ylim([0, 0.025])
     qtl.plot.format_plot(ax, fontsize=10)
+    ax.set_xlim([0, end1_limit])
+    ax.set_ylim([0, end2_limit])
 
     ax.spines['left'].set_position(('outward', 6))
     ax.spines['bottom'].set_position(('outward', 6))
-    ax.plot([0, 0.01], [0, 0.01], '--', c=[0.6]*3, lw=1, zorder=0)
+    ax.plot([0, end1_limit], [0, end1_limit], '--', c=[0.6]*3, lw=1, zorder=0)
 
     ax.set_xlabel('End 1 mismatch rate', fontsize=12)
     ax.set_ylabel('End 2 mismatch rate', fontsize=12)
@@ -212,7 +213,7 @@ def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, width=0.8,
     if cohort_s is not None:
         cax = fig.add_axes([dl/fw, (db+ah+ds)/fh, aw/fw, dc/fh], sharex=ax)
         cax.set_yticks([])
-        _plot_cohort_labels(cax, cohort_s, cohort_colors=cohort_colors,
+        _plot_cohort_labels(cax, cohort_s.loc[df.index], cohort_colors=cohort_colors,
                             lax=ax, legend=False, orientation='horizontal')
 
 
@@ -375,26 +376,36 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
     x_s = tpm_df.loc[x_id].rename('XIST')
     y_s = tpm_df.loc[y_id].rename('RPS4Y1')
 
-    ax = qtl.plot.setup_figure(3, 3)
+    ax = qtl.plot.setup_figure(3, 3, xspace=[0.75, 1.75])
     ax.set_xscale('symlog')
     ax.set_yscale('symlog')
 
     if sex_s is not None:  # flag potential swaps based on thresholds
         assert tpm_df.columns.isin(sex_s.index).all()
-        res_s = pd.Series('NA', index=sex_s.index, name='inferred_sex')
+        res_s = pd.Series('NA', index=sex_s.index[sex_s.index.isin(tpm_df.columns)], name='inferred_sex')
 
         args = {'edgecolors':'none', 'lw':0, 'rasterized':False, 'clip_on':False, 's':s, 'alpha':0.2}
         args2 = {'edgecolors':'k', 'lw':1, 'rasterized':False, 'clip_on':False, 's':s+6, 'alpha':1}
 
+        # unassigned samples
+        ix = sex_s[sex_s.isnull() & (x_s <= x_threshold)].index
+        if len(ix) > 0:
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), **args)
+            res_s[ix] = 'Male'
+        ix = sex_s[sex_s.isnull() & (y_s <= y_threshold)].index
+        if len(ix) > 0:
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), **args)
+            res_s[ix] = 'Female'
+
         # matching samples
         ix = sex_s[(sex_s == 'Male') & (x_s <= x_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label='Male ({})'.format(len(ix)), **args)
             res_s[ix] = 'Male'
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label='Male ({})'.format((res_s=='Male').sum()), **args)
         ix = sex_s[(sex_s == 'Female') & (y_s <= y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label='Female ({})'.format(len(ix)), **args)
             res_s[ix] = 'Female'
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label='Female ({})'.format((res_s=='Female').sum()), **args)
 
         # mismatches
         if flag_klinefelter:
@@ -442,7 +453,7 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         ax.scatter(x_s, y_s, s=s, alpha=0.5, edgecolors='none', lw=0.5, rasterized=True, clip_on=False)
 
     if highlight_ids is not None:  # highlight selected samples
-        ax.scatter(x_s[highlight_ids], y_s[highlight_ids], c='r', s=s, alpha=0.5, edgecolors='none', lw=0.5, rasterized=True, label=None)
+        ax.scatter(x_s[highlight_ids], y_s[highlight_ids], c=[hsv_to_rgb([0.075,1,1])], s=s+12, alpha=1, edgecolors='k', lw=1, zorder=50, rasterized=False, clip_on=False, label=None)
 
     qtl.plot.format_plot(ax, fontsize=12)
     ax.spines['left'].set_position(('outward', 6))
@@ -463,5 +474,4 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         leg = ax.legend(loc='upper left', fontsize=12, handlelength=0.5, labelspacing=0.2, bbox_to_anchor=(1,1))
         for lh in leg.legendHandles:
             lh.set_alpha(1)
-
-    return ax
+        return res_s
