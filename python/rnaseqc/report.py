@@ -13,7 +13,7 @@ from .plot import *
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
                     prefix=None, output_dir=None, dpi=300, show_legend=True,
                     ms=12, alpha=1, show_xticklabels=False, highlight_ids=None,
-                    thresholds=None, insertsize_df=None, tpm_df=None):
+                    thresholds=None, lims=None, insertsize_df=None, tpm_df=None):
     """
     metrics_df: output from RNA-SeQC
     cohort_s: mapping of sample ID to cohort/cluster/etc.
@@ -85,10 +85,12 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
         'Intergenic Rate': [0, 1],
         'Chimeric Alignment Rate': [0, 0.1],
         'rRNA Rate': [0, 1],
-        "Median 3' bias": None,
+        "Median 3' bias": [0, 1],
         'Median Exon CV': None,
         'Average Fragment Length': None,
     }
+    if lims is not None:
+        ylim_dict.update(lims)
 
     # plot cohort legend
     if show_legend:
@@ -119,7 +121,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.end_mismatch_rates.pdf'.format(prefix)), dpi=dpi)
 
-    mapping_sense(metrics_df, cohort_s, cohort_colors=cohort_colors)
+    mapping_sense(metrics_df, cohort_s, cohort_colors=cohort_colors, width=1)
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.mapping_sense.pdf'.format(prefix)), dpi=dpi)
 
