@@ -25,7 +25,7 @@ You can run the unit tests with `make test`
 ## Usage
 
 **NOTE**: This tool requires that the provided GTF be collapsed in such a way that there are no overlapping transcripts **on the same strand** and that each gene have a single transcript whose id matches the parent gene id. This is **not** a transcript-quantification method. Readcounts and coverage are made towards exons and genes only if *all* aligned segments of a read fully align to exons of a gene, but keep in mind that coverage may be counted towards multiple transcripts (and its exons) if these criteria are met. Beyond this, no attempt will be made to disambiguate which transcript a read belongs to.
-You can collapse an existing GTF using the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/tree/v9/gene_model)
+You can collapse an existing GTF using the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/tree/master/gene_model)
 
 ### Command Line Usage:
 
