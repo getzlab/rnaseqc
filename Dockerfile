@@ -1,5 +1,5 @@
 # Dockerfile for RNASeQC
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 MAINTAINER Aaron Graubert
 
 RUN apt-get update && apt-get install -y software-properties-common && \
