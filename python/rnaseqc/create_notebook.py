@@ -17,19 +17,27 @@ def main(args):
         'import rnaseqc.report'
     ])
 
-    nb.add_code_cell([
+    cell = [
         "# load inputs",
         "metrics_df = pd.read_csv('{}', sep='\\t', index_col=0)".format(args.metrics),
-        "tpm_df = qtl.io.read_gct('{}')".format(args.tpm),
-        "cohort_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None, squeeze=True)".format(args.cohort),
-        "insertsize_df = pd.read_csv('{}', sep='\\t', index_col=0)".format(args.insert_size),
-    ])
+    ]
+    if args.tpm is not None:
+        cell.append("tpm_df = qtl.io.read_gct('{}')".format(args.tpm))
+    if args.cohort is not None:
+        cell.append("cohort_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None, squeeze=True)".format(args.cohort))
+    if args.date is not None:
+        cell.append("date_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None, squeeze=True)".format(args.date))
+    if args.insert_size is not None:
+        cell.append("insertsize_df = pd.read_csv('{}', sep='\\t', index_col=0)".format(args.insert_size))
+    nb.add_code_cell(cell)
 
     nb.add_code_cell([
         "thresholds = {'Exonic Rate': 0.7}",
-        'rnaseqc.report.plot_qc_figures(metrics_df, cohort_s=cohort_s, cohort_colors=None, date_s=None,',
+        'rnaseqc.report.plot_qc_figures(metrics_df, cohort_s={}, cohort_colors=None, date_s={},'.format(
+            'cohort_s' if args.cohort is not None else 'None', 'date_s' if args.date is not None else 'None'),
         '                               show_legend=True, ms=12, alpha=1, highlight_ids=None,',
-        '                               thresholds=thresholds, insertsize_df=insertsize_df, tpm_df=tpm_df)',
+        '                               thresholds=thresholds, insertsize_df={}, tpm_df={})'.format(
+            'insertsize_df' if args.insert_size is not None else 'None', 'tpm_df' if args.tpm is not None else 'None'),
     ])
 
     nb.add_code_cell('')
@@ -55,4 +63,4 @@ if __name__ == '__main__':
     main(args)
 
     # execute notebook
-    subprocess.check_call('jupyter nbconvert --execute --inplace {}'.format(args.output.name), shell=True)
+    subprocess.check_call('jupyter nbconvert --execute --ExecutePreprocessor.timeout=300 --inplace {}'.format(args.output.name), shell=True)
