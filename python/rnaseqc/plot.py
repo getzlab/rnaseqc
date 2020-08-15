@@ -17,6 +17,31 @@ def get_cohort_colors(cohorts):
     return cohort_colors
 
 
+def sort_samples(sample_ix, cohort_s=None, date_s=None):
+    """Sort samples by date and cohort label"""
+    if cohort_s is None and date_s is None:
+        return sample_ix
+
+    if cohort_s is not None:
+        assert sample_ix.isin(cohort_s.index).all()
+        cohort_s = cohort_s[sample_ix]
+    if date_s is not None:
+        assert sample_ix.isin(cohort_s.index).all()
+        date_s = date_s[sample_ix]
+
+    if date_s is not None:
+        if cohort_s is not None:  # sort samples by date and cohort
+            sorted_ix = pd.concat([
+                pd.to_datetime(date_s).rename('date'), cohort_s.rename('cohort')], axis=1
+            ).sort_values(['date', 'cohort'], na_position='first').index
+        else:
+            sorted_ix = pd.to_datetime(date_s).sort_values(na_position='first').index
+    else:  # sort by cohort only
+        sorted_ix = cohort_s.sort_values(na_position='first').index
+
+    return sorted_ix
+
+
 def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1, aw=2,
                    end1_threshold=None, end2_threshold=None,
                    end1_limit=0.01, end2_limit=0.025):
@@ -24,6 +49,7 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
 
     if cohort_s is not None:
         assert metrics_df.index.isin(cohort_s.index).all()
+        cohort_s = cohort_s.loc[metrics_df.index]
     else:
         cohort_s = pd.Series('NA', index=metrics_df.index)
 
@@ -63,8 +89,9 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
     ax.set_ylabel('End 2 mismatch rate', fontsize=12)
 
 
-def metrics(metric_s, cohort_s=None, ylim=None, ms=12, alpha=1, ylabel=None, cohort_colors=None,
-            date_s=None, threshold=None, threshold_dir=None, show_legend=False,
+def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
+            threshold=None, threshold_dir=None, show_legend=False,
+            ms=12, alpha=1, ylim=None, ylabel=None,
             show_xticklabels=False, highlight_ids=None,
             dl=0.85, aw=6, ds=0.2, daw=0.5, dr=0.25,
             db=0.75, ah=2, dt=0.25):
@@ -81,6 +108,7 @@ def metrics(metric_s, cohort_s=None, ylim=None, ms=12, alpha=1, ylabel=None, coh
 
     if cohort_s is not None:
         assert metric_s.index.isin(cohort_s.index).all()
+        cohort_s = cohort_s.loc[metric_s.index]
     else:
         cohort_s = pd.Series('NA', index=metric_s.index)
 
@@ -93,25 +121,22 @@ def metrics(metric_s, cohort_s=None, ylim=None, ms=12, alpha=1, ylabel=None, coh
     ax = fig.add_axes([dl/fw, db/fh, aw/fw, ah/fh])
     dax = fig.add_axes([(dl+aw+ds)/fw, db/fh, daw/fw, ah/fh], sharey=ax)
 
-    if date_s is not None:  # sort samples by date and cohort
-        # date_ix = pd.to_datetime(date_s).sort_values(na_position='first').index
-        date_ix = pd.concat([pd.to_datetime(date_s).rename('date'), cohort_s.rename('cohort')], axis=1).sort_values(['date', 'cohort'], na_position='first').index
+    sorted_ix = sort_samples(metric_s.index, cohort_s=cohort_s, date_s=date_s)
+    if date_s is not None:
         xlabel = 'Samples, ordered by date'
     else:
-        date_ix = metric_s.index
         xlabel = 'Samples'
 
-    cohorts = cohort_s.loc[date_ix].unique()
+    cohorts = cohort_s.loc[sorted_ix].unique()
     if cohort_colors is None:
         cohort_colors = get_cohort_colors(cohorts)
 
     ns = len(metric_s)
-    xpos = pd.Series(np.arange(1,ns+1), index=date_ix)
+    xpos = pd.Series(np.arange(1,ns+1), index=sorted_ix)
 
     # plot
     for t in cohorts:
         ix = cohort_s[cohort_s==t].index
-        # ix = xpos.index[xpos.index.isin(cohort_s[cohort_s==t].index)]
         ax.scatter(xpos[ix], metric_s[ix], s=ms, edgecolor='none', label=t,
             c=cohort_colors[t].reshape(1,-1), alpha=alpha, clip_on=False, rasterized=True)
 
@@ -141,7 +166,7 @@ def metrics(metric_s, cohort_s=None, ylim=None, ms=12, alpha=1, ylabel=None, coh
 
     if show_xticklabels:
         ax.set_xticks(xpos)
-        ax.set_xticklabels(date_ix, rotation=45, ha='right', va='top')
+        ax.set_xticklabels(sorted_ix, rotation=45, ha='right', va='top')
     else:
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
@@ -179,7 +204,7 @@ def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate o
     return ax, cax
 
 
-def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, width=0.8,
+def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, width=0.8,
                   dl=0.75, aw=4, dr=1.5, db=0.5, ah=2, dt=0.25, ds=0.066, dc=0.1):
     """Summary of sense/antisense alignments.
 
@@ -187,9 +212,9 @@ def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, width=0.8,
     or vice versa, depending on protocol.
     For unstranded protocols, the 4 categories are expected to be of equal proportion (~0.25).
     """
-    df = metrics_df[['End 1 Sense', 'End 1 Antisense', 'End 2 Sense', 'End 2 Antisense']]
+    sorted_ix = sort_samples(metrics_df.index, cohort_s=cohort_s, date_s=date_s)
+    df = metrics_df.loc[sorted_ix, ['End 1 Sense', 'End 1 Antisense', 'End 2 Sense', 'End 2 Antisense']]
     df = df / np.sum(df.values, axis=1, keepdims=True)
-    # df = df.loc[df.max(1).sort_values().index]
 
     fw = dl + aw + dr
     fh = db + ah + dt

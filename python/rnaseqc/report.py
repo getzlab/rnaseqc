@@ -11,26 +11,32 @@ from .plot import *
 
 
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
-                    prefix=None, output_dir=None, dpi=300, show_legend=True,
-                    ms=12, alpha=1, show_xticklabels=False, highlight_ids=None,
-                    thresholds=None, lims=None, insertsize_df=None, tpm_df=None):
+                    insertsize_df=None, tpm_df=None, thresholds=None, lims=None,
+                    show_legend=True, ms=12, alpha=1, show_xticklabels=False,
+                    highlight_ids=None, prefix=None, output_dir=None, dpi=300):
     """
     metrics_df: output from RNA-SeQC
     cohort_s: mapping of sample ID to cohort/cluster/etc.
     """
     if cohort_s is None:
         cohort_s = pd.Series('All samples', index=metrics_df.index)
+    else:
+        assert metrics_df.index.isin(cohort_s.index).all() and cohort_s.loc[metrics_df.index].notnull().all()
+
+    if date_s is not None:
+        assert metrics_df.index.isin(date_s.index).all() and date_s.loc[metrics_df.index].notnull().all()
 
     if output_dir is not None:
         assert prefix is not None
 
-    cohorts = np.unique(cohort_s)
+    cohorts = np.unique(cohort_s.loc[metrics_df.index])
     if cohort_colors is None:
         cohort_colors = get_cohort_colors(cohorts)
 
     metrics_args = {
         'cohort_s': cohort_s,
         'cohort_colors': cohort_colors,
+        'date_s': date_s,
         'show_xticklabels': show_xticklabels,
         'ms': ms,
         'alpha': alpha,
@@ -121,13 +127,13 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.end_mismatch_rates.pdf'.format(prefix)), dpi=dpi)
 
-    mapping_sense(metrics_df, cohort_s, cohort_colors=cohort_colors, width=1)
+    mapping_sense(metrics_df, cohort_s=cohort_s, cohort_colors=cohort_colors, date_s=date_s, width=1)
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.mapping_sense.pdf'.format(prefix)), dpi=dpi)
 
     # insert size distributions (if supplied)
     if insertsize_df is not None:
-        insert_sizes(insertsize_df, cohort_s, cohort_colors=cohort_colors, sort_order='mean')
+        insert_sizes(insertsize_df, cohort_s=cohort_s, cohort_colors=cohort_colors, sort_order='mean')
         if output_dir is not None:
             plt.savefig(os.path.join(output_dir, '{}.insert_sizes.pdf'.format(prefix)), dpi=dpi)
 
