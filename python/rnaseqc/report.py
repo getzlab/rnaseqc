@@ -166,12 +166,18 @@ def load_inputs(args):
     else:
         cohort_s = None
 
-    if args.cohort is not None:
+    if args.date is not None:
+        date_s = pd.read_csv(args.date, sep='\t', index_col=0, header=None, squeeze=True)
+        assert metrics_df.index.isin(date_s.index).all()
+    else:
+        date_s = None
+
+    if args.insert_size is not None:
         insertsize_df = pd.read_csv(args.insert_size, sep='\t', index_col=0)
     else:
         insertsize_df = None
 
-    return metrics_df, tpm_df, cohort_s, insertsize_df
+    return metrics_df, tpm_df, cohort_s, date_s, insertsize_df
 
 
 if __name__ == '__main__':
@@ -182,11 +188,12 @@ if __name__ == '__main__':
     parser.add_argument('--tpm', default=None, help='Aggregated TPM matrix from RNA-SeQC.')
     parser.add_argument('--insert-size', default=None, help='Aggregated insert sizes from RNA-SeQC.')
     parser.add_argument('--cohort', default=None, help='Cohort or batch annotation. TSV file mapping sample IDs to annotation.')
+    parser.add_argument('--date', default=None, help='Date annotation. TSV file mapping sample IDs to dates.')
     parser.add_argument('--output-dir', default='.', help='If specified, figures are saved here.')
     parser.add_argument('--dpi', type=int, default=300, help='Figure resolution.')
     args = parser.parse_args()
 
-    metrics_df, tpm_df, cohort_s, insertsize_df = load_inputs(args)
+    metrics_df, tpm_df, cohort_s, date_s, insertsize_df = load_inputs(args)
 
     plot_qc_figures(metrics_df, cohort_s=cohort_s, cohort_colors=None, date_s=None,
                     prefix=args.prefix, output_dir=args.output_dir, dpi=args.dpi, show_legend=True,
