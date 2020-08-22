@@ -17,7 +17,7 @@ def get_cohort_colors(cohorts):
     return cohort_colors
 
 
-def sort_samples(sample_ix, cohort_s=None, date_s=None):
+def sort_samples(sample_ix, cohort_s=None, cohort_order=None, date_s=None):
     """Sort samples by date and cohort label"""
     if cohort_s is None and date_s is None:
         return sample_ix
@@ -37,7 +37,10 @@ def sort_samples(sample_ix, cohort_s=None, date_s=None):
         else:
             sorted_ix = pd.to_datetime(date_s).sort_values(na_position='first').index
     else:  # sort by cohort only
-        sorted_ix = cohort_s.sort_values(na_position='first').index
+        if cohort_order is None:
+            sorted_ix = cohort_s.sort_values(na_position='first').index
+        else:
+            sorted_ix = cohort_s.map({j:i for i,j in enumerate(cohort_order)}).sort_values(na_position='first').index
 
     return sorted_ix
 
@@ -75,7 +78,7 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
         ax.plot([0,0.02], 2*[end2_threshold], '--', color=[0.6]*3, zorder=0, lw=1, alpha=0.8)
     if end1_threshold is not None or end2_threshold is not None:
         ix = (x > end1_threshold) | (y > end2_threshold)
-        ax.scatter(x[ix], y[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
+        ax.scatter(x[ix], y[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
 
     qtl.plot.format_plot(ax, fontsize=10)
     ax.set_xlim([0, end1_limit])
@@ -89,7 +92,7 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
     ax.set_ylabel('End 2 mismatch rate', fontsize=12)
 
 
-def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
+def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
             threshold=None, threshold_dir=None, show_legend=False,
             ms=12, alpha=1, ylim=None, ylabel=None,
             show_xticklabels=False, highlight_ids=None,
@@ -121,12 +124,12 @@ def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
     ax = fig.add_axes([dl/fw, db/fh, aw/fw, ah/fh])
     dax = fig.add_axes([(dl+aw+ds)/fw, db/fh, daw/fw, ah/fh], sharey=ax)
 
-    sorted_ix = sort_samples(metric_s.index, cohort_s=cohort_s, date_s=date_s)
     if date_s is not None:
         xlabel = 'Samples, ordered by date'
     else:
         xlabel = 'Samples'
 
+    sorted_ix = sort_samples(metric_s.index, cohort_s=cohort_s, cohort_order=cohort_order, date_s=date_s)
     cohorts = cohort_s.loc[sorted_ix].unique()
     if cohort_colors is None:
         cohort_colors = get_cohort_colors(cohorts)
@@ -141,7 +144,8 @@ def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
             c=cohort_colors[t].reshape(1,-1), alpha=alpha, clip_on=False, rasterized=True)
 
     if highlight_ids is not None:
-        ax.scatter(xpos[highlight_ids], metric_s[highlight_ids], marker='s', edgecolor='k', facecolor='none')
+        ax.scatter(xpos[highlight_ids], metric_s[highlight_ids], marker='s',
+                   edgecolor='k', facecolor='none', clip_on=False, rasterized=True)
 
     if threshold is not None:
         ax.plot([-0.02*ns, 1.02*ns], 2*[threshold], '--', color=[0.6,0.6,0.6], lw=1, alpha=0.8)
@@ -149,7 +153,7 @@ def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
             ix = metric_s[metric_s > threshold].index
         elif threshold_dir=='lt':
             ix = metric_s[metric_s < threshold].index
-        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
+        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
 
     sns.kdeplot(metric_s, ax=dax, vertical=True, legend=False, shade=True)
 
@@ -204,7 +208,7 @@ def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate o
     return ax, cax
 
 
-def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, width=0.8,
+def mapping_sense(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None, width=0.8,
                   dl=0.75, aw=4, dr=1.5, db=0.5, ah=2, dt=0.25, ds=0.066, dc=0.1):
     """Summary of sense/antisense alignments.
 
@@ -212,7 +216,8 @@ def mapping_sense(metrics_df, cohort_s=None, cohort_colors=None, date_s=None, wi
     or vice versa, depending on protocol.
     For unstranded protocols, the 4 categories are expected to be of equal proportion (~0.25).
     """
-    sorted_ix = sort_samples(metrics_df.index, cohort_s=cohort_s, date_s=date_s)
+    sorted_ix = sort_samples(metrics_df.index, cohort_s=cohort_s,
+                             cohort_order=cohort_order, date_s=date_s)
     df = metrics_df.loc[sorted_ix, ['End 1 Sense', 'End 1 Antisense', 'End 2 Sense', 'End 2 Antisense']]
     df = df / np.sum(df.values, axis=1, keepdims=True)
 

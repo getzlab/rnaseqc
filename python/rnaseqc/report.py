@@ -10,9 +10,9 @@ sys.path.insert(1, os.path.dirname(__file__))
 from .plot import *
 
 
-def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
+def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
                     insertsize_df=None, tpm_df=None, thresholds=None, lims=None,
-                    show_legend=True, ms=12, alpha=1, show_xticklabels=False,
+                    show_legend=True, legend_cols=5, ms=12, alpha=1, show_xticklabels=False,
                     highlight_ids=None, prefix=None, output_dir=None, dpi=300):
     """
     metrics_df: output from RNA-SeQC
@@ -35,6 +35,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
 
     metrics_args = {
         'cohort_s': cohort_s,
+        'cohort_order': cohort_order,
         'cohort_colors': cohort_colors,
         'date_s': date_s,
         'show_xticklabels': show_xticklabels,
@@ -103,8 +104,10 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
         ax = qtl.plot.setup_figure(0.5,0.5)
         for c in cohorts:
             ax.scatter([], [], s=48, marker='s', c=cohort_colors[c].reshape(1,-1), label=c)
-        ax.legend(loc='upper left', handlelength=1, ncol=5, bbox_to_anchor=(1,1))
+        ax.legend(loc='upper left', handlelength=1, ncol=legend_cols, bbox_to_anchor=(1,1))
         plt.axis('off')
+        if output_dir is not None:
+            plt.savefig(os.path.join(output_dir, '{}.legend.pdf'.format(prefix)), dpi=dpi)
 
     # distributions for selected/key metrics
     for k,metric in enumerate(metrics_list, 1):
@@ -123,11 +126,14 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_colors=None, date_s=None,
         plt.savefig(os.path.join(output_dir, '{}.genes_detected_vs_median_3prime_bias.pdf'.format(prefix)), dpi=dpi)
 
     # mismatch rates
-    mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_colors=cohort_colors)
+    mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_colors=cohort_colors,
+                   end1_threshold=threshold_dict.get('End 1 mismatch rate', None),
+                   end2_threshold=threshold_dict.get('End 2 mismatch rate', None))
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.end_mismatch_rates.pdf'.format(prefix)), dpi=dpi)
 
-    mapping_sense(metrics_df, cohort_s=cohort_s, cohort_colors=cohort_colors, date_s=date_s, width=1)
+    mapping_sense(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order,
+                  cohort_colors=cohort_colors, date_s=date_s, width=1)
     if output_dir is not None:
         plt.savefig(os.path.join(output_dir, '{}.mapping_sense.pdf'.format(prefix)), dpi=dpi)
 
