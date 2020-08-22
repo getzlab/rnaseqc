@@ -146,10 +146,10 @@ def metrics(metric_s, cohort_s=None, cohort_colors=None, date_s=None,
     if threshold is not None:
         ax.plot([-0.02*ns, 1.02*ns], 2*[threshold], '--', color=[0.6,0.6,0.6], lw=1, alpha=0.8)
         if threshold_dir=='gt':
-            ix = metric_s > threshold
+            ix = metric_s[metric_s > threshold].index
         elif threshold_dir=='lt':
-            ix = metric_s < threshold
-        ax.scatter(xpos[np.where(ix)[0]], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
+            ix = metric_s[metric_s < threshold].index
+        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None)
 
     sns.kdeplot(metric_s, ax=dax, vertical=True, legend=False, shade=True)
 
