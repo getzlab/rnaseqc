@@ -121,12 +121,13 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
                 plt.savefig(os.path.join(output_dir, '{}.{}.pdf'.format(prefix, metric.lower().replace("3'",'3prime').replace(' ','_'))), dpi=dpi)
 
     # genes detected vs bias and duplication rate
-    detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped')
-    if output_dir is not None:
-        plt.savefig(os.path.join(output_dir, '{}.genes_detected_vs_median_3prime_bias.pdf'.format(prefix)), dpi=dpi)
+    if "Median 3' bias" in metrics_df:
+        detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped')
+        if output_dir is not None:
+            plt.savefig(os.path.join(output_dir, '{}.genes_detected_vs_median_3prime_bias.pdf'.format(prefix)), dpi=dpi)
 
     # mismatch rates
-    mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_colors=cohort_colors,
+    mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order, cohort_colors=cohort_colors,
                    end1_threshold=threshold_dict.get('End 1 mismatch rate', None),
                    end2_threshold=threshold_dict.get('End 2 mismatch rate', None))
     if output_dir is not None:

@@ -45,7 +45,7 @@ def sort_samples(sample_ix, cohort_s=None, cohort_order=None, date_s=None):
     return sorted_ix
 
 
-def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1, aw=2,
+def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=None, ms=12, alpha=1, aw=2,
                    end1_threshold=None, end2_threshold=None,
                    end1_limit=0.01, end2_limit=0.025):
     """Plot base mismatch rates ('NM' tag) for read mate 1 vs read mate 2."""
@@ -63,7 +63,8 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_colors=None, ms=12, alpha=1
     x[x>end1_limit] = end1_limit
     y[y>end2_limit] = end2_limit
 
-    cohorts = cohort_s.unique()
+    sorted_ix = sort_samples(metrics_df.index, cohort_s=cohort_s, cohort_order=cohort_order)
+    cohorts = cohort_s.loc[sorted_ix].unique()
     if cohort_colors is None:
         cohort_colors = get_cohort_colors(cohorts)
 
