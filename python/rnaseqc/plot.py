@@ -98,7 +98,7 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
             ms=12, alpha=1, ylim=None, ylabel=None,
             show_xticklabels=False, highlight_ids=None,
             dl=0.85, aw=6, ds=0.2, daw=0.5, dr=0.25,
-            db=0.75, ah=2, dt=0.25):
+            db=0.75, ah=2, dt=0.25, fontsize=10):
     """Plot a single QC metric sorted by cohort and/or date"""
 
     if ylabel is None:
@@ -142,13 +142,13 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
     for t in cohorts:
         ix = cohort_s[cohort_s==t].index
         ax.scatter(xpos[ix], metric_s[ix], s=ms, edgecolor='none', label=t,
-            c=cohort_colors[t].reshape(1,-1), alpha=alpha, clip_on=False, rasterized=True)
+                   c=cohort_colors[t].reshape(1,-1), alpha=alpha, clip_on=False, rasterized=True)
 
     if highlight_ids is not None:
         ax.scatter(xpos[highlight_ids], metric_s[highlight_ids], marker='s',
                    edgecolor='k', facecolor='none', clip_on=False, rasterized=True)
 
-    if threshold is not None:
+    if threshold is not None:  # highlight samples
         ax.plot([-0.02*ns, 1.02*ns], 2*[threshold], '--', color=[0.6,0.6,0.6], lw=1, alpha=0.8)
         if threshold_dir=='gt':
             ix = metric_s[metric_s > threshold].index
@@ -156,10 +156,12 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
             ix = metric_s[metric_s < threshold].index
         ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
 
-    sns.kdeplot(metric_s, ax=dax, vertical=True, legend=False, shade=True)
+    # plot density
+    sns.kdeplot(y=metric_s, ax=dax, legend=False, shade=True, lw=1.5)
+    dax.set_ylabel(None)
 
-    qtl.plot.format_plot(ax, fontsize=10)
-    qtl.plot.format_plot(dax, fontsize=10, hide=['top', 'right', 'bottom'])
+    qtl.plot.format_plot(ax, fontsize=fontsize)
+    qtl.plot.format_plot(dax, fontsize=fontsize, hide=['top', 'right', 'bottom'])
     ax.spines['left'].set_position(('outward', 8))
     plt.setp(dax.get_yticklabels(), visible=False)
 
@@ -175,11 +177,10 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
     else:
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
-    ax.set_ylabel(ylabel, fontsize=14)
-    ax.set_xlabel(xlabel, fontsize=14)
-    ax.tick_params(labelsize=12)
+    ax.set_ylabel(ylabel, fontsize=fontsize+2)
+    ax.set_xlabel(xlabel, fontsize=fontsize+2)
     dax.set_xticks([])
-    dax.set_xlabel('Freq.', ha='left', x=0, fontsize=12, labelpad=7)
+    dax.set_xlabel('Freq.', ha='left', x=0, fontsize=fontsize, labelpad=7)
 
     if show_legend:
         ax.legend(fontsize=9, handlelength=1, labelspacing=0.5, title=cohort_s.name)
