@@ -40,7 +40,7 @@ clean:
 
 .PHONY: test
 
-test: test-version test-single test-chr1 test-downsampled test-legacy test-expected-failures
+test: test-version test-single test-chr1 test-downsampled test-legacy test-expected-failures test-crams
 	echo Tests Complete
 
 .PHONY: test-version

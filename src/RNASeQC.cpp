@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
         
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-//        if (fastaFile) bam.addReference(fastaFile.Get());
+        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
