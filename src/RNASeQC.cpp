@@ -1,6 +1,6 @@
  // RNASeQC.cpp : Defines the entry point for the console application.
 
-#define NO_FASTA // Comment this line then compile to enable fasta features
+//#define NO_FASTA // Comment this line then compile to enable fasta features
 
 //Include headers
 #include "BED.h"
@@ -103,6 +103,8 @@ int main(int argc, char* argv[])
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
         map<chrom, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
+        Fasta fastaReader;
+        unsigned long gcBins[100] = {0};
         //Parse the GTF and extract features
         {
             Feature line; //current feature being read from the gtf
@@ -114,7 +116,6 @@ int main(int argc, char* argv[])
             }
             
 #ifndef NO_FASTA
-            Fasta fastaReader;
             if (fastaFile)
             {
                 fastaReader.open(fastaFile.Get());
@@ -137,10 +138,10 @@ int main(int argc, char* argv[])
                 if (line.type == FeatureType::Gene || line.type == FeatureType::Exon)
                 {
                     features[line.chromosome].push_back(line);
-#ifndef NO_FASTA
-                    //If fasta features are enabled, read the gene sequence from the fasta 
-                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
-#endif
+//#ifndef NO_FASTA
+//                    //If fasta features are enabled, read the gene sequence from the fasta
+//                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
+//#endif
                     
                 }
             }
@@ -195,7 +196,7 @@ int main(int argc, char* argv[])
         
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-        if (fastaFile) bam.addReference(fastaFile.Get());
+//        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
@@ -361,7 +362,9 @@ int main(int argc, char* argv[])
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
-                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences);
+                                double gcContent = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences, fastaReader);
+                                if (gcContent != -1 && static_cast<unsigned int>(gcContent * 100.0) == 0) cout << "0:0\t" << alignment.Qname() <<"\t" << gcContent<< endl;
+                                if (gcContent != -1) gcBins[static_cast<unsigned int>(gcContent * 100.0)]++;
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
@@ -409,9 +412,14 @@ int main(int argc, char* argv[])
         //gene coverage report generation
         unsigned int genesDetected = 0;
         double fragmentMed = 0.0;
-        double gcBias = 0.0;
         vector<double> ratios;
         {
+            if (fastaFile) {
+                ofstream gcReport(outputDir.Get() + "/" + SAMPLENAME + ".gc_content.tsv");
+                gcReport << "Content Bin\tCount" << endl;
+                for (unsigned int i = 0; i < 100; ++i)
+                    gcReport << i << "\t" << gcBins[i] << endl;
+            }
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
             ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_"+(useRPKM.Get() ? "rpkm" : "tpm")+".gct");
             ofstream fragmentReport(outputDir.Get()+"/"+SAMPLENAME+".gene_fragments.gct");
@@ -432,10 +440,10 @@ int main(int argc, char* argv[])
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
                 fragmentReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneFragmentCounts[*gene]) << endl;
                 
-#ifndef NO_FASTA
-                //If fasta features were enabled, get the gc content coverage bias from this gene
-                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
-#endif
+//#ifndef NO_FASTA
+//                //If fasta features were enabled, get the gc content coverage bias from this gene
+//                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
+//#endif
                 
                 if (useRPKM.Get())
                 {
@@ -564,9 +572,9 @@ int main(int argc, char* argv[])
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
         
-#ifndef NO_FASTA
-        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
-#endif
+//#ifndef NO_FASTA
+//        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
+//#endif
         
         if (fragmentSizes.size())
         {

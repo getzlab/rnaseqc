@@ -75,7 +75,7 @@ namespace rnaseqc {
     // Open a fasta file
     void Fasta::open(std::string &filename)
     {
-        this->isOpen = true;
+        this->_open = true;
         this->reader.open(filename);
         if (!this->reader.is_open())
         {
@@ -101,12 +101,16 @@ namespace rnaseqc {
     {
         return this->getSeq(contig, start, end, Strand::Forward);
     }
+
+    bool Fasta::isOpen() const {
+        return this->_open;
+    }
     
     //Get a sequence {contig}:{start}-{end}, and optionally return its reverse complement
     std::string Fasta::getSeq(chrom contig, coord start, coord end, Strand strand)
     {
         //NOTE: Coordinates must be 0-based, end-exclusive.
-        if (!this->isOpen) return "";
+        if (!this->isOpen()) return "";
         std::string output;
         // Determine the coordinate for the start of the page which contains the start of this sequence
         coord pageOffset = (floor(start / PAGE_SIZE) * PAGE_SIZE);

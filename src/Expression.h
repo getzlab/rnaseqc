@@ -29,7 +29,7 @@ namespace rnaseqc {
     const std::size_t EXON = 0, ENDPOS = 1;
     
     //Metrics functions
-    unsigned int fragmentSizeMetrics(unsigned int, std::map<chrom, std::list<Feature>>*, std::map<std::string, FragmentMateEntry>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&);
+    double fragmentSizeMetrics(unsigned int&, std::map<chrom, std::list<Feature>>*, std::map<std::string, FragmentMateEntry>&, std::map<long long, unsigned long>&,std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, Fasta&);
     
     void exonAlignmentMetrics(std::map<chrom, std::list<Feature>>&, Metrics&, std::vector<Feature>&, Alignment&, SeqLib::HeaderSequenceVector&, unsigned int, Strand, BaseCoverage&, const bool, const bool);
     

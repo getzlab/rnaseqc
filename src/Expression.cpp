@@ -456,9 +456,10 @@ namespace rnaseqc {
         }
         baseCoverage.reset();
     }
-    
+
     // Estimate fragment size in a read pair
-    unsigned int fragmentSizeMetrics(unsigned int doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
+    // Also estimate Fragment GCContent
+    double fragmentSizeMetrics(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, Fasta &fastaReader)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
@@ -502,7 +503,9 @@ namespace rnaseqc {
                 // 2) The mate must always be +. If both reads are on the - strand, there has been a mapping error or genomic inversion
                 // 3) The this read ends after the mate does. If this read is contained by the mate, there has been some weird clipping errors with the cDNA adapters
                 // 4) This read must not start at the same point as the mate. If so, without this check, the pair may be arbitrarily discarded or kept depending on sort order
-                if (alignment.MateReverseFlag() || !alignment.ReverseFlag() || alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second)  || alignment.Position() == alignment.MatePosition()) return doFragmentSize;
+                
+                //FIXME: Is the above test actually accurate? Cant a + read appear after a - read for reverse strand alignments?
+                if (alignment.MateReverseFlag() || !alignment.ReverseFlag() || alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second)  || alignment.Position() == alignment.MatePosition()) return -1;
                 //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
                 fragmentSizes[abs(alignment.InsertSize())] += 1;
                 fragments.erase(fragment);
@@ -512,9 +515,14 @@ namespace rnaseqc {
                     delete bedFeatures; //after taking all the samples we need, clean up the dynamic allocation
                     bedFeatures = nullptr;
                 }
+                
+                // Now GC Content
+                string seq = fastaReader.getSeq(chr, std::get<ENDPOS>(fragment->second) - alignment.Length(), alignment.PositionEnd());
+                if (seq.length() > 0 && gc(seq) < .1) cout << chr << "\t" << std::get<ENDPOS>(fragment->second) - alignment.Length() << "\t" << alignment.PositionEnd() << endl;
+                return seq.length() > 0 ? gc(seq) : -1;
             }
         }
         //return the remaining count of fragment samples to take
-        return doFragmentSize;
+        return -1;
     }
 }
