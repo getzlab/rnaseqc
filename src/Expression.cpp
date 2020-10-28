@@ -305,7 +305,7 @@ namespace rnaseqc {
     
     // New version of exon metrics
     // More efficient and less buggy
-    void exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, const bool highQuality, const bool singleEnd)
+    double exonAlignmentMetrics(map<chrom, list<Feature>> &features, Metrics &counter, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, unsigned int length, Strand orientation, BaseCoverage &baseCoverage, const bool highQuality, const bool singleEnd, map<string, FragmentMateEntry> &fragments, Fasta &fastaReader)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand name
@@ -316,6 +316,7 @@ namespace rnaseqc {
         current.end = alignment.PositionEnd(); //0-based, open == 1-based, closed
         
         vector<set<string> > genes; //each set is the set of genes intersected by the current block (one set per block)
+        set<string> alignedExons; // Record of all aligned exons (make sure all blocks align to same exon for gc content)
         Collector exonCoverageCollector(&exonCounts); //Collects coverage counts for later (counts may be discarded)
         bool intragenic = false, transcriptPlus = false, transcriptMinus = false, ribosomal = false, doExonMetrics = false, exonic = false; //various booleans for keeping track of the alignment
         
@@ -344,7 +345,7 @@ namespace rnaseqc {
                         double tmp = static_cast<double>(intersectionSize) / length;
                         exonCoverageCollector.add(result->gene_id, result->feature_id, tmp);
                         baseCoverage.add(*result, block->start, block->end); //provisionally add per-base coverage to this gene
-                        
+                        alignedExons.insert(result->feature_id);
                     }
                     
                 }
@@ -455,11 +456,30 @@ namespace rnaseqc {
             }
         }
         baseCoverage.reset();
+        if (fastaReader.hasContig(chr) && highQuality && exonic && doExonMetrics && alignedExons.size() == 1) {
+            string exonName = *(alignedExons.begin());
+            auto fragment = fragments.find(alignment.Qname());
+            if (fragment == fragments.end()) //first time we've encountered a read in this pair
+            {
+                // Record the exon we aligned to and the actual end of the read
+                fragments[alignment.Qname()] = std::make_tuple(exonName, alignment.PositionEnd());
+            }
+            else if (exonName == std::get<EXON>(fragment->second)) //second time we've encountered a read in this pair
+            {
+                
+                //Check that we end after the mate ends, and that we aren't aligned to the same start position
+                if (alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second) || alignment.Position() == alignment.MatePosition()) return -1;
+                //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
+                string seq = fastaReader.getSeq(chr, std::get<ENDPOS>(fragment->second) - alignment.Length(), alignment.PositionEnd());
+                fragments.erase(alignment.Qname());
+                return seq.length() > 0 ? gc(seq) : -1;
+            }
+        }
+        return -1;
     }
 
     // Estimate fragment size in a read pair
-    // Also estimate Fragment GCContent
-    double fragmentSizeMetrics(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, Fasta &fastaReader)
+    void fragmentSizeMetrics(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
@@ -505,7 +525,7 @@ namespace rnaseqc {
                 // 4) This read must not start at the same point as the mate. If so, without this check, the pair may be arbitrarily discarded or kept depending on sort order
                 
                 //FIXME: Is the above test actually accurate? Cant a + read appear after a - read for reverse strand alignments?
-                if (alignment.MateReverseFlag() || !alignment.ReverseFlag() || alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second)  || alignment.Position() == alignment.MatePosition()) return -1;
+                if (alignment.MateReverseFlag() || !alignment.ReverseFlag() || alignment.PositionEnd() <= std::get<ENDPOS>(fragment->second)  || alignment.Position() == alignment.MatePosition()) return;
                 //This pair is useable for fragment statistics:  both pairs fully aligned to the same exon
                 fragmentSizes[abs(alignment.InsertSize())] += 1;
                 fragments.erase(fragment);
@@ -515,12 +535,41 @@ namespace rnaseqc {
                     delete bedFeatures; //after taking all the samples we need, clean up the dynamic allocation
                     bedFeatures = nullptr;
                 }
-                
-                // Now GC Content
-                string seq = fastaReader.getSeq(chr, std::get<ENDPOS>(fragment->second) - alignment.Length(), alignment.PositionEnd());
-                if (seq.length() > 0 && gc(seq) < .1) cout << chr << "\t" << std::get<ENDPOS>(fragment->second) - alignment.Length() << "\t" << alignment.PositionEnd() << endl;
-                return seq.length() > 0 ? gc(seq) : -1;
             }
+        }
+    }
+
+
+    double gcContent(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, Fasta &fastaReader)
+    {
+        string chrName = sequenceTable[alignment.ChrID()].Name;
+        chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
+        bool firstBlock = true, sameExon = true; //for keeping track of the alignment state
+        string exonName = ""; // the name of the intersected exon from the bed
+        
+        trimFeatures(alignment, (*bedFeatures)[chr]); //trim out the features to speed up intersections
+        for (auto block = blocks.begin(); sameExon && block != blocks.end(); ++block)
+        {
+            //for each block, intersect it with the bed file features
+            list<Feature> *results = intersectBlock(*block, (*bedFeatures)[chr]);
+            if (results->size() == 1 && (partialIntersect(results->front(), *block) == (block->end - block->start))) //if the block intersected more than one exon, it's immediately disqualified
+            {
+                if (firstBlock) exonName = results->begin()->feature_id; //record the exon name on the first pass
+                else if (exonName != results->begin()->feature_id) //ensure the same exon name on subsequent passes
+                {
+                    sameExon = false;
+                    delete results;
+                    break;
+                }
+            }
+            else sameExon = false;
+            delete results; //clean up dynamic allocation
+            firstBlock = false;
+        }
+        if (sameExon && exonName.size()) //if all blocks intersected the same exon, take a fragment size sample
+        {
+            //both mates in a pair have to intersected the same exon in order for the pair to qualify for the sample
+            
         }
         //return the remaining count of fragment samples to take
         return -1;

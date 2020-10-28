@@ -188,5 +188,9 @@ namespace rnaseqc {
         this->pageCache.clear();
         if (this->misses) std::cerr << this->misses << " cache misses out of " << this->calls << " requests" << std::endl;
     }
+
+    bool Fasta::hasContig(chrom contig) const {
+        return this->contigIndex.count(contig);
+    }
 }
 

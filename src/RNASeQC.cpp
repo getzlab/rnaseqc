@@ -119,7 +119,8 @@ int main(int argc, char* argv[])
             if (fastaFile)
             {
                 fastaReader.open(fastaFile.Get());
-                if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but will slow down the initial startup..." << endl;
+                cerr << "Warning: Due to a bug, Crams currently ignore the provided reference Fasta and attempt to use the reference indicated by its @SQ headers" << endl;
+                if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but adds additional runtime and memory costs" << endl;
             }
 #endif
             
@@ -168,7 +169,7 @@ int main(int argc, char* argv[])
         //fragment size variables
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
         map<chrom, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
-        map<string, FragmentMateEntry> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
+        map<string, FragmentMateEntry> fragmentSizeFragmentTracker, gcContentFragmentTracker; //Map of alignment name -> exonID to ensure mates map to the same exon for
         map<long long, unsigned long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
         {
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
         
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-        if (fastaFile) bam.addReference(fastaFile.Get());
+//        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
@@ -345,6 +346,9 @@ int main(int argc, char* argv[])
                             {
                                 dropFeatures(features[current_chrom], baseCoverage);
                                 current_chrom = chr;
+                                if (fastaReader.isOpen() && !fastaReader.hasContig(chr)) {
+                                    cerr << "Warning: Provided Fasta does not contain chromosome " << chrName << ". No GC statistics will be collected for this chromosome" << endl;
+                                }
                             }
                             else if (last_position > alignment.Position())
                                 cerr << "Warning: The input bam does not appear to be sorted. An unsorted bam will yield incorrect results" << endl;
@@ -357,14 +361,16 @@ int main(int argc, char* argv[])
 
                             //run the read through exon metrics
                             if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
-                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
+                            else {
+                                double gcContent = exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get(), gcContentFragmentTracker, fastaReader);
+                                if (gcContent != -1 && static_cast<unsigned int>(gcContent * 100.0) == 0) cout << "0:0\t" << alignment.Qname() <<"\t" << gcContent<< endl;
+                                if (gcContent != -1) gcBins[static_cast<unsigned int>(gcContent * 100.0)]++;
+                            }
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
-                                double gcContent = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences, fastaReader);
-                                if (gcContent != -1 && static_cast<unsigned int>(gcContent * 100.0) == 0) cout << "0:0\t" << alignment.Qname() <<"\t" << gcContent<< endl;
-                                if (gcContent != -1) gcBins[static_cast<unsigned int>(gcContent * 100.0)]++;
+                                fragmentSizeMetrics(doFragmentSize, bedFeatures, fragmentSizeFragmentTracker, fragmentSizes, blocks, alignment, sequences);
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }

@@ -63,6 +63,7 @@ namespace rnaseqc {
         indexType pageForCoord(chrom, coord);
         coord pageOffset(indexType);
         bool isOpen() const;
+        bool hasContig(chrom) const;
         
     };
     
