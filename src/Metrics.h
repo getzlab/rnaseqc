@@ -11,6 +11,7 @@
 
 #include "GTF.h"
 #include <map>
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -127,7 +128,14 @@ namespace rnaseqc {
             return this->geneCVs;
         }
     };
-    
+
+    template <typename T> void sortContainer(T &data) {
+        std::sort(data.begin(), data.end());
+    }
+
+    template <typename T> void sortContainer(std::list<T> &data) {
+        data.sort();
+    }
     
     template <typename T> double computeMedian(unsigned long size, T &&iterator)
     {
@@ -140,6 +148,32 @@ namespace rnaseqc {
             return (value + static_cast<double>(*iterator)) / 2.0;
         }
         return static_cast<double>(*iterator);
+    }
+
+    typedef std::tuple<double, double, double, double> statsTuple;
+    
+    enum StatIdx {avg = 0, med = 1, std = 2, mad = 3};
+    
+    template <typename T>
+    statsTuple getStatistics(T &data) {
+        if (data.size()) {
+            double avg = 0.0, std = 0.0;
+            std::vector<double> deviations;
+            sortContainer(data);
+            const double size = data.size();
+            double median = computeMedian(size, data.begin());
+            for (auto element = data.begin(); element != data.end(); ++element) {
+                avg += static_cast<double>(*element) / size;
+                deviations.push_back(fabs(static_cast<double>(*element) - median));
+            }
+            sortContainer(deviations);
+            double medDev = computeMedian(deviations.size(), deviations.begin()) * 1.4826;
+            for (auto element = data.begin(); element != data.end(); ++element)
+                std += pow(static_cast<double>(*element) - avg, 2.0) / size;
+            std = pow(std, 0.5);
+            return statsTuple(avg, median, std, medDev);
+        }
+        return statsTuple(NAN, NAN, NAN, NAN);
     }
     
     extern std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons

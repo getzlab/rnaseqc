@@ -15,6 +15,8 @@
 #include <iterator>
 
 namespace rnaseqc {
+
+
     std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons
 
     std::map<std::string, std::unordered_set<std::string> > fragmentTracker; // tracks fragments encountered by each gene

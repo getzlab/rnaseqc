@@ -9,7 +9,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <set>
-#include <cmath>
 #include <regex>
 #include <ctime>
 #include <limits.h>
@@ -420,12 +419,6 @@ int main(int argc, char* argv[])
         double fragmentMed = 0.0;
         vector<double> ratios;
         {
-            if (fastaFile) {
-                ofstream gcReport(outputDir.Get() + "/" + SAMPLENAME + ".gc_content.tsv");
-                gcReport << "Content Bin\tCount" << endl;
-                for (unsigned int i = 0; i < 100; ++i)
-                    gcReport << i << "\t" << gcBins[i] << endl;
-            }
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
             ofstream geneRPKM(outputDir.Get()+"/"+SAMPLENAME+".gene_"+(useRPKM.Get() ? "rpkm" : "tpm")+".gct");
             ofstream fragmentReport(outputDir.Get()+"/"+SAMPLENAME+".gene_fragments.gct");
@@ -483,21 +476,26 @@ int main(int argc, char* argv[])
         double ratioAvg = 0.0, ratioMedDev = 0.0, ratioMedian = 0.0, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
         if (ratios.size())
         {
-            vector<double> ratioDeviations;
-            sort(ratios.begin(), ratios.end());
-            ratioMedian = computeMedian(ratios.size(), ratios.begin());
-            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-            {
-                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
-                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
-            }
-            sort(ratioDeviations.begin(), ratioDeviations.end());
-            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
-            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-            {
-                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
-            }
-            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
+//            vector<double> ratioDeviations;
+//            sortContainer(ratios);
+//            ratioMedian = computeMedian(ratios.size(), ratios.begin());
+//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+//            {
+//                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
+//                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
+//            }
+//            sortContainer(ratioDeviations);
+//            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
+//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+//            {
+//                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
+//            }
+//            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
+            statsTuple ratio_stats = getStatistics(ratios);
+            ratioAvg = std::get<StatIdx::avg>(ratio_stats);
+            ratioMedian = std::get<StatIdx::med>(ratio_stats);
+            ratioStd = std::get<StatIdx::std>(ratio_stats);
+            ratioMedDev = std::get<StatIdx::mad>(ratio_stats);
             double index = .25 * ratios.size();
             if (index > floor(index))
             {
@@ -591,7 +589,7 @@ int main(int argc, char* argv[])
             list<long long> dumb_fragment_expansion_list;
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
                 for(unsigned long i = 0u; i < fragment->second; ++i) dumb_fragment_expansion_list.push_back(fragment->first);
-            dumb_fragment_expansion_list.sort();
+            sortContainer(dumb_fragment_expansion_list);
             double size = static_cast<double>(dumb_fragment_expansion_list.size());
             vector<double> deviations; //list of recorded deviations from the median
             fragmentMed = computeMedian(size, dumb_fragment_expansion_list.begin());
@@ -605,7 +603,7 @@ int main(int argc, char* argv[])
                 for(unsigned long i = 0u; i < fragment->second; ++i) deviations.push_back(deviation); //record this fragment's deviation
             }
             fragmentList.close();
-            sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
+            sortContainer(deviations); //for the next line to work, we have to sort
             //now compute the median absolute deviation, an estimator for standard deviation
             fragmentMedDev = computeMedian(deviations.size(), deviations.begin()) * MAD_FACTOR;
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
@@ -624,8 +622,8 @@ int main(int argc, char* argv[])
         {
             list<double> means = baseCoverage.getGeneMeans(), stdDevs = baseCoverage.getGeneStds(), cvs = baseCoverage.getGeneCVs();
             const unsigned long nTranscripts = means.size();
-            means.sort();
-            stdDevs.sort();
+            sortContainer(means);
+            sortContainer(stdDevs);
             auto beg = cvs.begin();
             auto end = cvs.end();
             while (beg != end)
@@ -642,14 +640,32 @@ int main(int argc, char* argv[])
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << (nCVS ? computeMedian(nCVS, cvs.begin()) : 0.0) << endl;
             list<double> totalExonCV = baseCoverage.getExonCVs();
-            totalExonCV.sort();
-            const unsigned long nExonCVs = totalExonCV.size();
-            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
-            vector<double> exonDeviations;
-            for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
-            sort(exonDeviations.begin(), exonDeviations.end());
-            output << "Median Exon CV\t" << exonMedian << endl;
-            output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
+//            sortContainer(totalExonCV);
+//            const unsigned long nExonCVs = totalExonCV.size();
+//            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
+//            vector<double> exonDeviations;
+//            for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
+//            sortContainer(exonDeviations);
+//            output << "Median Exon CV\t" << exonMedian << endl;
+//            output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
+            statsTuple cv_stats = getStatistics(totalExonCV);
+            output << "Median Exon CV\t" << std::get<StatIdx::med>(cv_stats) << endl;
+            output << "Exon CV MAD\t" << std::get<StatIdx::mad>(cv_stats) << endl;
+        }
+        if (fastaFile) {
+            ofstream gcReport(outputDir.Get() + "/" + SAMPLENAME + ".gc_content.tsv");
+            gcReport << "Content Bin\tCount" << endl;
+            std::list<unsigned int> rough_gc;
+            for (unsigned int i = 0; i < 100; ++i) {
+                gcReport << i << "\t" << gcBins[i] << endl;
+                for (unsigned int j = 0; j < gcBins[i]; ++j)
+                    rough_gc.push_back(i);
+            }
+            statsTuple gc_stats = getStatistics(rough_gc);
+            output << "Average GC Content\t" << std::get<StatIdx::avg>(gc_stats) << endl;
+            output << "Median GC Content\t" << std::get<StatIdx::med>(gc_stats) << endl;
+            output << "GC Content Std\t" << std::get<StatIdx::std>(gc_stats) << endl;
+            output << "GC Content MAD\t" << std::get<StatIdx::mad>(gc_stats) << endl;
         }
 
         output.close();
@@ -743,7 +759,7 @@ int main(int argc, char* argv[])
 
 double reduceDeltaCV(list<double> &deltaCV)
 {
-    deltaCV.sort();
+    sortContainer(deltaCV);
     return computeMedian(deltaCV.size(), deltaCV.begin());
 }
 

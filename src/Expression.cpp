@@ -456,7 +456,7 @@ namespace rnaseqc {
             }
         }
         baseCoverage.reset();
-        if (fastaReader.hasContig(chr) && highQuality && exonic && doExonMetrics && alignedExons.size() == 1) {
+        if (fastaReader.hasContig(chr) && highQuality && exonic && doExonMetrics && alignedExons.size() == 1 && blocks.size() == 1) {
             string exonName = *(alignedExons.begin());
             auto fragment = fragments.find(alignment.Qname());
             if (fragment == fragments.end()) //first time we've encountered a read in this pair
@@ -540,7 +540,7 @@ namespace rnaseqc {
     }
 
 
-    double gcContent(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, Fasta &fastaReader)
+    /*double gcContent(unsigned int &doFragmentSize, map<chrom, list<Feature>> *bedFeatures, map<string, FragmentMateEntry> &fragments, map<long long, unsigned long> &fragmentSizes, vector<Feature> &blocks, Alignment &alignment, SeqLib::HeaderSequenceVector &sequenceTable, Fasta &fastaReader)
     {
         string chrName = sequenceTable[alignment.ChrID()].Name;
         chrom chr = chromosomeMap(chrName); //generate the chromosome shorthand referemce
@@ -573,5 +573,5 @@ namespace rnaseqc {
         }
         //return the remaining count of fragment samples to take
         return -1;
-    }
+    }*/
 }
