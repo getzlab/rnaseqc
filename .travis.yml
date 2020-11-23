@@ -2,7 +2,8 @@ language: cpp
 os:
 - linux
 - osx
-dist: trusty
+osx_image: xcode12
+dist: bionic
 sudo: required
 addons:
   apt:
