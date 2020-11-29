@@ -456,7 +456,7 @@ namespace rnaseqc {
             }
         }
         baseCoverage.reset();
-        if (fastaReader.hasContig(chr) && highQuality && exonic && doExonMetrics && alignedExons.size() == 1 && blocks.size() == 1) {
+        if (fastaReader.hasContig(chr) && highQuality && exonic && doExonMetrics && alignedExons.size() == 1 && blocks.size() == 1 && fabs(alignment.InsertSize()) > 100 && fabs(alignment.InsertSize()) < 1000) {
             string exonName = *(alignedExons.begin());
             auto fragment = fragments.find(alignment.Qname());
             if (fragment == fragments.end()) //first time we've encountered a read in this pair

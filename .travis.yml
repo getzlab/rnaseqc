@@ -4,13 +4,10 @@ os:
 - osx
 osx_image: xcode12
 dist: bionic
-sudo: required
 addons:
   apt:
     packages:
     - cmake
-    - python3.5
-    - python3.5-dev
     - libboost-filesystem-dev
     - libboost-regex-dev
     - libboost-system-dev
@@ -22,9 +19,8 @@ addons:
 install:
 - if [[ "${TRAVIS_OS_NAME}" = "linux" ]]; then sudo apt-add-repository ppa:ubuntu-toolchain-r/test
   -y && sudo apt-get update && sudo apt-get install g++-5 -y && export CC=$(which
-  gcc-5) CXX=$(which g++-5) && sudo rm /usr/bin/python3 && sudo ln -s $(which python3.5)
-  /usr/bin/python3 && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && sudo
-  python3.5 get-pip.py; fi
+  gcc-5) CXX=$(which g++-5) && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && sudo
+  python3 get-pip.py; fi
 - if [[ "${TRAVIS_OS_NAME}" = "osx" ]]; then brew update >/dev/null && brew install
   zlib curl samtools bzip2 xz > /dev/null && export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
   LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a); fi
