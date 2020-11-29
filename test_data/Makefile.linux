@@ -9,7 +9,7 @@ STATIC_LIBS=SeqLib/lib/libhts.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a 
 #List of remaining libraries that will be dynamically linked
 LIBS=-lpthread
 
-CC=g++-5
+CC=g++
 STDLIB=-std=c++14
 CFLAGS=-Wall $(STDLIB) -D_GLIBCXX_USE_CXX11_ABI=$(ABI) -O3
 SOURCES=BED.cpp Expression.cpp GTF.cpp RNASeQC.cpp Metrics.cpp Fasta.cpp BamReader.cpp
