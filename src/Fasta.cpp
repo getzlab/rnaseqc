@@ -66,6 +66,7 @@ namespace rnaseqc {
     //Count GC content in a sequence
     double gc(std::string &sequence)
     {
+        if (sequence.length() == 0) return -1;
         double content = 0.0, size = static_cast<double>(sequence.length());
         for (auto base = sequence.begin(); base != sequence.end(); ++base)
             if (*base == 'G' || *base == 'g' || *base == 'C' || *base == 'c') content += 1.0/size;

@@ -88,19 +88,26 @@ namespace rnaseqc {
             return this->detectionThreshold;
         }
     };
+
+    struct ExonCoverage {
+        double cv;
+        double gc;
+    };
     
     class BaseCoverage {
         // For computing per-base coverage of genes
+        Fasta& fastaReader;
         std::map<std::string, std::vector<CoverageEntry> > cache; //GID -> Entry<EID> tmp cache as exon hits are recorded
         std::map<std::string, std::vector<unsigned long> > coverage; //EID -> Coverage vector for exons still in window
+        std::map<std::string, ExonCoverage> exonCoverage;
         std::ofstream writer;
         const unsigned int mask_size;
-        std::list<double> exonCVs, geneMeans, geneStds, geneCVs;
+        std::list<double> geneMeans, geneStds, geneCVs;
         BiasCounter &bias;
         std::unordered_set<std::string> seen;
         BaseCoverage(const BaseCoverage&) = delete; //No!
     public:
-        BaseCoverage(const std::string &filename, const unsigned int mask, bool openFile, BiasCounter &biasCounter) : coverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), exonCVs(), geneMeans(), geneStds(), geneCVs(), bias(biasCounter), seen()
+        BaseCoverage(Fasta& fasta, const std::string &filename, const unsigned int mask, bool openFile, BiasCounter &biasCounter) : fastaReader(fasta), coverage(), exonCoverage(), cache(), writer(openFile ? filename : "/dev/null"), mask_size(mask), geneMeans(), geneStds(), geneCVs(), bias(biasCounter), seen()
         {
             if ((!this->writer.is_open()) && openFile) throw std::runtime_error("Unable to open BaseCoverage output file");
             this->writer << "gene_id\tcoverage_mean\tcoverage_std\tcoverage_CV" << std::endl;
@@ -115,8 +122,8 @@ namespace rnaseqc {
         BiasCounter& getBiasCounter() const {
             return this->bias;
         }
-        std::list<double>& getExonCVs() {
-            return this->exonCVs;
+        const std::map<std::string, ExonCoverage>& getExonCoverage() const {
+            return this->exonCoverage;
         }
         std::list<double>& getGeneMeans() {
             return this->geneMeans;
@@ -152,7 +159,7 @@ namespace rnaseqc {
 
     typedef std::tuple<double, double, double, double> statsTuple;
     
-    enum StatIdx {avg = 0, med = 1, std = 2, mad = 3};
+    enum StatIdx {avg = 0, med = 1, std = 2, mad = 3, skew = 1, kurt = 3};
     
     template <typename T>
     statsTuple getStatistics(T &data) {
@@ -174,6 +181,26 @@ namespace rnaseqc {
             return statsTuple(avg, median, std, medDev);
         }
         return statsTuple(NAN, NAN, NAN, NAN);
+    }
+
+    template<typename T>
+    statsTuple getAdvancedStatistics(T &data) {
+        if (!data.size()) return statsTuple(NAN, NAN, NAN, NAN);
+        double avg = 0.0, m2 = 0.0, m3 = 0.0, m4 = 0.0, count = 0.0;
+        for (auto element = data.begin(); element != data.end(); ++element) {
+            double prev_count = count++;
+            double delta = static_cast<double>(*element) - avg;
+            double delta_n = delta / count;
+            double delta_n2 = delta_n * delta_n;
+            double t = delta * delta_n * prev_count;
+            avg += delta_n;
+            m4 += t * delta_n2 * (count*count - 3*count + 3) + 6*delta_n2*m2 - 4*delta_n*m3;
+            m3 += t * delta_n * (count - 2) - 3 * delta_n * m2;
+            m2 += t;
+            
+        }
+        double std = pow(m2/count, 0.5);
+        return statsTuple(avg, m3 / count / pow(std, 3.0), std, (count * m4) / (m2 * m2) - 3);
     }
     
     extern std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons

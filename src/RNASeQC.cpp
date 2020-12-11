@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
         
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-        if (fastaFile) bam.addReference(fastaFile.Get());
+//        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
         int readLength = 0; //longest read encountered so far
         
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH, DETECTION_THRESHOLD);
-        BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
+        BaseCoverage baseCoverage(fastaReader, outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         chrom current_chrom = 0;
         int32_t last_position = 0; // For some reason, htslib has decided that this will be the datatype used for positions
@@ -639,7 +639,25 @@ int main(int argc, char* argv[])
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << (nCVS ? computeMedian(nCVS, cvs.begin()) : 0.0) << endl;
-            list<double> totalExonCV = baseCoverage.getExonCVs();
+            list<double> totalExonCV;
+            map<string, ExonCoverage> exonCoverage = baseCoverage.getExonCoverage();
+            ofstream cvReport(outputDir.Get()+"/"+SAMPLENAME+".exon_cv.tsv");
+            cvReport << "Exon ID\tExon CV";
+            if (fastaFile)
+                cvReport << "\tGC Content";
+            cvReport << endl;
+            if (fastaFile) {
+                for (auto entry = exonCoverage.begin(); entry != exonCoverage.end(); ++entry) {
+                    cvReport << entry->first << "\t" << entry->second.cv << "\t" << entry->second.gc << endl;
+                    totalExonCV.push_back(entry->second.cv);
+                }
+            } else {
+                for (auto entry = exonCoverage.begin(); entry != exonCoverage.end(); ++entry) {
+                    cvReport << entry->first << "\t" << entry->second.cv << endl;
+                    totalExonCV.push_back(entry->second.cv);
+                }
+            }
+            
 //            sortContainer(totalExonCV);
 //            const unsigned long nExonCVs = totalExonCV.size();
 //            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
@@ -661,11 +679,11 @@ int main(int argc, char* argv[])
                 for (unsigned int j = 0; j < gcBins[i]; ++j)
                     rough_gc.push_back(i);
             }
-            statsTuple gc_stats = getStatistics(rough_gc);
-            output << "Average GC Content\t" << std::get<StatIdx::avg>(gc_stats) << endl;
-            output << "Median GC Content\t" << std::get<StatIdx::med>(gc_stats) << endl;
-            output << "GC Content Std\t" << std::get<StatIdx::std>(gc_stats) << endl;
-            output << "GC Content MAD\t" << std::get<StatIdx::mad>(gc_stats) << endl;
+            statsTuple gc_stats = getAdvancedStatistics(rough_gc);
+            output << "Fragment GC Content Mean\t" << std::get<StatIdx::avg>(gc_stats) << endl;
+            output << "Fragment GC Content Std\t" << std::get<StatIdx::std>(gc_stats) << endl;
+            output << "Fragment GC Content Skewness\t" << std::get<StatIdx::skew>(gc_stats) << endl;
+            output << "Fragment GC Content Kurtosis\t" << std::get<StatIdx::kurt>(gc_stats) << endl;
         }
 
         output.close();
