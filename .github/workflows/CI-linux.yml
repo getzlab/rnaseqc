@@ -1,0 +1,27 @@
+name: C/C++ CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+
+    runs-on:
+    - ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install deps
+      run: >
+        sudo apt-get update && sudo apt-get install -y cmake python3 python3-dev
+        libboost-filesystem-dev libboost-regex-dev libboost-system-dev libbz2-dev
+        liblzma-dev libpthread-stubs0-dev wget zlib1g-dev g++ &&
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && sudo
+        python3.5 get-pip.py && python3 -m pip install --upgrade pip &&
+        python3 -m pip install numpy && python3 -m pip install -e ./python &&
+        python3 -m pip install --force-reinstall matplotlib
+    - name: make
+      run: make
+    - name: Run Tests
+      run: make test
