@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
                 cerr << "Unable to open GTF file: " << gtfFile.Get() << endl;
                 return 10;
             }
-            
+
 #ifndef NO_FASTA
             if (fastaFile)
             {
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
                 if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but adds additional runtime and memory costs" << endl;
             }
 #endif
-            
+
             if (VERBOSITY) cout<<"Reading GTF Features..."<<endl;
             time(&t0);
             while ((reader >> line))
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 //                    //If fasta features are enabled, read the gene sequence from the fasta
 //                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
 //#endif
-                    
+
                 }
             }
         }
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
             beg->second.sort(compIntervalStart);
             for (auto feat = beg->second.begin(); feat != beg->second.end(); ++feat)
                 if (feat->type == FeatureType::Exon) exonsForGene[feat->gene_id].push_back(feat->feature_id);
-            
+
         }
         time(&t1); //record the time taken to parse the GTF
         if (!(geneList.size() && exonList.size()))
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
             boost::filesystem::create_directories(outputDir.Get());
         }
 
-        
+
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
 //        if (fastaFile) bam.addReference(fastaFile.Get());
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
         }
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
-        
+
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH, DETECTION_THRESHOLD);
         BaseCoverage baseCoverage(fastaReader, outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
                             }
                         }
                         if (discard) continue;
-                        
+
                         bool highQuality = (mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD);
 
                         //now record intron/exon metrics by intersecting filtered reads with the list of features
@@ -438,12 +438,12 @@ int main(int argc, char* argv[])
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
                 fragmentReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneFragmentCounts[*gene]) << endl;
-                
+
 //#ifndef NO_FASTA
 //                //If fasta features were enabled, get the gc content coverage bias from this gene
 //                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
 //#endif
-                
+
                 if (useRPKM.Get())
                 {
                     double RPKM = (1000.0 * geneCounts[*gene] / scaleRPKM) / static_cast<double>(geneCodingLengths[*gene]);
@@ -575,11 +575,11 @@ int main(int argc, char* argv[])
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
-        
+
 //#ifndef NO_FASTA
 //        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
 //#endif
-        
+
         if (fragmentSizes.size())
         {
             //If any fragment size samples were taken, also generate a fragment size report
@@ -657,7 +657,7 @@ int main(int argc, char* argv[])
                     totalExonCV.push_back(entry->second.cv);
                 }
             }
-            
+
 //            sortContainer(totalExonCV);
 //            const unsigned long nExonCVs = totalExonCV.size();
 //            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
@@ -675,13 +675,13 @@ int main(int argc, char* argv[])
             gcReport << "Content Bin\tCount" << endl;
             std::list<unsigned int> rough_gc;
             for (unsigned int i = 0; i < 100; ++i) {
-                gcReport << i << "\t" << gcBins[i] << endl;
+                gcReport << (double)i/100.0 << "\t" << gcBins[i] << endl;
                 for (unsigned int j = 0; j < gcBins[i]; ++j)
                     rough_gc.push_back(i);
             }
             statsTuple gc_stats = getAdvancedStatistics(rough_gc);
-            output << "Fragment GC Content Mean\t" << std::get<StatIdx::avg>(gc_stats) << endl;
-            output << "Fragment GC Content Std\t" << std::get<StatIdx::std>(gc_stats) << endl;
+            output << "Fragment GC Content Mean\t" << (double) std::get<StatIdx::avg>(gc_stats)/100.0 << endl;
+            output << "Fragment GC Content Std\t" << (double) std::get<StatIdx::std>(gc_stats)/100.0 << endl;
             output << "Fragment GC Content Skewness\t" << std::get<StatIdx::skew>(gc_stats) << endl;
             output << "Fragment GC Content Kurtosis\t" << std::get<StatIdx::kurt>(gc_stats) << endl;
         }
@@ -788,9 +788,9 @@ bool compGenes(const string &a, const string &b)
 
 bool readStringTag(Alignment& alignment, string tagName, string& result) {
     if (alignment.GetZTag(tagName, result)) return true;
-    
+
     const auto b = alignment.shared_pointer();
-    
+
     //Copied (with slight modification) from https://github.com/walaj/SeqLib/blob/master/src/BamRecord.cpp#L499
     uint8_t* tagPtr = bam_aux_get(b.get(),tagName.c_str());
     if (!tagPtr)
@@ -799,7 +799,7 @@ bool readStringTag(Alignment& alignment, string tagName, string& result) {
     int type = *tagPtr;
     if (type != 'A')
       return false;
-    
+
     char tagContents = bam_aux2A(tagPtr);
     if (!tagContents)
       return false;
