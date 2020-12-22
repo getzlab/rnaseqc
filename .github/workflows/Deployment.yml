@@ -25,7 +25,7 @@ jobs:
       run: sudo python3 -m pip install --user --upgrade pip setuptools && sudo python3 -m pip install --user numpy && sudo python3 -m pip install --user -e ./python
     - name: Zip Source
       run: >
-        cd .. && tar czf rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz $GITHUB_WORKSPACE &&
+        cd .. && tar czf --strip-components=4 rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz $GITHUB_WORKSPACE &&
         cd $GITHUB_WORKSPACE && mv ../rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz .
     - name: make
       run: >

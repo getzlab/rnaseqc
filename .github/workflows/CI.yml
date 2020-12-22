@@ -23,17 +23,13 @@ jobs:
       run: brew install boost zlib curl samtools bzip2 xz && brew link --overwrite python@3.9
     - name: Pip install
       run: sudo python3 -m pip install --user --upgrade pip setuptools && sudo python3 -m pip install --user numpy && sudo python3 -m pip install --user -e ./python
-    - name: Zip Source
-      run: >
-        cd .. && tar czf rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz $GITHUB_WORKSPACE &&
-        cd $GITHUB_WORKSPACE && mv ../rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz .
     - name: make
       run: >
         export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
         LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a) &&
         make -f test_data/Makefile.osx
     - name: Run Tests
-      run: make -f test_data/Makefile.osx test
+      run: sudo bash -c "PYTHONPATH=$(pwd) make -f test_data/Makefile.osx test"
 
   build-linux:
 
