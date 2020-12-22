@@ -1,0 +1,83 @@
+name: Deployment
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build-macos:
+
+    runs-on:
+    - macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Brew Update
+      run: brew update >/dev/null
+    - name: Reinstall
+      run: brew reinstall xz curl
+      continue-on-error: true
+    - name: Install Deps
+      run: brew install boost zlib curl samtools bzip2 xz && brew link --overwrite python@3.9
+    - name: Pip install
+      run: sudo python3 -m pip install --user --upgrade pip setuptools && sudo python3 -m pip install --user numpy && sudo python3 -m pip install --user -e ./python
+    - name: Zip Source
+      run: >
+        cd .. && tar czf rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz $GITHUB_WORKSPACE &&
+        cd $GITHUB_WORKSPACE && mv ../rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz .
+    - name: make
+      run: >
+        export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
+        LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a) &&
+        make -f test_data/Makefile.osx &&
+        gzip -c rnaseqc > rnaseqc.${{ github.event.release.tag_name }}.macos.gz && ls -l
+    - name: Upload Executable
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.OAUTH_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/getzlab/rnaseqc/releases/${{ github.event.release.id }}/assets?name=rnaseqc.${{ github.event.release.tag_name }}.macos.gz
+        asset_path: rnaseqc.${{ github.event.release.tag_name }}.macos.gz
+        asset_name: rnaseqc.${{ github.event.release.tag_name }}.macos.gz
+        asset_content_type: application/gzip
+    - name: Upload Zip
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.OAUTH_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/getzlab/rnaseqc/releases/${{ github.event.release.id }}/assets?name=rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz
+        asset_path: rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz
+        asset_name: rnaseqc.${{ github.event.release.tag_name }}.full_source.tar.gz
+        asset_content_type: application/gzip
+
+  build-linux:
+
+    runs-on:
+    - ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install deps
+      run: >
+        sudo apt-get update && sudo apt-get install -y cmake python3 python3-dev
+        libboost-filesystem-dev libboost-regex-dev libboost-system-dev libbz2-dev
+        liblzma-dev libpthread-stubs0-dev wget zlib1g-dev g++ &&
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && sudo
+        python3 get-pip.py && python3 -m pip install --upgrade pip &&
+        python3 -m pip install numpy && python3 -m pip install -e ./python &&
+        python3 -m pip install --force-reinstall matplotlib
+    - name: make
+      run: make -f test_data/Makefile.linux && gzip -c rnaseqc > rnaseqc.${{ github.event.release.tag_name }}.linux.gz
+    - name: Upload Executable
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.OAUTH_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/getzlab/rnaseqc/releases/${{ github.event.release.id }}/assets?name=rnaseqc.${{ github.event.release.tag_name }}.linux.gz
+        asset_path: rnaseqc.${{ github.event.release.tag_name }}.linux.gz
+        asset_name: rnaseqc.${{ github.event.release.tag_name }}.linux.gz
+        asset_content_type: application/gzip
