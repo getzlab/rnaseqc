@@ -1,7 +1,7 @@
 # RNA-SeQC
 
 [![Version](https://img.shields.io/github/release/getzlab/rnaseqc.svg?label=Version)](https://github.com/getzlab/rnaseqc/releases)
-![CI](https://github.com/getzlab/rnaseqc/workflows/CI/badge.svg)
+[![CI](https://github.com/getzlab/rnaseqc/workflows/CI/badge.svg)](https://github.com/getzlab/rnaseqc/actions)
 
 ## Installing
 
