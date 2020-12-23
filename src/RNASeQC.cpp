@@ -17,7 +17,6 @@
 #include <unordered_set>
 #include "../args.hxx"
 #include <boost/filesystem.hpp>
-#include <htslib/sam.h>
 using namespace std;
 using namespace args;
 using namespace rnaseqc;
@@ -32,7 +31,6 @@ map<string, double> tpms;
 bool compGenes(const string&, const string&);
 void add_range(vector<unsigned long>&, coord, unsigned int);
 double reduceDeltaCV(list<double>&);
-bool readStringTag(Alignment&, string, string&);
 
 int main(int argc, char* argv[])
 {
@@ -57,7 +55,7 @@ int main(int argc, char* argv[])
     ValueFlag<string> strandSpecific(parser, "stranded", "Use strand-specific metrics. Only features on the same strand of a read will be considered.  Allowed values are 'RF', 'rf', 'FR', and 'fr'", {"stranded"});
     CounterFlag verbosity(parser, "verbose", "Give some feedback about what's going on.  Supply this argument twice for progress updates while parsing the bam", {'v', "verbose"});
     ValueFlagList<string> filterTags(parser, "TAG", "Filter out reads with the specified tag.", {'t', "tag"});
-    ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be labeled as Chimeric.  Defaults to 'ch' for STAR", {"chimeric-tag"});
+    ValueFlag<string> chimericTag(parser, "TAG", "Reads maked with the specified tag will be labeled as Chimeric.  Defaults to 'mC' for STAR", {"chimeric-tag"});
     Flag excludeChimeric(parser, "exclude-chimeric", "Exclude chimeric reads from the read counts", {"exclude-chimeric"});
     Flag unpaired(parser, "unparied", "Allow unpaired reads to be quantified. Required for single-end libraries", {'u', "unpaired"});
     Flag useRPKM(parser, "rpkm", "Output gene RPKM values instead of TPMs", {"rpkm"});
@@ -96,7 +94,7 @@ int main(int argc, char* argv[])
         const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
         const unsigned long BIAS_LENGTH = biasGeneLength ? biasGeneLength.Get() : 200u;
         const vector<string> tags = filterTags ? filterTags.Get() : vector<string>();
-        const string chimeric_tag = chimericTag ? chimericTag.Get() : "ch";
+        const string chimeric_tag = chimericTag ? chimericTag.Get() : "mC";
         const string SAMPLENAME = sampleName ? sampleName.Get() : boost::filesystem::path(bamFile.Get()).filename().string();
         const unsigned int DETECTION_THRESHOLD = detectionThreshold ? detectionThreshold.Get() : 5u;
 
@@ -241,7 +239,6 @@ int main(int argc, char* argv[])
             {
                 //try to print an update to stdout every 250,000 reads, but no more than once every 10 seconds
                 ++alignmentCount;
-                string trash;
                 if (alignmentCount % 250000 == 0) time(&t2);
                 if (difftime(t2, report_time) >= 10)
                 {
@@ -252,12 +249,8 @@ int main(int argc, char* argv[])
                 if (alignment.SecondaryFlag()) counter.increment("Alternative Alignments");
                 else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low Mapping Quality");
-                if (alignment.SupplementaryFlag() && !(LegacyMode.Get() || readStringTag(alignment, chimeric_tag, trash)))
-                {
-                    counter.increment("Chimeric Fragments_auto");
-                    if(excludeChimeric.Get()) continue;
-                }
-                if (!(alignment.SecondaryFlag() || alignment.QCFailFlag() || alignment.SupplementaryFlag()))
+                if (!(alignment.SecondaryFlag() || alignment.QCFailFlag()) /*&& alignment.MapQuality >= 255u*/)
+//                if ((LegacyMode.Get() || !alignment.SecondaryFlag()) && !alignment.QCFailFlag())
                 {
                     counter.increment("Unique Mapping, Vendor QC Passed Reads");
                     //raw counts:
@@ -273,9 +266,10 @@ int main(int argc, char* argv[])
                         if (LegacyMode.Get() && alignmentSize > LEGACY_MAX_READ_LENGTH) continue;
                         if (!readLength) current_chrom = chromosomeMap(sequences[alignment.ChrID()].Name);
                         if (alignmentSize > readLength) readLength = alignment.Length();
-                        if (!LegacyMode.Get() && readStringTag(alignment, chimeric_tag, trash))
+                        string trash;
+                        if (!LegacyMode.Get() && alignment.GetZTag(chimeric_tag, trash))
                         {
-                            if (alignment.FirstFlag()) counter.increment("Chimeric Fragments_tag");
+                            counter.increment("Chimeric Reads_tag");
                             if(excludeChimeric.Get()) continue;
                         }
                         if (alignment.PairedFlag() && alignment.MateMappedFlag() )
@@ -283,7 +277,7 @@ int main(int argc, char* argv[])
                             if (alignment.FirstFlag()) counter.increment("Total Mapped Pairs");
                             if (alignment.ChrID() != alignment.MateChrID() || abs(alignment.Position() - alignment.MatePosition()) > CHIMERIC_DISTANCE || (LegacyMode.Get() && alignment.ChrID() > 127))
                             {
-                                if (alignment.FirstFlag()) counter.increment("Chimeric Fragments_auto");
+                                counter.increment("Chimeric Reads_contig");
                                 if(excludeChimeric.Get()) continue;
                             }
                         }
@@ -736,26 +730,4 @@ double reduceDeltaCV(list<double> &deltaCV)
 bool compGenes(const string &a, const string &b)
 {
     return tpms[a] < tpms[b];
-}
-
-bool readStringTag(Alignment& alignment, string tagName, string& result) {
-    if (alignment.GetZTag(tagName, result)) return true;
-    
-    const auto b = alignment.shared_pointer();
-    
-    //Copied (with slight modification) from https://github.com/walaj/SeqLib/blob/master/src/BamRecord.cpp#L499
-    uint8_t* tagPtr = bam_aux_get(b.get(),tagName.c_str());
-    if (!tagPtr)
-      return false;
-
-    int type = *tagPtr;
-    if (type != 'A')
-      return false;
-    
-    char tagContents = bam_aux2A(tagPtr);
-    if (!tagContents)
-      return false;
-    result = "";
-    result += tagContents;
-    return true;
 }
