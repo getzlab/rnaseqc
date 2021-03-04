@@ -11,7 +11,6 @@
 
 #include "Metrics.h"
 #include "BamReader.h"
-#include <vector>
 #include <set>
 #include <iostream>
 

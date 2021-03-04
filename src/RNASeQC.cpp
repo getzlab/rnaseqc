@@ -218,15 +218,17 @@ int main(int argc, char* argv[])
             //Check the sequence dictionary for contig overlap with gtf
             if (VERBOSITY > 1) cout<<"Checking bam header..."<<endl;
             bool hasOverlap = false;
+            unsigned short chrMismatchCount = 0;
             for(auto sequence = sequences.begin(); sequence != sequences.end(); ++sequence)
             {
                 chrom chrom = chromosomeMap(sequence->Name);
-                if (features.find(chrom) != features.end())
-                {
-                    hasOverlap = true;
-                    break;
+                if (features.find(chrom) != features.end()) hasOverlap = true;
+                if (!bam.validateChromosome(chrom)) {
+                    ++chrMismatchCount;
+                    if (VERBOSITY) cerr << "The cram MD5 field for chromosome " << sequence->Name << " did not match the provided reference file. HTSLIB will revert to using cached references." << endl;
                 }
             }
+            if (chrMismatchCount) cerr << chrMismatchCount << " chromosomes present in the cram header did not match any chromosomes in the provided reference. This may cause cram decoding problems down the line" << endl;
             if (!hasOverlap)
             {
                 cerr << "BAM file shares no contigs with GTF" << endl;
@@ -679,6 +681,10 @@ int main(int argc, char* argv[])
     catch (bedException &e)
     {
         cerr << "Failed to parse the BED: " << e.error << endl;
+        return 11;
+    }
+    catch (referenceHTSMismatch &e) {
+        cerr << e.error << endl;
         return 11;
     }
     catch (std::length_error &e)
