@@ -15,11 +15,13 @@
 #include <iterator>
 
 namespace rnaseqc {
+
+
     std::map<std::string, double> uniqueGeneCounts, geneCounts, exonCounts, geneFragmentCounts; //counters for read coverage of genes and exons
 
     std::map<std::string, std::unordered_set<std::string> > fragmentTracker; // tracks fragments encountered by each gene
     
-    std::tuple<double, double, double> computeCoverage(std::ofstream&, const Feature&, const unsigned int, const std::map<std::string, std::vector<unsigned long> >&, std::list<double>&, BiasCounter&);
+    std::tuple<double, double, double> computeCoverage(Fasta&, std::ofstream&, const Feature&, const unsigned int, const std::map<std::string, std::vector<unsigned long> >&, std::map<std::string, ExonCoverage>&, BiasCounter&);
 
     void add_range(std::vector<unsigned long>&, coord, unsigned int);
 
@@ -112,7 +114,7 @@ namespace rnaseqc {
         auto end = this->cache[gene_id].end();
         while (beg != end)
         {
-            if (this->coverage.find(beg->feature_id) == this->coverage.end()) this->coverage[beg->feature_id] = std::vector<unsigned long>(exonLengths[beg->feature_id], 0ul);
+            if (this->coverage.find(beg->feature_id) == this->coverage.end()) this->coverage[beg->feature_id] = std::vector<unsigned long>(exonLengths[beg->feature_id].length, 0ul);
             //Add each coverage entry to the per-base coverage vector for the exon
             //At this stage exons each have their own vectors.
             //During the compute() step, exons get stiched together
@@ -133,9 +135,9 @@ namespace rnaseqc {
         //First iterate over all exons of the gene and ensure they're filled
         //That way, stiching the exons will result in a complete transcript even for exons which haven't been seen
         for (auto exon_id = exonsForGene[gene.feature_id].begin(); exon_id != exonsForGene[gene.feature_id].end(); ++exon_id)
-            if (this->coverage.find(*exon_id) == this->coverage.end()) this->coverage[*exon_id] = std::vector<unsigned long>(exonLengths[*exon_id], 0ul);
+            if (this->coverage.find(*exon_id) == this->coverage.end()) this->coverage[*exon_id] = std::vector<unsigned long>(exonLengths[*exon_id].length, 0ul);
         //then compute coverage for the gene
-        std::tuple<double, double, double> results = computeCoverage(this->writer, gene, this->mask_size, this->coverage, this->exonCVs, this->bias);
+        std::tuple<double, double, double> results = computeCoverage(this->fastaReader, this->writer, gene, this->mask_size, this->coverage, this->exonCoverage, this->bias);
         if (std::get<0>(results) != -1)
         {
             this->geneMeans.push_back(std::get<0>(results));
@@ -260,14 +262,14 @@ namespace rnaseqc {
     }
 
     //Compute exon coverage metrics, then stich exons together and compute gene coverage metrics
-    std::tuple<double, double, double> computeCoverage(std::ofstream &writer, const Feature &gene, const unsigned int mask_size, const std::map<std::string, std::vector<unsigned long> > &coverage, std::list<double> &totalExonCV, BiasCounter &bias)
+    std::tuple<double, double, double> computeCoverage(Fasta& fastaReader, std::ofstream &writer, const Feature &gene, const unsigned int mask_size, const std::map<std::string, std::vector<unsigned long> > &coverage, std::map<std::string, ExonCoverage>& totalExonCV, BiasCounter &bias)
     {
         std::vector<std::vector<bool> > coverageMask;
         std::vector<unsigned long> geneCoverage;
         unsigned int maskRemainder = mask_size;
         for (unsigned int i = 0; i < exonsForGene[gene.feature_id].size(); ++i)
         {
-            coverageMask.push_back(std::vector<bool>(exonLengths[exonsForGene[gene.feature_id][i]], true)); //First store a pre-filled mask for the exon
+            coverageMask.push_back(std::vector<bool>(exonLengths[exonsForGene[gene.feature_id][i]].length, true)); //First store a pre-filled mask for the exon
             for (unsigned int j = 0; j < coverageMask.back().size() && maskRemainder; ++j, --maskRemainder) //now, remove coverage from the front of the exon until either it, or the mask size is depleted
                 coverageMask.back()[j] = false;
         }
@@ -292,7 +294,14 @@ namespace rnaseqc {
                     if (*(maskIter++)) exonStd += pow(static_cast<double>(*start) - exonMean, 2.0) / exonSize;
                 exonStd = pow(exonStd, 0.5);
                 exonStd /= exonMean; //now it's a CV
-                if (!(std::isnan(exonStd) || std::isinf(exonStd))) totalExonCV.push_back(exonStd);
+                
+                if (!(std::isnan(exonStd) || std::isinf(exonStd))) {
+                    FeatureSpan exonPos = exonLengths[exonsForGene[gene.feature_id][i]];
+                    if (fastaReader.hasContig(exonPos.chromosome)) {
+                        std::string exonSeq = fastaReader.getSeq(exonPos.chromosome, exonPos.start, exonPos.start + exonPos.length);
+                        totalExonCV[exonsForGene[gene.feature_id][i]] = {exonStd, gc(exonSeq)};
+                    } else totalExonCV[exonsForGene[gene.feature_id][i]] = {exonStd, -1.0};
+                }
             }
             // Reserve and append the exon vector to the growing gene vector
             geneCoverage.reserve(geneCoverage.size() + exon_coverage.size());

@@ -20,7 +20,8 @@ namespace rnaseqc {
     const string EXON_NAME = "exon";
     const boost::regex ribosomalPattern("rRNA"); //For recognizing features which are rRNAs
     map<string, string> geneNames, geneSeqs;
-    map<string, coord> geneLengths, geneCodingLengths, exonLengths;
+map<string, coord> geneLengths, geneCodingLengths;
+    map<string, FeatureSpan> exonLengths;
     std::map<std::string, std::vector<std::string>> exonsForGene;
     std::vector<std::string> geneList, exonList;
     map<string, unsigned int> exon_names;
@@ -104,7 +105,7 @@ namespace rnaseqc {
                     exonIds.insert(out.feature_id);
                     exonList.push_back(out.feature_id);
                     geneCodingLengths[out.gene_id] += 1 + (out.end - out.start);
-                    exonLengths[out.feature_id] = 1 + (out.end - out.start);
+                    exonLengths[out.feature_id] = {out.chromosome, out.start, 1 + (out.end - out.start)};
                 }
                 if (attributes.find("transcript_type") != attributes.end()) out.transcript_type = attributes["transcript_type"];
                 if (attributes.find("gene_name") != attributes.end()) geneNames[out.feature_id] = attributes["gene_name"];

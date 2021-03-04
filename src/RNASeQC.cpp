@@ -1,6 +1,6 @@
  // RNASeQC.cpp : Defines the entry point for the console application.
 
-#define NO_FASTA // Comment this line then compile to enable fasta features
+//#define NO_FASTA // Comment this line then compile to enable fasta features
 
 //Include headers
 #include "BED.h"
@@ -9,7 +9,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <set>
-#include <cmath>
 #include <regex>
 #include <ctime>
 #include <limits.h>
@@ -101,6 +100,8 @@ int main(int argc, char* argv[])
         time_t t0, t1, t2; //various timestamps to record execution time
         clock_t start_clock = clock(); //timer used to compute CPU time
         map<chrom, list<Feature>> features; //map of chr -> genes/exons; parsed from GTF
+        Fasta fastaReader;
+        unsigned long gcBins[100] = {0};
         //Parse the GTF and extract features
         {
             Feature line; //current feature being read from the gtf
@@ -110,16 +111,16 @@ int main(int argc, char* argv[])
                 cerr << "Unable to open GTF file: " << gtfFile.Get() << endl;
                 return 10;
             }
-            
+
 #ifndef NO_FASTA
-            Fasta fastaReader;
             if (fastaFile)
             {
                 fastaReader.open(fastaFile.Get());
-                if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but will slow down the initial startup..." << endl;
+                cerr << "Warning: Due to a bug, Crams currently ignore the provided reference Fasta and attempt to use the reference indicated by its @SQ headers" << endl;
+                if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but adds additional runtime and memory costs" << endl;
             }
 #endif
-            
+
             if (VERBOSITY) cout<<"Reading GTF Features..."<<endl;
             time(&t0);
             while ((reader >> line))
@@ -135,11 +136,11 @@ int main(int argc, char* argv[])
                 if (line.type == FeatureType::Gene || line.type == FeatureType::Exon)
                 {
                     features[line.chromosome].push_back(line);
-#ifndef NO_FASTA
-                    //If fasta features are enabled, read the gene sequence from the fasta 
-                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
-#endif
-                    
+//#ifndef NO_FASTA
+//                    //If fasta features are enabled, read the gene sequence from the fasta
+//                    if (fastaFile && line.type == FeatureType::Gene) geneSeqs[line.feature_id] = fastaReader.getSeq(line.chromosome, line.start - 1, line.end, line.strand);
+//#endif
+
                 }
             }
         }
@@ -150,7 +151,7 @@ int main(int argc, char* argv[])
             beg->second.sort(compIntervalStart);
             for (auto feat = beg->second.begin(); feat != beg->second.end(); ++feat)
                 if (feat->type == FeatureType::Exon) exonsForGene[feat->gene_id].push_back(feat->feature_id);
-            
+
         }
         time(&t1); //record the time taken to parse the GTF
         if (!(geneList.size() && exonList.size()))
@@ -165,7 +166,7 @@ int main(int argc, char* argv[])
         //fragment size variables
         unsigned int doFragmentSize = 0u; //count of remaining fragment size samples to record
         map<chrom, list<Feature> > *bedFeatures = nullptr; //similar map, but parsed from BED for fragment sizes only
-        map<string, FragmentMateEntry> fragments; //Map of alignment name -> exonID to ensure mates map to the same exon for
+        map<string, FragmentMateEntry> fragmentSizeFragmentTracker, gcContentFragmentTracker; //Map of alignment name -> exonID to ensure mates map to the same exon for
         map<long long, unsigned long> fragmentSizes; //list of fragment size samples taken so far
         if (bedFile) //If we were given a BED file, parse it for fragment size calculations
         {
@@ -190,10 +191,10 @@ int main(int argc, char* argv[])
             boost::filesystem::create_directories(outputDir.Get());
         }
 
-        
+
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-        if (fastaFile) bam.addReference(fastaFile.Get());
+//        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;
@@ -201,9 +202,9 @@ int main(int argc, char* argv[])
         }
         Metrics counter; //main tracker for various metrics
         int readLength = 0; //longest read encountered so far
-        
+
         BiasCounter bias(BIAS_OFFSET, BIAS_WINDOW, BIAS_LENGTH, DETECTION_THRESHOLD);
-        BaseCoverage baseCoverage(outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
+        BaseCoverage baseCoverage(fastaReader, outputDir.Get() + "/" + SAMPLENAME + ".coverage.tsv", COVERAGE_MASK, outputTranscriptCoverage.Get(), bias);
         unsigned long long alignmentCount = 0ull; //count of how many alignments we've seen so far
         chrom current_chrom = 0;
         int32_t last_position = 0; // For some reason, htslib has decided that this will be the datatype used for positions
@@ -319,7 +320,7 @@ int main(int argc, char* argv[])
                             }
                         }
                         if (discard) continue;
-                        
+
                         bool highQuality = (mismatches <= BASE_MISMATCH_THRESHOLD && (unpaired.Get() || alignment.ProperPair()) && alignment.MapQuality() >= MAPPING_QUALITY_THRESHOLD);
 
                         //now record intron/exon metrics by intersecting filtered reads with the list of features
@@ -340,6 +341,9 @@ int main(int argc, char* argv[])
                             {
                                 dropFeatures(features[current_chrom], baseCoverage);
                                 current_chrom = chr;
+                                if (fastaReader.isOpen() && !fastaReader.hasContig(chr)) {
+                                    cerr << "Warning: Provided Fasta does not contain chromosome " << chrName << ". No GC statistics will be collected for this chromosome" << endl;
+                                }
                             }
                             else if (last_position > alignment.Position())
                                 cerr << "Warning: The input bam does not appear to be sorted. An unsorted bam will yield incorrect results" << endl;
@@ -352,12 +356,16 @@ int main(int argc, char* argv[])
 
                             //run the read through exon metrics
                             if (LegacyMode.Get()) legacyExonAlignmentMetrics(LEGACY_SPLIT_DISTANCE, features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
-                            else exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get());
+                            else {
+                                double gcContent = exonAlignmentMetrics(features, counter, blocks, alignment, sequences, length, STRAND_ORIENTATION, baseCoverage, highQuality, unpaired.Get(), gcContentFragmentTracker, fastaReader);
+                                if (gcContent != -1 && static_cast<unsigned int>(gcContent * 100.0) == 0) cout << "0:0\t" << alignment.Qname() <<"\t" << gcContent<< endl;
+                                if (gcContent != -1) gcBins[static_cast<unsigned int>(gcContent * 100.0)]++;
+                            }
 
                             //if fragment size calculations were requested, we still have samples to take, and the chromosome exists within the provided bed
                             if (highQuality && doFragmentSize && alignment.PairedFlag() && bedFeatures != nullptr && bedFeatures->find(chr) != bedFeatures->end())
                             {
-                                doFragmentSize = fragmentSizeMetrics(doFragmentSize, bedFeatures, fragments, fragmentSizes, blocks, alignment, sequences);
+                                fragmentSizeMetrics(doFragmentSize, bedFeatures, fragmentSizeFragmentTracker, fragmentSizes, blocks, alignment, sequences);
                                 if (!doFragmentSize && VERBOSITY > 1) cout << "Completed taking fragment size samples" << endl;
                             }
                         }
@@ -405,7 +413,6 @@ int main(int argc, char* argv[])
         //gene coverage report generation
         unsigned int genesDetected = 0;
         double fragmentMed = 0.0;
-        double gcBias = 0.0;
         vector<double> ratios;
         {
             ofstream geneReport(outputDir.Get()+"/"+SAMPLENAME+".gene_reads.gct");
@@ -427,12 +434,12 @@ int main(int argc, char* argv[])
             {
                 geneReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneCounts[*gene]) << endl;
                 fragmentReport << *gene << "\t" << geneNames[*gene] << "\t" << static_cast<long>(geneFragmentCounts[*gene]) << endl;
-                
-#ifndef NO_FASTA
-                //If fasta features were enabled, get the gc content coverage bias from this gene
-                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
-#endif
-                
+
+//#ifndef NO_FASTA
+//                //If fasta features were enabled, get the gc content coverage bias from this gene
+//                if (fastaFile && geneCoverage[*gene]) gcBias += gc(geneSeqs[*gene]) / static_cast<double>(geneList.size());
+//#endif
+
                 if (useRPKM.Get())
                 {
                     double RPKM = (1000.0 * geneCounts[*gene] / scaleRPKM) / static_cast<double>(geneCodingLengths[*gene]);
@@ -465,21 +472,26 @@ int main(int argc, char* argv[])
         double ratioAvg = 0.0, ratioMedDev = 0.0, ratioMedian = 0.0, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
         if (ratios.size())
         {
-            vector<double> ratioDeviations;
-            sort(ratios.begin(), ratios.end());
-            ratioMedian = computeMedian(ratios.size(), ratios.begin());
-            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-            {
-                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
-                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
-            }
-            sort(ratioDeviations.begin(), ratioDeviations.end());
-            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
-            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-            {
-                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
-            }
-            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
+//            vector<double> ratioDeviations;
+//            sortContainer(ratios);
+//            ratioMedian = computeMedian(ratios.size(), ratios.begin());
+//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+//            {
+//                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
+//                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
+//            }
+//            sortContainer(ratioDeviations);
+//            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
+//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
+//            {
+//                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
+//            }
+//            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
+            statsTuple ratio_stats = getStatistics(ratios);
+            ratioAvg = std::get<StatIdx::avg>(ratio_stats);
+            ratioMedian = std::get<StatIdx::med>(ratio_stats);
+            ratioStd = std::get<StatIdx::std>(ratio_stats);
+            ratioMedDev = std::get<StatIdx::mad>(ratio_stats);
             double index = .25 * ratios.size();
             if (index > floor(index))
             {
@@ -559,11 +571,11 @@ int main(int argc, char* argv[])
         output << "3' bias MAD_Std\t" << ratioMedDev << endl;
         output << "3' Bias, 25th Percentile\t" << ratio25 << endl;
         output << "3' Bias, 75th Percentile\t" << ratio75 << endl;
-        
-#ifndef NO_FASTA
-        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
-#endif
-        
+
+//#ifndef NO_FASTA
+//        if (fastaFile) output << "Mean Weighted GC Content\t" << gcBias << endl;
+//#endif
+
         if (fragmentSizes.size())
         {
             //If any fragment size samples were taken, also generate a fragment size report
@@ -573,7 +585,7 @@ int main(int argc, char* argv[])
             list<long long> dumb_fragment_expansion_list;
             for(auto fragment = fragmentSizes.begin(); fragment != fragmentSizes.end(); ++fragment)
                 for(unsigned long i = 0u; i < fragment->second; ++i) dumb_fragment_expansion_list.push_back(fragment->first);
-            dumb_fragment_expansion_list.sort();
+            sortContainer(dumb_fragment_expansion_list);
             double size = static_cast<double>(dumb_fragment_expansion_list.size());
             vector<double> deviations; //list of recorded deviations from the median
             fragmentMed = computeMedian(size, dumb_fragment_expansion_list.begin());
@@ -587,7 +599,7 @@ int main(int argc, char* argv[])
                 for(unsigned long i = 0u; i < fragment->second; ++i) deviations.push_back(deviation); //record this fragment's deviation
             }
             fragmentList.close();
-            sort(deviations.begin(), deviations.end()); //for the next line to work, we have to sort
+            sortContainer(deviations); //for the next line to work, we have to sort
             //now compute the median absolute deviation, an estimator for standard deviation
             fragmentMedDev = computeMedian(deviations.size(), deviations.begin()) * MAD_FACTOR;
             //we have to iterate again now for the standard deviation calculation, now that we know the mean
@@ -606,8 +618,8 @@ int main(int argc, char* argv[])
         {
             list<double> means = baseCoverage.getGeneMeans(), stdDevs = baseCoverage.getGeneStds(), cvs = baseCoverage.getGeneCVs();
             const unsigned long nTranscripts = means.size();
-            means.sort();
-            stdDevs.sort();
+            sortContainer(means);
+            sortContainer(stdDevs);
             auto beg = cvs.begin();
             auto end = cvs.end();
             while (beg != end)
@@ -623,15 +635,51 @@ int main(int argc, char* argv[])
             output << "Median of Avg Transcript Coverage\t" << computeMedian(nTranscripts, means.begin()) << endl;
             output << "Median of Transcript Coverage Std\t" << computeMedian(nTranscripts, stdDevs.begin()) << endl;
             output << "Median of Transcript Coverage CV\t" << (nCVS ? computeMedian(nCVS, cvs.begin()) : 0.0) << endl;
-            list<double> totalExonCV = baseCoverage.getExonCVs();
-            totalExonCV.sort();
-            const unsigned long nExonCVs = totalExonCV.size();
-            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
-            vector<double> exonDeviations;
-            for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
-            sort(exonDeviations.begin(), exonDeviations.end());
-            output << "Median Exon CV\t" << exonMedian << endl;
-            output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
+            list<double> totalExonCV;
+            map<string, ExonCoverage> exonCoverage = baseCoverage.getExonCoverage();
+            ofstream cvReport(outputDir.Get()+"/"+SAMPLENAME+".exon_cv.tsv");
+            cvReport << "Exon ID\tExon CV";
+            if (fastaFile)
+                cvReport << "\tGC Content";
+            cvReport << endl;
+            if (fastaFile) {
+                for (auto entry = exonCoverage.begin(); entry != exonCoverage.end(); ++entry) {
+                    cvReport << entry->first << "\t" << entry->second.cv << "\t" << entry->second.gc << endl;
+                    totalExonCV.push_back(entry->second.cv);
+                }
+            } else {
+                for (auto entry = exonCoverage.begin(); entry != exonCoverage.end(); ++entry) {
+                    cvReport << entry->first << "\t" << entry->second.cv << endl;
+                    totalExonCV.push_back(entry->second.cv);
+                }
+            }
+
+//            sortContainer(totalExonCV);
+//            const unsigned long nExonCVs = totalExonCV.size();
+//            double exonMedian = nExonCVs ? computeMedian(totalExonCV.size(), totalExonCV.begin()) : 0.0;
+//            vector<double> exonDeviations;
+//            for (auto cv = totalExonCV.begin(); cv != totalExonCV.end(); ++cv) exonDeviations.push_back(fabs((*cv) - exonMedian));
+//            sortContainer(exonDeviations);
+//            output << "Median Exon CV\t" << exonMedian << endl;
+//            output << "Exon CV MAD\t" << (nExonCVs ? computeMedian(exonDeviations.size(), exonDeviations.begin()) * MAD_FACTOR : 0.0) << endl;
+            statsTuple cv_stats = getStatistics(totalExonCV);
+            output << "Median Exon CV\t" << std::get<StatIdx::med>(cv_stats) << endl;
+            output << "Exon CV MAD\t" << std::get<StatIdx::mad>(cv_stats) << endl;
+        }
+        if (fastaFile) {
+            ofstream gcReport(outputDir.Get() + "/" + SAMPLENAME + ".gc_content.tsv");
+            gcReport << "Content Bin\tCount" << endl;
+            std::list<unsigned int> rough_gc;
+            for (unsigned int i = 0; i < 100; ++i) {
+                gcReport << (double)i/100.0 << "\t" << gcBins[i] << endl;
+                for (unsigned int j = 0; j < gcBins[i]; ++j)
+                    rough_gc.push_back(i);
+            }
+            statsTuple gc_stats = getAdvancedStatistics(rough_gc);
+            output << "Fragment GC Content Mean\t" << (double) std::get<StatIdx::avg>(gc_stats)/100.0 << endl;
+            output << "Fragment GC Content Std\t" << (double) std::get<StatIdx::std>(gc_stats)/100.0 << endl;
+            output << "Fragment GC Content Skewness\t" << std::get<StatIdx::skew>(gc_stats) << endl;
+            output << "Fragment GC Content Kurtosis\t" << std::get<StatIdx::kurt>(gc_stats) << endl;
         }
 
         output.close();
@@ -729,11 +777,33 @@ int main(int argc, char* argv[])
 
 double reduceDeltaCV(list<double> &deltaCV)
 {
-    deltaCV.sort();
+    sortContainer(deltaCV);
     return computeMedian(deltaCV.size(), deltaCV.begin());
 }
 
 bool compGenes(const string &a, const string &b)
 {
     return tpms[a] < tpms[b];
+}
+
+bool readStringTag(Alignment& alignment, string tagName, string& result) {
+    if (alignment.GetZTag(tagName, result)) return true;
+
+    const auto b = alignment.shared_pointer();
+
+    //Copied (with slight modification) from https://github.com/walaj/SeqLib/blob/master/src/BamRecord.cpp#L499
+    uint8_t* tagPtr = bam_aux_get(b.get(),tagName.c_str());
+    if (!tagPtr)
+      return false;
+
+    int type = *tagPtr;
+    if (type != 'A')
+      return false;
+
+    char tagContents = bam_aux2A(tagPtr);
+    if (!tagContents)
+      return false;
+    result = "";
+    result += tagContents;
+    return true;
 }
