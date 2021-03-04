@@ -14,7 +14,7 @@ namespace rnaseqc {
         // Must uncomment before adding multithreading
         //    std::lock_guard<SeqlibReader> guard(*this);
         try {
-            bool ok = this->GetNextRecord(read);
+            bool ok = this->bam.GetNextRecord(read);
             if (ok) this->read_count++;
             return ok;
         }

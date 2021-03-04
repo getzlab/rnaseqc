@@ -52,7 +52,8 @@ namespace rnaseqc {
         }
     };
     
-    class SeqlibReader : public SynchronizedReader, public SeqLib::BamReader {
+    class SeqlibReader : public SynchronizedReader {
+        SeqLib::BamReader bam;
         std::string reference_path;
         std::set<chrom> valid_chroms;
         bool user_cram_reference;
@@ -63,7 +64,7 @@ namespace rnaseqc {
         bool next(SeqLib::BamRecord&);
         
         const SeqLib::BamHeader getHeader() const {
-            return this->Header();
+            return this->bam.Header();
         }
         
         bool open(std::string filepath) {
@@ -82,12 +83,12 @@ namespace rnaseqc {
                                 this->valid_chroms.insert(
                                     chromosomeMap(cram->refs->ref_id[i]->name)
                                 );
-                    this->SetCramReference(this->reference_path); // Consider moving out of if statement, if there's any meaningful use to having a reference set on a non-cram
+                    this->bam.SetCramReference(this->reference_path); // Consider moving out of if statement, if there's any meaningful use to having a reference set on a non-cram
                 }
                 hts_close(htsfile);
             }
-            this->Open(filepath);
-            return this->IsOpen();
+            this->bam.Open(filepath);
+            return this->bam.IsOpen();
         }
         
         void addReference(std::string filepath) {
