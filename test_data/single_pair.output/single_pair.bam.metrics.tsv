@@ -2,6 +2,7 @@ Sample	single_pair.bam
 Mapping Rate	1
 Unique Rate of Mapped	1
 Duplicate Rate of Mapped	0
+Duplicate Rate of Mapped, excluding Globins	0
 Base Mismatch	0
 End 1 Mapping Rate	1
 End 2 Mapping Rate	1
@@ -21,12 +22,12 @@ High Quality Intragenic Rate	1
 High Quality Ambiguous Alignment Rate	0
 Discard Rate	0
 rRNA Rate	0
-Chimeric Alignment Rate	0
 End 1 Sense Rate	1
 End 2 Sense Rate	0
 Avg. Splits per Read	0
 Alternative Alignments	0
 Chimeric Reads	0
+Chimeric Alignment Rate	0
 Duplicate Reads	0
 End 1 Antisense	0
 End 2 Antisense	1
@@ -51,7 +52,8 @@ Mapped Duplicate Reads	0
 Mapped Reads	2
 Mapped Unique Reads	2
 Mismatched Bases	0
-Reads excluded from exon counts	0
+Non-Globin Reads	2
+Non-Globin Duplicate Reads	0
 Reads used for Intron/Exon counts	2
 rRNA Reads	0
 Total Bases	152
@@ -62,6 +64,7 @@ Unpaired Reads	0
 Read Length	76
 Genes Detected	0
 Estimated Library Complexity	0
+Genes used in 3' bias	0
 Mean 3' bias	0
 Median 3' bias	0
 3' bias Std	0
@@ -71,5 +74,5 @@ Median 3' bias	0
 Median of Avg Transcript Coverage	0
 Median of Transcript Coverage Std	0
 Median of Transcript Coverage CV	0
-Median Exon CV	0
-Exon CV MAD	0
+Median Exon CV	nan
+Exon CV MAD	nan

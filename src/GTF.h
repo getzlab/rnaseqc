@@ -43,10 +43,16 @@ namespace rnaseqc {
     bool intersectPoint(const Feature&, const coord);
     bool intersectInterval(const Feature&, const Feature&);
     int partialIntersect(const Feature&, const Feature&);
+
+    struct FeatureSpan {
+        chrom chromosome;
+        coord start, length;
+    };
     
     
     extern std::map<std::string, std::string> geneNames, geneSeqs;
-    extern std::map<std::string, coord> geneLengths, geneCodingLengths, exonLengths;
+extern std::map<std::string, coord> geneLengths, geneCodingLengths;
+    extern std::map<std::string, FeatureSpan> exonLengths;
     extern std::vector<std::string> geneList, exonList;
     extern std::map<std::string, std::vector<std::string>> exonsForGene;
     

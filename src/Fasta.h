@@ -45,7 +45,7 @@ namespace rnaseqc {
         // Represents an entire fasta file
         // Uses the bioio library for quickly retrieving sequences
         // Uses an internal LRU cache to minimize required reading
-        bool isOpen;
+        bool _open;
         std::ifstream reader;
         std::unordered_map<indexType, std::string> pageCache;
         std::list<indexType> lru;
@@ -55,13 +55,15 @@ namespace rnaseqc {
         std::string readSeq(chrom, coord);
         unsigned long calls, misses;
     public:
-        Fasta() : isOpen(), reader(), pageCache(), lru(), contigIndex(), calls(), misses() {};
+        Fasta() : _open(), reader(), pageCache(), lru(), contigIndex(), calls(), misses() {};
         ~Fasta();
         void open(std::string&);
         std::string getSeq(chrom, coord, coord);
         std::string getSeq(chrom, coord, coord, Strand);
         indexType pageForCoord(chrom, coord);
         coord pageOffset(indexType);
+        bool isOpen() const;
+        bool hasContig(chrom) const;
         
     };
     

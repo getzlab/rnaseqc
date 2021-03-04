@@ -1,0 +1,82 @@
+Sample	chr1.cram
+Mapping Rate	1
+Unique Rate of Mapped	1
+Duplicate Rate of Mapped	0
+Duplicate Rate of Mapped, excluding Globins	0
+Base Mismatch	0.00968147
+End 1 Mapping Rate	1.01474
+End 2 Mapping Rate	0.985262
+End 1 Mismatch Rate	0.00253608
+End 2 Mismatch Rate	0.0170406
+Expression Profiling Efficiency	0.807719
+High Quality Rate	0.884446
+Exonic Rate	0.807719
+Intronic Rate	0.131935
+Intergenic Rate	0.0274077
+Intragenic Rate	0.939654
+Ambiguous Alignment Rate	0.0329382
+High Quality Exonic Rate	0.835902
+High Quality Intronic Rate	0.108092
+High Quality Intergenic Rate	0.0240545
+High Quality Intragenic Rate	0.943994
+High Quality Ambiguous Alignment Rate	0.0319513
+Discard Rate	0
+rRNA Rate	4.18304e-06
+End 1 Sense Rate	0.495471
+End 2 Sense Rate	0.503206
+Avg. Splits per Read	0.261769
+Alternative Alignments	229158
+Chimeric Reads	0
+Chimeric Alignment Rate	0
+Duplicate Reads	0
+End 1 Antisense	498854
+End 2 Antisense	477326
+End 1 Bases	82963728
+End 2 Bases	80553844
+End 1 Mapped Reads	1091628
+End 2 Mapped Reads	1059919
+End 1 Mismatches	210403
+End 2 Mismatches	1372688
+End 1 Sense	489897
+End 2 Sense	483486
+Exonic Reads	1737846
+Failed Vendor QC	122510
+High Quality Reads	1902928
+Intergenic Reads	58969
+Intragenic Reads	2021710
+Ambiguous Reads	70868
+Intronic Reads	283864
+Low Mapping Quality	186732
+Low Quality Reads	248619
+Mapped Duplicate Reads	0
+Mapped Reads	2151547
+Mapped Unique Reads	2151547
+Mismatched Bases	1583091
+Non-Globin Reads	2151547
+Non-Globin Duplicate Reads	0
+Reads used for Intron/Exon counts	2151547
+rRNA Reads	9
+Total Bases	163517572
+Total Mapped Pairs	1052544
+Total Reads	2503215
+Unique Mapping, Vendor QC Passed Reads	2151547
+Unpaired Reads	0
+Read Length	76
+Genes Detected	1842
+Estimated Library Complexity	0
+Genes used in 3' bias	236
+Mean 3' bias	0.511031
+Median 3' bias	0.5
+3' bias Std	0.293274
+3' bias MAD_Std	0.353802
+3' Bias, 25th Percentile	0.264706
+3' Bias, 75th Percentile	0.75
+Median of Avg Transcript Coverage	0.629976
+Median of Transcript Coverage Std	0.905514
+Median of Transcript Coverage CV	1.06256
+Median Exon CV	0.313763
+Exon CV MAD	0.308991
+Fragment GC Content Mean	0.453382
+Fragment GC Content Std	0.104727
+Fragment GC Content Skewness	0.25671
+Fragment GC Content Kurtosis	-0.673033

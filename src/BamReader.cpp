@@ -13,8 +13,16 @@ namespace rnaseqc {
     {
         // Must uncomment before adding multithreading
         //    std::lock_guard<SeqlibReader> guard(*this);
-        bool ok = this->bam.GetNextRecord(read);
-        if (ok) this->read_count++;
-        return ok;
+        try {
+            bool ok = this->bam.GetNextRecord(read);
+            if (ok) this->read_count++;
+            return ok;
+        }
+        catch (std::runtime_error &e) {
+            if (this->user_cram_reference) throw referenceHTSMismatch(std::string("HTSLib was unable to find a suitable reference while decoding a cram: ")+e.what());
+            throw;
+        }
+        return false; // No way to get here
+        
     }
 }
