@@ -19,45 +19,43 @@ def run(args):
     writer.writeheader()
     current = None
     features = []
-    with status_bar(numRows) as bar:
-        for line in reader:
-            bar.update(bar.current + 1)
-            gene = '_'.join(line['Name'].split('_')[:-1])
-            if gene != current:
-                if current is not None:
-                    ref = gtf.get_gene(current)
+    for line in status_bar.iter(reader, maximum=numRows):
+        gene = '_'.join(line['Name'].split('_')[:-1])
+        if gene != current:
+            if current is not None:
+                ref = gtf.get_gene(current)
+                try:
+                    if len(ref):
+                        ref = ref[0]
+                except:
+                    pass
+                exons = {exon.id:exon for transcript in ref.transcripts for exon in transcript.exons}
+                raw_size = len(exons)
+                for exon in [exon for exon in exons]:
                     try:
-                        if len(ref):
-                            ref = ref[0]
+                        if exon.isdigit() and int(exon) <= raw_size:
+                            exons[current+'_'+exon] = exons[exon]
                     except:
                         pass
-                    exons = {exon.id:exon for transcript in ref.transcripts for exon in transcript.exons}
-                    raw_size = len(exons)
-                    for exon in [exon for exon in exons]:
-                        try:
-                            if exon.isdigit() and int(exon) <= raw_size:
-                                exons[current+'_'+exon] = exons[exon]
-                        except:
-                            pass
-                    features.sort(
-                        key=lambda feat:(
-                            1 if exons[feat['Name']].length == 1 else 0,
-                            exons[feat['Name']].start_pos,
-                            exons[feat['Name']].end_pos
-                        )
+                features.sort(
+                    key=lambda feat:(
+                        1 if exons[feat['Name']].length == 1 else 0,
+                        exons[feat['Name']].start_pos,
+                        exons[feat['Name']].end_pos
                     )
-                    for i in range(len(features)):
-                        parts = features[i]['Name'].split('_')
-                        prefix = '_'.join(parts[:-1])
-                        suffix = parts[-1]
-                        if exons[features[i]['Name']].length == 1:
-                            features[i][reader.fieldnames[-1]] = 0
-                        suffix = str(i)
-                        features[i]['Name'] = prefix+'_'+suffix
-                    writer.writerows(features)
-                current = gene
-                features = []
-            features.append({k:v for k,v in line.items()})
+                )
+                for i in range(len(features)):
+                    parts = features[i]['Name'].split('_')
+                    prefix = '_'.join(parts[:-1])
+                    suffix = parts[-1]
+                    if exons[features[i]['Name']].length == 1:
+                        features[i][reader.fieldnames[-1]] = 0
+                    suffix = str(i)
+                    features[i]['Name'] = prefix+'_'+suffix
+                writer.writerows(features)
+            current = gene
+            features = []
+        features.append({k:v for k,v in line.items()})
     if len(features):
         ref = gtf.get_gene(current)
         try:

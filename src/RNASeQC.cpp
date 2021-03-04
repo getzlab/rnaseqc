@@ -116,7 +116,6 @@ int main(int argc, char* argv[])
             if (fastaFile)
             {
                 fastaReader.open(fastaFile.Get());
-                cerr << "Warning: Due to a bug, Crams currently ignore the provided reference Fasta and attempt to use the reference indicated by its @SQ headers" << endl;
                 if (VERBOSITY > 1) cout << "A FASTA has been provided. This will enable GC-content statistics but adds additional runtime and memory costs" << endl;
             }
 #endif
@@ -194,7 +193,7 @@ int main(int argc, char* argv[])
 
         const string bamFilename = bamFile.Get();
         SeqlibReader bam;
-//        if (fastaFile) bam.addReference(fastaFile.Get());
+        if (fastaFile) bam.addReference(fastaFile.Get());
         if (!bam.open(bamFilename))
         {
             cerr << "Unable to open BAM file: " << bamFilename << endl;

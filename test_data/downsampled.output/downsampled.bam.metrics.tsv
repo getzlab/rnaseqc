@@ -71,6 +71,10 @@ Median 3' bias	0.591125
 3' bias MAD_Std	0.445799
 3' Bias, 25th Percentile	0.375
 3' Bias, 75th Percentile	0.928571
+Average Fragment Length	182.276
+Fragment Length Median	164
+Fragment Length Std	69.7425
+Fragment Length MAD_Std	56.3388
 Median of Avg Transcript Coverage	0.0201045
 Median of Transcript Coverage Std	0.141663
 Median of Transcript Coverage CV	1.44311

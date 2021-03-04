@@ -89,7 +89,7 @@ test-downsampled: rnaseqc
 test-crams: rnaseqc
 	touch test_data/chr1.fasta.fai
 	./rnaseqc test_data/chr1.gtf test_data/chr1.cram .test_output --coverage --fasta test_data/chr1.fasta
-	python3 test_data/approx_diff.py .test_output/chr1.cram.metrics.tsv test_data/chr1.output/chr1.bam.metrics.tsv -m metrics -c chr1.cram chr1.bam -t
+	python3 test_data/approx_diff.py .test_output/chr1.cram.metrics.tsv test_data/chr1.output/chr1.cram.metrics.tsv -m metrics -c chr1.cram chr1.cram_ -t
 	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_reads.gct test_data/chr1.output/chr1.bam.gene_reads.gct -m tables -c Counts Counts_ -t
 	python3 test_data/approx_diff.py .test_output/chr1.cram.gene_tpm.gct test_data/chr1.output/chr1.bam.gene_tpm.gct -m tables -c TPM TPM_ -t
 	python3 test_data/approx_diff.py .test_output/chr1.cram.exon_reads.gct test_data/chr1.output/chr1.bam.exon_reads.gct -m tables -c Counts Counts_ -t
