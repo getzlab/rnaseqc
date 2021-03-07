@@ -11,8 +11,8 @@ from .plot import *
 
 
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
-                    insertsize_df=None, tpm_df=None, thresholds=None, lims=None,
-                    show_legend=True, legend_cols=5, ms=12, alpha=1, show_xticklabels=False,
+                    insertsize_df=None, gc_content_df=None, tpm_df=None, thresholds=None, lims=None,
+                    show_legend=True, legend_cols=5, lw=4, lh=1, ms=12, alpha=1, show_xticklabels=False,
                     highlight_ids=None, prefix=None, output_dir=None, dpi=300):
     """
     metrics_df: output from RNA-SeQC
@@ -56,6 +56,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
         # 'Mapped Unique Reads',  # Duplicate Rate of Mapped is more representative
         "Median 3' bias",
         'Median Exon CV',
+        'Fragment GC Content Mean',
         'Average Fragment Length',
     ]
 
@@ -94,6 +95,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
         'rRNA Rate': [0, 1],
         "Median 3' bias": [0, 1],
         'Median Exon CV': None,
+        'Fragment GC Content Mean': [0, 1],
         'Average Fragment Length': None,
     }
     if lims is not None:
@@ -101,13 +103,13 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
 
     # plot cohort legend
     if show_legend:
-        ax = qtl.plot.setup_figure(0.5,0.5)
+        ax = qtl.plot.setup_figure(lw, lh, xspace=[0,0], yspace=[0,0])
         for c in cohorts:
             ax.scatter([], [], s=48, marker='s', c=cohort_colors[c].reshape(1,-1), label=c)
-        ax.legend(loc='upper left', handlelength=1, ncol=legend_cols, bbox_to_anchor=(1,1))
+        ax.legend(loc='center left', handlelength=1, ncol=legend_cols)
         plt.axis('off')
         if output_dir is not None:
-            plt.savefig(os.path.join(output_dir, '{}.legend.pdf'.format(prefix)), dpi=dpi)
+            plt.savefig(os.path.join(output_dir, f'{prefix}.legend.pdf'), dpi=dpi)
 
     # distributions for selected/key metrics
     for k,metric in enumerate(metrics_list, 1):
@@ -124,25 +126,32 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
     if "Median 3' bias" in metrics_df:
         detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped')
         if output_dir is not None:
-            plt.savefig(os.path.join(output_dir, '{}.genes_detected_vs_median_3prime_bias.pdf'.format(prefix)), dpi=dpi)
+            plt.savefig(os.path.join(output_dir, f'{prefix}.genes_detected_vs_median_3prime_bias.pdf'), dpi=dpi)
 
     # mismatch rates
     mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order, cohort_colors=cohort_colors,
                    end1_threshold=threshold_dict.get('End 1 mismatch rate', None),
                    end2_threshold=threshold_dict.get('End 2 mismatch rate', None))
     if output_dir is not None:
-        plt.savefig(os.path.join(output_dir, '{}.end_mismatch_rates.pdf'.format(prefix)), dpi=dpi)
+        plt.savefig(os.path.join(output_dir, f'{prefix}.end_mismatch_rates.pdf'), dpi=dpi)
 
     mapping_sense(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order,
                   cohort_colors=cohort_colors, date_s=date_s, width=1)
     if output_dir is not None:
-        plt.savefig(os.path.join(output_dir, '{}.mapping_sense.pdf'.format(prefix)), dpi=dpi)
+        plt.savefig(os.path.join(output_dir, f'{prefix}.mapping_sense.pdf'), dpi=dpi)
 
     # insert size distributions (if supplied)
     if insertsize_df is not None:
-        insert_sizes(insertsize_df, cohort_s=cohort_s, cohort_colors=cohort_colors, sort_order='mean')
+        insert_sizes(insertsize_df, cohort_s=cohort_s, cohort_order=cohort_order,
+                     cohort_colors=cohort_colors, sort_order='cohort')
         if output_dir is not None:
-            plt.savefig(os.path.join(output_dir, '{}.insert_sizes.pdf'.format(prefix)), dpi=dpi)
+            plt.savefig(os.path.join(output_dir, f'{prefix}.insert_sizes.pdf'), dpi=dpi)
+
+    if gc_content_df is not None:
+        gc_content(gc_content_df, cohort_s=cohort_s, cohort_colors=cohort_colors,
+                   cohort_order=cohort_order, sort_order='cohort')
+        if output_dir is not None:
+            plt.savefig(os.path.join(output_dir, f'{prefix}.gc_content.pdf'), dpi=dpi)
 
     if tpm_df is not None:
         cdf_df = calculate_expression_cdfs(tpm_df)
@@ -152,7 +161,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
             mode = 'ci'
         cumulative_expression(cdf_df, cohort_s=cohort_s, cohort_colors=cohort_colors, mode=mode)
         if output_dir is not None:
-            plt.savefig(os.path.join(output_dir, '{}.cumulative_expression.pdf'.format(prefix)), dpi=dpi)
+            plt.savefig(os.path.join(output_dir, f'{prefix}.cumulative_expression.pdf'), dpi=dpi)
 
 
 def load_inputs(args):

@@ -94,11 +94,11 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=N
 
 
 def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
-            threshold=None, threshold_dir=None, show_legend=False,
+            threshold=None, threshold_dir=None, plot_density=True, show_legend=False,
             ms=12, alpha=1, ylim=None, ylabel=None,
             show_xticklabels=False, highlight_ids=None,
             dl=0.85, aw=6, ds=0.2, daw=0.5, dr=0.25,
-            db=0.75, ah=2, dt=0.25, fontsize=10):
+            db=0.75, ah=2, dt=0.25, fontsize=10, rasterized=True):
     """Plot a single QC metric sorted by cohort and/or date"""
 
     if ylabel is None:
@@ -119,11 +119,15 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
     if show_xticklabels:
         db += 0.75
 
-    fw = dl + aw + ds + daw + dr
+    if plot_density:
+        fw = dl + aw + ds + daw + dr
+    else:
+        fw = dl + aw + dr
     fh = db + ah + dt
     fig = plt.figure(facecolor=(1,1,1), figsize=(fw,fh))
     ax = fig.add_axes([dl/fw, db/fh, aw/fw, ah/fh])
-    dax = fig.add_axes([(dl+aw+ds)/fw, db/fh, daw/fw, ah/fh], sharey=ax)
+    if plot_density:
+        dax = fig.add_axes([(dl+aw+ds)/fw, db/fh, daw/fw, ah/fh], sharey=ax)
 
     if date_s is not None:
         xlabel = 'Samples, ordered by date'
@@ -142,11 +146,11 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
     for t in cohorts:
         ix = cohort_s[cohort_s==t].index
         ax.scatter(xpos[ix], metric_s[ix], s=ms, edgecolor='none', label=t,
-                   c=cohort_colors[t].reshape(1,-1), alpha=alpha, clip_on=False, rasterized=True)
+                   c=[cohort_colors[t]], alpha=alpha, clip_on=False, rasterized=rasterized)
 
     if highlight_ids is not None:
         ax.scatter(xpos[highlight_ids], metric_s[highlight_ids], marker='s',
-                   edgecolor='k', facecolor='none', clip_on=False, rasterized=True)
+                   edgecolor='k', facecolor='none', clip_on=False, rasterized=rasterized)
 
     if threshold is not None:  # highlight samples
         ax.plot([-0.02*ns, 1.02*ns], 2*[threshold], '--', color=[0.6,0.6,0.6], lw=1, alpha=0.8)
@@ -154,16 +158,19 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
             ix = metric_s[metric_s > threshold].index
         elif threshold_dir=='lt':
             ix = metric_s[metric_s < threshold].index
-        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
+        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=rasterized)
 
     # plot density
-    sns.kdeplot(y=metric_s, ax=dax, legend=False, shade=True, lw=1.5)
-    dax.set_ylabel(None)
+    if plot_density:
+        sns.kdeplot(y=metric_s, ax=dax, legend=False, shade=True, lw=1.5)
+        dax.set_ylabel(None)
+        qtl.plot.format_plot(dax, fontsize=fontsize, hide=['top', 'right', 'bottom'])
+        plt.setp(dax.get_yticklabels(), visible=False)
+        dax.set_xticks([])
+        dax.set_xlabel('Freq.', ha='left', x=0, fontsize=fontsize, labelpad=7)
 
     qtl.plot.format_plot(ax, fontsize=fontsize)
-    qtl.plot.format_plot(dax, fontsize=fontsize, hide=['top', 'right', 'bottom'])
     ax.spines['left'].set_position(('outward', 8))
-    plt.setp(dax.get_yticklabels(), visible=False)
 
     ax.set_xlim([1, ns])
     if ylim is None:
@@ -179,20 +186,22 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
 
     ax.set_ylabel(ylabel, fontsize=fontsize+2)
     ax.set_xlabel(xlabel, fontsize=fontsize+2)
-    dax.set_xticks([])
-    dax.set_xlabel('Freq.', ha='left', x=0, fontsize=fontsize, labelpad=7)
 
     if show_legend:
         ax.legend(fontsize=9, handlelength=1, labelspacing=0.5, title=cohort_s.name)
 
-    return ax, dax
+    if plot_density:
+        return ax, dax
+    else:
+        return ax
 
 
-def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped'):
+def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped',
+                   ah=2, aw=2, ct=0):
     """Plot genes detected vs a bias metric (e.g., Median Exon CV)"""
 
-    ax, cax = qtl.plot.setup_figure(2, 2, xspace=[0.75, 0.75],
-                                    colorbar=True, ds=0.05, cw=0.1)
+    ax, cax = qtl.plot.setup_figure(ah, aw, xspace=[0.75, 0.75],
+                                    colorbar=True, ds=0.05, cw=0.1, ct=ct)
 
     ix = metrics_df[c].sort_values().index
     h = ax.scatter(metrics_df.loc[ix, 'Genes Detected'], metrics_df.loc[ix, bias_metric],
@@ -203,6 +212,7 @@ def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate o
     ax.set_xlabel('Genes detected', fontsize=12)
     ax.set_ylabel(bias_metric, fontsize=12)
     qtl.plot.format_plot(ax, fontsize=10)
+    ax.autoscale(True)
     ax.spines['left'].set_position(('outward', 6))
     ax.spines['bottom'].set_position(('outward', 6))
     hc = plt.colorbar(h, cax=cax)
@@ -345,7 +355,8 @@ def _plot_cohort_labels(ax, cohort_s, cohort_colors=None, lax=None, legend=True,
         lax.legend(loc='upper left', borderaxespad=None, bbox_to_anchor=(1,1), handlelength=1, title='Cohort')
 
 
-def insert_sizes(insertsize_df, cohort_s=None, cohort_colors=None, sort_order='mean', max_size=1000,
+def insert_sizes(insertsize_df, cohort_s=None, cohort_colors=None,
+                 cohort_order=None, sort_order='mean', max_size=1000,
                  legend=False, dl=0.75, aw=3, dr=0.5, db=0.5, ah=2, dt=0.25):
     """Plot heat map of insert size distributions"""
 
@@ -358,10 +369,11 @@ def insert_sizes(insertsize_df, cohort_s=None, cohort_colors=None, sort_order='m
     si = n[n<100000].index.tolist() + mu.loc[n[n>=100000].index].sort_values().index.tolist()
 
     if cohort_s is not None and sort_order == 'cohort':  # sort within each cohort
-        size_s = cohort_s.value_counts()
+        if cohort_order is None:
+            cohort_order = cohort_s.value_counts().index
         sort_s = pd.Series(cohort_s[si], index=si)
         si = []
-        for c in size_s.index:
+        for c in cohort_order:
             si.extend(sort_s[sort_s==c].index)
 
     # set up figure
@@ -393,6 +405,59 @@ def insert_sizes(insertsize_df, cohort_s=None, cohort_colors=None, sort_order='m
     ax.imshow(df.loc[si], interpolation='none', aspect='auto', norm=LogNorm())
     ax.set_xlabel('Insert size (bp)', fontsize=12)
     ax.set_xlim([1, max_size])
+    return ax
+
+
+def gc_content(gc_content_df, cohort_s=None, cohort_colors=None,
+               cohort_order=None, sort_order='mean', legend=False,
+               dl=0.75, aw=3, dr=0.5, db=0.5, ah=2, dt=0.25):
+    """Plot heat map of GC content distributions"""
+
+    # sort by mean
+    x = gc_content_df.index.values
+    mu = (gc_content_df * x.reshape(-1,1)).sum()
+    si = mu.sort_values().index
+
+    if cohort_s is not None and sort_order == 'cohort':  # sort within each cohort
+        if cohort_order is None:
+            cohort_order = cohort_s.value_counts().index
+        sort_s = pd.Series(cohort_s[si], index=si)
+        si = []
+        for c in cohort_order:
+            si.extend(sort_s[sort_s==c].index)
+
+    # set up figure
+    if cohort_s is not None:
+        ch = 0.1
+        ds = 0.05
+    else:
+        ch = 0
+        ds = 0
+    fw = dl + aw + dr
+    fh = db + ah + ch + ds + dt
+    fig = plt.figure(facecolor=(1,1,1), figsize=(fw,fh))
+    ax = fig.add_axes([dl/fw, db/fh, aw/fw, ah/fh])
+
+    # add cohort information and legend
+    if cohort_s is not None:
+        # set up axes
+        cax = fig.add_axes([dl/fw, (db+ah+ds)/fh, aw/fw, ch/fh], sharex=ax)
+        plt.setp(cax.get_xticklabels(), visible=False);
+        for line in cax.xaxis.get_ticklines():
+            line.set_markersize(0)
+            line.set_markeredgewidth(0)
+        cax.set_yticks([])
+
+        # plot labels
+        _plot_cohort_labels(cax, cohort_s[si], orientation='horizontal',
+                            cohort_colors=cohort_colors, lax=ax, legend=legend)
+
+    ax.imshow(gc_content_df[si], origin='lower', interpolation='none', aspect='auto', norm=LogNorm())
+    ax.set_xlabel('Samples', fontsize=12)
+    ax.set_ylabel('Fragment GC Content', fontsize=12)
+    y = np.arange(0, 120, 20)
+    ax.set_yticks(y)
+    ax.set_yticklabels(y/100)
     return ax
 
 
