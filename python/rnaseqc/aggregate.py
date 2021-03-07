@@ -30,7 +30,7 @@ def combine_gcts(path_dict, verbose=True):
 
     for k,sample_id in enumerate(sample_ids[1:], 2):
         if verbose:
-            print('\r  * loading GCT {}/{}'.format(k, len(path_dict)), end='', flush=True)
+            print(f'\r  * loading GCT {k}/{len(path_dict)}', end='', flush=True)
         df = pd.read_csv(path_dict[sample_id], sep='\t', skiprows=3, header=None,
                          usecols=[0,2],  index_col=0, names=['Name', sample_id],
                          dtype={'Name':str, sample_id:dtype})
@@ -52,7 +52,7 @@ def write_gct(df, gct_file, float_format='%.6g', compresslevel=6):
         opener = open(gct_file, 'w')
 
     with opener as gct:
-        gct.write('#1.2\n{0:d}\t{1:d}\n'.format(df.shape[0], df.shape[1]-1))
+        gct.write(f'#1.2\n{df.shape[0]:d}\t{df.shape[1]-1:d}\n')
         df.to_csv(gct, sep='\t', float_format=float_format)
 
 
@@ -66,14 +66,13 @@ def combine_metrics(path_dict):
     return metrics_df
 
 
-def combine_insert_sizes(path_dict):
+def combine_distributions(path_dict):
     """Aggregate single-sample insert sizes distributions."""
-    insertsize_df = []
+    distr_df = []
     for k,sample_id in enumerate(sorted(path_dict), 1):
-        insertsize_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0, squeeze=True).rename(sample_id))
-    insertsize_df = pd.concat(insertsize_df, axis=1).fillna(0).astype(np.int32)
-    return insertsize_df
-
+        distr_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0, squeeze=True).rename(sample_id))
+    distr_df = pd.concat(distr_df, axis=1).fillna(0).astype(np.int32)
+    return distr_df
 
 
 if __name__ == '__main__':
@@ -94,47 +93,53 @@ if __name__ == '__main__':
     exon_reads_gcts =  {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*exon_reads.gct*'), recursive=True)}
     metrics_files =    {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*metrics.tsv*'), recursive=True)}
     insertsize_files = {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*fragmentSizes.txt*'), recursive=True)}
+    gc_content_files = {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results_dir, '**/*gc_content.tsv*'), recursive=True)}
     # coverage files don't get aggregated
     # coverage_files =   {os.path.basename(i).split('.')[0]:i for i in glob.glob(os.path.join(args.results, '*coverage.tsv*'))}
 
     if len(metrics_files) > 0:
         print('Aggregating metrics')
         metrics_df = combine_metrics(metrics_files)
-        metrics_df.to_csv(os.path.join(args.output_dir, '{}.metrics.txt.gz'.format(args.prefix)), sep='\t', float_format='%.6g')
+        metrics_df.to_csv(os.path.join(args.output_dir, f'{args.prefix}.metrics.txt.gz'), sep='\t', float_format='%.6g')
 
     if len(insertsize_files) > 0:
         print('Aggregating insert size distributions')
-        insertsize_df = combine_insert_sizes(insertsize_files)
-        insertsize_df.to_csv(os.path.join(args.output_dir, '{}.insert_size_hists.txt.gz'.format(args.prefix)), sep='\t')
+        insertsize_df = combine_distributions(insertsize_files)
+        insertsize_df.to_csv(os.path.join(args.output_dir, f'{args.prefix}.insert_size_hists.txt.gz'), sep='\t')
+
+    if len(gc_content_files) > 0:
+        print('Aggregating GC content distributions')
+        gc_df = combine_distributions(gc_content_files)
+        gc_df.to_csv(os.path.join(args.output_dir, f'{args.prefix}.gc_content_hists.txt.gz'), sep='\t')
 
     if len(gene_reads_gcts) > 0:
         print('Aggregating read count GCTs')
         gct_df = combine_gcts(gene_reads_gcts)
         if args.parquet:
-            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_reads.parquet'.format(args.prefix)))
+            gct_df.to_parquet(os.path.join(args.output_dir, f'{args.prefix}.gene_reads.parquet'))
         else:
-            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_reads.gct.gz'.format(args.prefix)))
+            write_gct(gct_df, os.path.join(args.output_dir, f'{args.prefix}.gene_reads.gct.gz'))
 
     if len(gene_fragm_gcts) > 0:
         print('Aggregating fragment count GCTs')
         gct_df = combine_gcts(gene_fragm_gcts)
         if args.parquet:
-            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_fragments.parquet'.format(args.prefix)))
+            gct_df.to_parquet(os.path.join(args.output_dir, f'{args.prefix}.gene_fragments.parquet'))
         else:
-            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_fragments.gct.gz'.format(args.prefix)))
+            write_gct(gct_df, os.path.join(args.output_dir, f'{args.prefix}.gene_fragments.gct.gz'))
 
     if len(gene_tpm_gcts) > 0:
         print('Aggregating TPM GCTs')
         gct_df = combine_gcts(gene_tpm_gcts)
         if args.parquet:
-            gct_df.to_parquet(os.path.join(args.output_dir, '{}.gene_tpm.parquet'.format(args.prefix)))
+            gct_df.to_parquet(os.path.join(args.output_dir, f'{args.prefix}.gene_tpm.parquet'))
         else:
-            write_gct(gct_df, os.path.join(args.output_dir, '{}.gene_tpm.gct.gz'.format(args.prefix)))
+            write_gct(gct_df, os.path.join(args.output_dir, f'{args.prefix}.gene_tpm.gct.gz'))
 
     if len(exon_reads_gcts) > 0:
         print('Aggregating exon read count GCTs')
         gct_df = combine_gcts(exon_reads_gcts)
         if args.parquet:
-            gct_df.to_parquet(os.path.join(args.output_dir, '{}.exon_reads.parquet'.format(args.prefix)))
+            gct_df.to_parquet(os.path.join(args.output_dir, f'{args.prefix}.exon_reads.parquet'))
         else:
-            write_gct(gct_df, os.path.join(args.output_dir, '{}.exon_reads.gct.gz'.format(args.prefix)))
+            write_gct(gct_df, os.path.join(args.output_dir, f'{args.prefix}.exon_reads.gct.gz'))
