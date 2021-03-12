@@ -380,16 +380,16 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
         "Unpaired Reads"
     };
     stream << "Alternative Alignments\t" << counter.get("Alternative Alignments") << std::endl;
-    stream << "Chimeric Reads\t";
-    if (counter.get("Chimeric Reads_tag"))
+    stream << "Chimeric Fragments\t";
+    if (counter.get("Chimeric Fragments_tag"))
     {
-        stream << counter.get("Chimeric Reads_tag") << std::endl;
-        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Reads_tag", "Mapped Reads") << std::endl;
+        stream << counter.get("Chimeric Fragments_tag") << std::endl;
+        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Fragments_tag", "Total Mapped Pairs") << std::endl;
     }
     else
     {
-        stream << counter.get("Chimeric Reads_contig") << std::endl;
-        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Reads_contig", "Mapped Reads") << std::endl;
+        stream << counter.get("Chimeric Fragments_auto") << std::endl;
+        stream << "Chimeric Alignment Rate\t" << counter.frac("Chimeric Fragments_auto", "Total Mapped Pairs") << std::endl;
 
     }
     for (int i = 0; i < keys.size(); ++i)
