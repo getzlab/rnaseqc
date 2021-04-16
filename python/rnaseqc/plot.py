@@ -197,7 +197,7 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
 
 
 def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped',
-                   ah=2, aw=2, ct=0):
+                   ah=2, aw=2, ct=0, rasterized=False):
     """Plot genes detected vs a bias metric (e.g., Median Exon CV)"""
 
     ax, cax = qtl.plot.setup_figure(ah, aw, xspace=[0.75, 0.75],
@@ -207,7 +207,7 @@ def detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate o
     h = ax.scatter(metrics_df.loc[ix, 'Genes Detected'], metrics_df.loc[ix, bias_metric],
                    c=metrics_df.loc[ix, c], cmap=plt.cm.GnBu,
                    clip_on=False, s=36, edgecolor='k',lw=0.5,
-                   vmin=0, vmax=1)
+                   vmin=0, vmax=1, rasterized=rasterized)
 
     ax.set_xlabel('Genes detected', fontsize=12)
     ax.set_ylabel(bias_metric, fontsize=12)
