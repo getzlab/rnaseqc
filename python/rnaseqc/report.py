@@ -41,7 +41,9 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
         'show_xticklabels': show_xticklabels,
         'ms': ms,
         'alpha': alpha,
-        'highlight_ids': highlight_ids
+        'highlight_ids': highlight_ids,
+        'aw': 6,
+        'ah': 2,
     }
 
     metrics_list = [
@@ -101,11 +103,14 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
     if lims is not None:
         ylim_dict.update(lims)
 
+    if cohort_order is None:
+        cohort_order = cohorts
+
     # plot cohort legend
     if show_legend:
         ax = qtl.plot.setup_figure(lw, lh, xspace=[0,0], yspace=[0,0])
-        for c in cohorts:
-            ax.scatter([], [], s=48, marker='s', c=cohort_colors[c].reshape(1,-1), label=c)
+        for c in cohort_order:
+            ax.scatter([], [], s=48, marker='s', c=cohort_colors[c], label=c)
         ax.legend(loc='center left', handlelength=1, ncol=legend_cols)
         plt.axis('off')
         if output_dir is not None:
@@ -113,7 +118,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
 
     # distributions for selected/key metrics
     for k,metric in enumerate(metrics_list, 1):
-        if metric in metrics_df:
+        if metric in metrics_df and not (metrics_df[metric] == 0).all():
             ylim = [0,1]
             metrics(metrics_df[metric], ylim=ylim_dict[metric],
                          threshold=threshold_dict.get(metric, None),
@@ -129,11 +134,12 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
             plt.savefig(os.path.join(output_dir, f'{prefix}.genes_detected_vs_median_3prime_bias.pdf'), dpi=dpi)
 
     # mismatch rates
-    mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order, cohort_colors=cohort_colors,
-                   end1_threshold=threshold_dict.get('End 1 mismatch rate', None),
-                   end2_threshold=threshold_dict.get('End 2 mismatch rate', None))
-    if output_dir is not None:
-        plt.savefig(os.path.join(output_dir, f'{prefix}.end_mismatch_rates.pdf'), dpi=dpi)
+    if not metrics_df['End 1 Mismatch Rate'].isnull().all():
+        mismatch_rates(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order, cohort_colors=cohort_colors,
+                       end1_threshold=threshold_dict.get('End 1 mismatch rate', None),
+                       end2_threshold=threshold_dict.get('End 2 mismatch rate', None))
+        if output_dir is not None:
+            plt.savefig(os.path.join(output_dir, f'{prefix}.end_mismatch_rates.pdf'), dpi=dpi)
 
     mapping_sense(metrics_df, cohort_s=cohort_s, cohort_order=cohort_order,
                   cohort_colors=cohort_colors, date_s=date_s, width=1)

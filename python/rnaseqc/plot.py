@@ -158,7 +158,8 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
             ix = metric_s[metric_s > threshold].index
         elif threshold_dir=='lt':
             ix = metric_s[metric_s < threshold].index
-        ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=rasterized)
+        if any(ix):
+            ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=rasterized)
 
     # plot density
     if plot_density:
@@ -301,8 +302,8 @@ def cumulative_expression(cdf_df, cohort_s=None, cohort_colors=None, ax=None, cm
             ax.fill_between(np.arange(reference_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor='k', edgecolor='k', alpha=0.2, label=None, zorder=20)
             ax.plot(mu, 'k', lw=2, alpha=0.8, rasterized=False, label=reference_name, zorder=30)
         else:
-            ax.fill_between(np.arange(reference_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor='k', edgecolor='none', alpha=0.2, label='{} 95% CI'.format(reference_name), zorder=20)
-            ax.plot(mu, 'k', lw=1.5, alpha=0.8, rasterized=False, label='{} mean'.format(reference_name), zorder=30)
+            ax.fill_between(np.arange(reference_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor='k', edgecolor='none', alpha=0.2, label=f'{reference_name} 95% CI', zorder=20)
+            ax.plot(mu, 'k', lw=1.5, alpha=0.8, rasterized=False, label=f'{reference_name} mean', zorder=30)
 
     for c in cohort_s.unique():
         ix = cohort_s[cohort_s==c].index
@@ -350,7 +351,7 @@ def _plot_cohort_labels(ax, cohort_s, cohort_colors=None, lax=None, legend=True,
     if lax is None:
         lax = ax
     for k,i in cohort_index_dict.items():
-        lax.scatter([], [], marker='s', c=[cmap(i)], label='{}'.format(k))
+        lax.scatter([], [], marker='s', c=[cmap(i)], label=f'{k}')
     if legend:
         lax.legend(loc='upper left', borderaxespad=None, bbox_to_anchor=(1,1), handlelength=1, title='Cohort')
 
@@ -462,7 +463,7 @@ def gc_content(gc_content_df, cohort_s=None, cohort_colors=None,
 
 
 def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
-                  x_threshold=5, y_threshold=30, s=24, verbose=True):
+                  x_threshold=5, y_threshold=30, s=24, verbose=True, rasterized=False, **kwargs):
     """Expression of sex-specific genes (XIST and RPS4Y1) to identify sample swaps.
 
     sex_s: pd.Series annotating the sex of each sample, as Male/Female.
@@ -481,70 +482,79 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         assert tpm_df.columns.isin(sex_s.index).all()
         res_s = pd.Series('NA', index=sex_s.index[sex_s.index.isin(tpm_df.columns)], name='inferred_sex')
 
-        args = {'edgecolors':'none', 'lw':0, 'rasterized':False, 'clip_on':False, 's':s, 'alpha':0.2}
-        args2 = {'edgecolors':'k', 'lw':1, 'rasterized':False, 'clip_on':False, 's':s+6, 'alpha':1}
+        args =  {'ec':'none', 'lw':0, 'rasterized':rasterized, 'clip_on':False, 's':s, 'alpha':0.33}
+        args.update(kwargs)
+        args2 = {**args, 'ec':'k', 'lw':1, 's':s+6, 'alpha':1}
 
-        # unassigned samples
-        ix = sex_s[sex_s.isnull() & (x_s <= x_threshold)].index
+        # infer missing labels based on thresholds
+        ix = sex_s[sex_s.isnull() & (x_s <= x_threshold) & (y_s > y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), **args, label='Male*')
             res_s[ix] = 'Male'
-        ix = sex_s[sex_s.isnull() & (y_s <= y_threshold)].index
+        ix = sex_s[sex_s.isnull() & (x_s > x_threshold) & (y_s <= y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), **args, label='Female*')
             res_s[ix] = 'Female'
+        ix = sex_s[sex_s.isnull() & (x_s > x_threshold) & (y_s > y_threshold)].index
+        if len(ix) > 0:
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.75,0.8,0.7]).reshape(1,-1), **args, label='XXY*')
+            res_s[ix] = 'Klinefelter (XXY)'
+        ix = sex_s[sex_s.isnull() & (x_s <= x_threshold) & (y_s <= y_threshold)].index
+        if len(ix) > 0:
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.0,0,0.7]).reshape(1,-1), **args, label='?')
+            res_s[ix] = np.NaN
 
         # matching samples
         ix = sex_s[(sex_s == 'Male') & (x_s <= x_threshold)].index
         if len(ix) > 0:
             res_s[ix] = 'Male'
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label='Male ({})'.format((res_s=='Male').sum()), **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label=f"Male ({(res_s=='Male').sum()})", **args)
         ix = sex_s[(sex_s == 'Female') & (y_s <= y_threshold)].index
         if len(ix) > 0:
             res_s[ix] = 'Female'
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label='Female ({})'.format((res_s=='Female').sum()), **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label=f"Female ({(res_s=='Female').sum()})", **args)
 
         # mismatches
         if flag_klinefelter:
             ix = sex_s[(sex_s == 'Male') & (x_s > x_threshold) & (y_s <= y_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,1,0.9]).reshape(1,-1), label='M > F swap ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,1,0.9]).reshape(1,-1), label=f'M > F swap ({len(ix)})', **args2)
                 if verbose:
-                    print('F mislabeled as M:\n{}'.format(ix.tolist()))
+                    print(f'F mislabeled as M:\n{ix.tolist()}')
                 res_s[ix] = 'Female'
             ix = sex_s[(sex_s == 'Female') & (y_s > y_threshold) & (x_s <= x_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=[[0.9, 0, 0, 1]], label='F > M swap ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=[[0.9, 0, 0, 1]], label=f'F > M swap ({len(ix)})', **args2)
                 if verbose:
-                    print('M mislabeled as F:\n{}'.format(ix.tolist()))
+                    print(f'M mislabeled as F:\n{ix.tolist()}')
                 res_s[ix] = 'Male'
 
             # Klinefelter
             ix = sex_s[(sex_s == 'Male') & (x_s > x_threshold) & (y_s > y_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,1,0.9]).reshape(1,-1), label='XXY? ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.75,1,0.9]).reshape(1,-1), label=f'XXY? ({len(ix)})', **args2)
                 if verbose:
-                    print('Possible Klinefelter (XXY): {}'.format(ix.tolist()))
+                    print(f'Possible Klinefelter (XXY): {ix.tolist()}')
                 res_s[ix] = 'Possible Klinefelter (XXY)'
             ix = sex_s[(sex_s == 'Female') & (y_s > y_threshold) & (x_s > x_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,1,0.9]).reshape(1,-1), label='XXY? ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,1,0.9]).reshape(1,-1), label=f'XXY? ({len(ix)})', **args2)
                 if verbose:
-                    print('Possible Klinefelter (XXY): {}'.format(ix.tolist()))
+                    print(f'Possible Klinefelter (XXY): {ix.tolist()}')
                 res_s[ix] = 'Possible Klinefelter (XXY)'
 
         else:
             ix = sex_s[(sex_s == 'Male') & (x_s > x_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,1,0.9]).reshape(1,-1), label='M > F swap ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,1,0.9]).reshape(1,-1), label=f'M > F swap ({len(ix)})', **args2)
                 if verbose:
-                    print('F mislabeled as M:\n{}'.format(ix.tolist()))
+                    print(f'F mislabeled as M:\n{ix.tolist()}')
                 res_s[ix] = 'Female'
             ix = sex_s[(sex_s == 'Female') & (y_s > y_threshold)].index
             if len(ix) > 0:
-                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,1,0.9]).reshape(1,-1), label='F > M swap ({})'.format(len(ix)), **args2)
+                ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,1,0.9]).reshape(1,-1), label=f'F > M swap ({len(ix)})', **args2)
                 if verbose:
-                    print('M mislabeled as F:\n{}'.format(ix.tolist()))
+                    print(f'M mislabeled as F:\n{ix.tolist()}')
                 res_s[ix] = 'Male'
     else:
         ax.scatter(x_s, y_s, s=s, alpha=0.5, edgecolors='none', lw=0.5, rasterized=True, clip_on=False)
