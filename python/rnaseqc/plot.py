@@ -94,7 +94,7 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=N
 
 
 def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
-            threshold=None, threshold_dir=None, plot_density=True, show_legend=False,
+            threshold=None, threshold_dir=None, outlier_method='threshold', plot_density=True, show_legend=False,
             ms=12, alpha=1, ylim=None, ylabel=None,
             show_xticklabels=False, highlight_ids=None,
             dl=0.85, aw=6, ds=0.2, daw=0.5, dr=0.25,
@@ -152,11 +152,21 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
         ax.scatter(xpos[highlight_ids], metric_s[highlight_ids], marker='s',
                    edgecolor='k', facecolor='none', clip_on=False, rasterized=rasterized)
 
-    if threshold is not None:  # highlight samples
+    if threshold is not None:
         ax.plot([-0.02*ns, 1.02*ns], 2*[threshold], '--', color=[0.6,0.6,0.6], lw=1, alpha=0.8)
-        if threshold_dir=='gt':
+
+    if outlier_method.lower() == 'iqr':
+        p = np.percentile(metric_s, [25, 75])
+        if threshold_dir == 'gt':
+            ix = metric_s[metric_s > p[1] + 1.5*(p[1]-p[0])].index
+        elif threshold_dir == 'lt':
+            ix = metric_s[metric_s < p[0] - 1.5*(p[1]-p[0])].index
+        if any(ix):
+            ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=rasterized)
+    elif outlier_method.lower() == 'threshold' and threshold is not None:
+        if threshold_dir == 'gt':
             ix = metric_s[metric_s > threshold].index
-        elif threshold_dir=='lt':
+        elif threshold_dir == 'lt':
             ix = metric_s[metric_s < threshold].index
         if any(ix):
             ax.scatter(xpos[ix], metric_s[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=rasterized)

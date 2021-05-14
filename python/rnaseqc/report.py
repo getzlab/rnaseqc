@@ -11,7 +11,8 @@ from .plot import *
 
 
 def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=None, date_s=None,
-                    insertsize_df=None, gc_content_df=None, tpm_df=None, thresholds=None, lims=None,
+                    insertsize_df=None, gc_content_df=None, tpm_df=None,
+                    thresholds=None, lims=None, outlier_method='threshold',
                     show_legend=True, legend_cols=5, lw=4, lh=1, ms=12, alpha=1, show_xticklabels=False,
                     highlight_ids=None, prefix=None, output_dir=None, dpi=300):
     """
@@ -71,6 +72,9 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
         'Intergenic Rate': 'gt',
         'Chimeric Alignment Rate': 'gt',
         'rRNA Rate': 'gt',
+        "Median 3' bias": 'gt',
+        'Median Exon CV': 'gt',
+        'Average Fragment Length': 'lt',
     }
 
     threshold_dict = {
@@ -110,7 +114,8 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
     if show_legend:
         ax = qtl.plot.setup_figure(lw, lh, xspace=[0,0], yspace=[0,0])
         for c in cohort_order:
-            ax.scatter([], [], s=48, marker='s', c=cohort_colors[c], label=c)
+            ax.scatter([], [], s=48, marker='s', color=cohort_colors[c], label=c)
+        ax.scatter([], [], fc='w', ec='k', lw=1, s=30, label='Outliers')
         ax.legend(loc='center left', handlelength=1, ncol=legend_cols)
         plt.axis('off')
         if output_dir is not None:
@@ -123,6 +128,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
             metrics(metrics_df[metric], ylim=ylim_dict[metric],
                          threshold=threshold_dict.get(metric, None),
                          threshold_dir=threshold_dir_dict.get(metric, None),
+                         outlier_method=outlier_method,
                          **metrics_args)
             if output_dir is not None:
                 plt.savefig(os.path.join(output_dir, '{}.{}.pdf'.format(prefix, metric.lower().replace("3'",'3prime').replace(' ','_'))), dpi=dpi)
