@@ -518,11 +518,11 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         ix = sex_s[(sex_s == 'Male') & (x_s <= x_threshold)].index
         if len(ix) > 0:
             res_s[ix] = 'Male'
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label=f"Male ({(res_s=='Male').sum()})", **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), label=f"Male ({len(ix)})", **args)
         ix = sex_s[(sex_s == 'Female') & (y_s <= y_threshold)].index
         if len(ix) > 0:
             res_s[ix] = 'Female'
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label=f"Female ({(res_s=='Female').sum()})", **args)
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), label=f"Female ({len(ix)})", **args)
 
         # mismatches
         if flag_klinefelter:
