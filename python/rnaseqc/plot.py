@@ -499,19 +499,19 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         # infer missing labels based on thresholds
         ix = sex_s[sex_s.isnull() & (x_s <= x_threshold) & (y_s > y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), **args, label='Male*')
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.6,0.8,0.7]).reshape(1,-1), **args, label=f"Male* ({len(ix)})")
             res_s[ix] = 'Male'
         ix = sex_s[sex_s.isnull() & (x_s > x_threshold) & (y_s <= y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), **args, label='Female*')
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0,0.8,0.7]).reshape(1,-1), **args, label=f"Female* ({len(ix)})")
             res_s[ix] = 'Female'
         ix = sex_s[sex_s.isnull() & (x_s > x_threshold) & (y_s > y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.75,0.8,0.7]).reshape(1,-1), **args, label='XXY*')
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.75,0.8,0.7]).reshape(1,-1), **args, label=f"XXY* ({len(ix)})")
             res_s[ix] = 'Klinefelter (XXY)'
         ix = sex_s[sex_s.isnull() & (x_s <= x_threshold) & (y_s <= y_threshold)].index
         if len(ix) > 0:
-            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.0,0,0.7]).reshape(1,-1), **args, label='?')
+            ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.0,0,0.7]).reshape(1,-1), **args, label=f"? ({len(ix)})")
             res_s[ix] = np.NaN
 
         # matching samples
