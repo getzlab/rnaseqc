@@ -3,6 +3,8 @@
 [![Version](https://img.shields.io/github/release/getzlab/rnaseqc.svg?label=Version)](https://github.com/getzlab/rnaseqc/releases)
 [![CI](https://github.com/getzlab/rnaseqc/workflows/CI/badge.svg)](https://github.com/getzlab/rnaseqc/actions)
 
+RNA-SeQC 2 is described in [A. Graubert*, F. Aguet*, A. Ravi, K.G. Ardlie, Gad Getz, "RNA-SeQC 2: efficient RNA-seq quality control and quantification for large cohorts," *Bioinformatics*, 2021](https://doi.org/10.1093/bioinformatics/btab135).
+
 ## Installing
 
 The latest stable build of RNA-SeQC is available on the [GitHub Releases](https://github.com/getzlab/rnaseqc/releases) page, and contains static binaries for Linux and OSX.
