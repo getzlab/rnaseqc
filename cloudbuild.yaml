@@ -23,12 +23,12 @@ steps:
       - >
           apt-get update &&
           apt-get install git wget -y &&
-          wget https://github.com/git-lfs/git-lfs/releases/download/v2.5.2/git-lfs-linux-amd64-v2.5.2.tar.gz &&
-          tar xzf git-lfs-linux-amd64-v2.5.2.tar.gz &&
-          ./install.sh &&
           git clone https://github.com/getzlab/rnaseqc.git &&
           mv rnaseqc/test_data /opt/rnaseqc &&
-          cd /opt/rnaseqc &&
+          cd /opt/rnaseqc/test_data &&
+          wget https://storage.googleapis.com/agraubert/broadinstitute/rnaseqc/test_inputs.tar.gz &&
+          tar xzf test_inputs.tar.gz &&
+          cd .. &&
           make test
     timeout: 900s
   - name: gcr.io/cloud-builders/docker

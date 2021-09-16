@@ -32,6 +32,12 @@ jobs:
         export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
         LZMA_PATH=$(ls /usr/local/Cellar/xz/*/lib/liblzma.a) &&
         make -f test_data/Makefile.osx
+    - name: Download Tests
+      run: >
+        cd test_data &&
+        wget https://storage.googleapis.com/agraubert/broadinstitute/rnaseqc/test_inputs.tar.gz &&
+        tar xzf test_inputs.tar.gz &&
+        cd ..
     - name: Run Tests
       run: sudo bash -c "PYTHONPATH=$(pwd) make -f test_data/Makefile.osx test"
 
@@ -56,5 +62,11 @@ jobs:
         python3 -m pip install --force-reinstall matplotlib
     - name: make
       run: make -f test_data/Makefile.linux
+    - name: Download Tests
+      run: >
+        cd test_data &&
+        wget https://storage.googleapis.com/agraubert/broadinstitute/rnaseqc/test_inputs.tar.gz &&
+        tar xzf test_inputs.tar.gz &&
+        cd ..
     - name: Run Tests
       run: make -f test_data/Makefile.linux test
