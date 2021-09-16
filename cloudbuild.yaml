@@ -29,7 +29,7 @@ steps:
           wget https://storage.googleapis.com/agraubert/broadinstitute/rnaseqc/test_inputs.tar.gz &&
           tar xzf test_inputs.tar.gz &&
           cd .. &&
-          make test
+          make && make -f test_data/Makefile.linux test
     timeout: 900s
   - name: gcr.io/cloud-builders/docker
     args:
