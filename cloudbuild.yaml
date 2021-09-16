@@ -11,7 +11,7 @@ steps:
       - --cache-from
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
       - .
-    timeout: 600s
+    timeout: 900s
   - name: gcr.io/cloud-builders/docker
     args:
       - push
@@ -42,4 +42,4 @@ steps:
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
 images:
   - gcr.io/broad-cga-aarong-gtex/rnaseqc
-timeout: 1500s
+timeout: 1800s
