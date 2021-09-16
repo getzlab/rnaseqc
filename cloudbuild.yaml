@@ -11,9 +11,9 @@ steps:
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
       - --cache-from
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
-      - .
-      - f
+      - -f
       - test_data/Base-Dockerfile
+      - .
   - name: gcr.io/cloud-builders/docker
     args:
       - push
