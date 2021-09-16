@@ -2,20 +2,37 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - pull
-      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
+    timeout: 120s
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
+      - --cache-from
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
+      - .
+      - f
+      - test_data/Base-Dockerfile
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
+    timeout: 120s
   - name: gcr.io/cloud-builders/docker
     args:
       - build
       - -t
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
       - --cache-from
-      - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+      - gcr.io/broad-cga-aarong-gtex/rnaseqc:internal-base
       - .
-    timeout: 900s
+    timeout: 300s
   - name: gcr.io/cloud-builders/docker
     args:
       - push
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
+    timeout: 120s
   - name: gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
     args:
       - bash
@@ -30,16 +47,17 @@ steps:
           tar xzf test_inputs.tar.gz &&
           cd .. &&
           make && make -f test_data/Makefile.linux test
-    timeout: 900s
   - name: gcr.io/cloud-builders/docker
     args:
       - tag
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:$COMMIT_SHA
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+    timeout: 30s
   - name: gcr.io/cloud-builders/docker
     args:
       - push
       - gcr.io/broad-cga-aarong-gtex/rnaseqc:latest
+    timeout: 30s
 images:
   - gcr.io/broad-cga-aarong-gtex/rnaseqc
-timeout: 1800s
+timeout: 1500s

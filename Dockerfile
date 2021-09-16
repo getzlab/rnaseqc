@@ -2,8 +2,9 @@
 FROM ubuntu:20.04
 MAINTAINER Aaron Graubert
 
-RUN apt-get update && apt-get install -y software-properties-common && \
-    apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y software-properties-common
+
+RUN apt-get update && apt-get install -y \
         build-essential \
         cmake \
         git \
@@ -19,7 +20,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
         wget \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
-    
+
 # Python
 RUN python3 -m pip install --upgrade pip setuptools pyarrow jupyter
 
