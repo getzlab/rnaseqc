@@ -6,3 +6,10 @@ rnaseqc
 rnaseqc.a
 build/
 *.egg-info/
+*.bam
+*.cram
+*.gtf
+*.fasta
+*.fa
+*.fai
+test_data/test_inputs.tar.gz
