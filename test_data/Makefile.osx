@@ -57,7 +57,7 @@ test-single: rnaseqc
 
 .PHONY: test-chr1
 
-test-chr1: rnaseqcmake
+test-chr1: rnaseqc
 	./rnaseqc test_data/chr1.gtf test_data/chr1.bam .test_output --coverage
 	python3 test_data/approx_diff.py .test_output/chr1.bam.metrics.tsv test_data/chr1.output/chr1.bam.metrics.tsv -m metrics -c chr1.bam chr1.bam_ -t
 	python3 test_data/approx_diff.py .test_output/chr1.bam.gene_reads.gct <(gzcat test_data/chr1.output/chr1.bam.gene_reads.gct.gz) -m tables -c Counts Counts_ -t
