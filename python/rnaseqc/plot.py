@@ -280,8 +280,8 @@ def calculate_expression_cdfs(tpm_df):
     return cdf_df
 
 
-def cumulative_expression(cdf_df, cohort_s=None, cohort_colors=None, ax=None, cmap=plt.cm.Spectral_r,
-                          reference_df=None, reference_name=None, alpha=0.5, mode='lines', lw=1, legend=False):
+def cumulative_expression(cdf_df, cohort_s=None, cohort_colors=None, ax=None, cmap=plt.cm.Spectral_r, c=[0.6,0.6,0.6],
+                          reference_df=None, reference_name=None, alpha=0.5, mode='lines', lw=1, legend=False, rasterized=False):
     """
     Plot cumulative gene expression for each sample.
     This enables identification of samples with dominant expression of few genes.
@@ -295,7 +295,7 @@ def cumulative_expression(cdf_df, cohort_s=None, cohort_colors=None, ax=None, cm
         cohorts = cohort_s.unique()
         nc = len(cohorts)
         if nc==1:
-            cohort_colors = {cohorts[0]: [0.6,0.6,0.6]}
+            cohort_colors = {cohorts[0]: c}
         else:
             cohort_colors = {i:j for i,j in zip(cohorts, plt.cm.get_cmap(cmap.name, nc)(np.arange(nc)))}
 
@@ -310,23 +310,24 @@ def cumulative_expression(cdf_df, cohort_s=None, cohort_colors=None, ax=None, cm
         # s = np.median(np.abs(gtex_cdf-mu), axis=0) / 0.6745
         if mode=='ci':
             ax.fill_between(np.arange(reference_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor='k', edgecolor='k', alpha=0.2, label=None, zorder=20)
-            ax.plot(mu, 'k', lw=2, alpha=0.8, rasterized=False, label=reference_name, zorder=30)
+            ax.plot(mu, 'k', lw=2, alpha=0.8, rasterized=rasterized, label=reference_name, zorder=30)
         else:
             ax.fill_between(np.arange(reference_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor='k', edgecolor='none', alpha=0.2, label=f'{reference_name} 95% CI', zorder=20)
-            ax.plot(mu, 'k', lw=1.5, alpha=0.8, rasterized=False, label=f'{reference_name} mean', zorder=30)
+            ax.plot(mu, 'k', lw=1.5, alpha=0.8, rasterized=rasterized, label=f'{reference_name} mean', zorder=30)
 
     for c in cohort_s.unique():
+        x = np.arange(1, cdf_df.shape[0]+1)
         ix = cohort_s[cohort_s==c].index
         if mode == 'ci':  # plot confidence intervals
             mu = cdf_df[ix].median(axis=1)
             s = cdf_df[ix].std(axis=1)  # replace with MAD?
             fc = cohort_colors[c]
-            pc = ax.fill_between(np.arange(cdf_df.shape[0])+1, mu-1.96*s, mu+1.96*s, facecolor=fc, edgecolor=fc, alpha=0.2, label=None, zorder=20, lw=1)
-            ax.plot(mu, '-', color=cohort_colors[c], lw=2, alpha=0.8, rasterized=False, label=c, zorder=30)
+            pc = ax.fill_between(x, mu-1.96*s, mu+1.96*s, facecolor=fc, edgecolor=fc, alpha=0.2, label=None, zorder=20, lw=1)
+            ax.plot(mu, '-', color=cohort_colors[c], lw=2, alpha=0.8, rasterized=rasterized, label=c, zorder=30)
         else:
-            ax.plot(cdf_df[ix[0]], color=cohort_colors[c], alpha=alpha, lw=lw, rasterized=False, label=c)  # plot first one w/ label
+            ax.plot(x, cdf_df[ix[0]], color=cohort_colors[c], alpha=alpha, lw=lw, rasterized=rasterized, label=c)  # plot first one w/ label
             if len(ix)>1:
-                ax.plot(cdf_df[ix[1:]], color=cohort_colors[c], alpha=alpha, lw=lw, rasterized=False)
+                ax.plot(x, cdf_df[ix[1:]], color=cohort_colors[c], alpha=alpha, lw=lw, rasterized=rasterized)
 
     ax.set_ylim([0,1])
     ax.set_xlim([1,10000])
