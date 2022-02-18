@@ -152,8 +152,8 @@ Example: `./rnaseqc test_data/downsampled.gtf test_data/downsampled.bam --bed te
 The following output files are generated in the output directory you provide:
 * {sample}.metrics.tsv : A tab-delimited list of (Statistic, Value) pairs of all statistics and metrics recorded.
 * {sample}.exon_reads.gct : A tab-delimited GCT file with (Exon ID, Gene Name, coverage) tuples for all exons which had at least part of one read mapped.
-* {sample}.gene_reads.gct : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all genes which had at least one read map to at least one of its exons
-* {sample}.gene_tpm.gct : A tab-delimited GCT file with (Gene ID, Gene Name, TPM) tuples for all genes reported in the gene_reads.gct file. Note: this file is renamed to .gene_rpkm.gct if the **--rpkm** flag is present.
+* {sample}.gene_reads.gct : A tab-delimited GCT file with (Gene ID, Gene Name, coverage) tuples for all genes which had at least one read map to at least one of its exons. This file contains the gene-level read counts used, e.g., for differential expression analyses.
+* {sample}.gene_tpm.gct : A tab-delimited GCT file with (Gene ID, Gene Name, TPM) tuples for all genes reported in the gene_reads.gct file, with expression values in transcript per million (TPM) units. Note: this file is renamed to .gene_rpkm.gct if the **--rpkm** flag is present.
 * {sample}.fragmentSizes.txt : A list of fragment sizes recorded, if a BED file was provided
 * {sample}.coverage.tsv : A tab-delimited list of (Gene ID, Transcript ID, Mean Coverage, Coverage Std, Coverage CV) tuples for all transcripts encountered in the GTF.
 
