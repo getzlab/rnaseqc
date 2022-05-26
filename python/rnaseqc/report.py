@@ -189,13 +189,13 @@ def load_inputs(args):
         tpm_df = None
 
     if args.cohort is not None:
-        cohort_s = pd.read_csv(args.cohort, sep='\t', index_col=0, header=None, squeeze=True)
+        cohort_s = pd.read_csv(args.cohort, sep='\t', index_col=0, header=None).squeeze('columns')
         assert metrics_df.index.isin(cohort_s.index).all()
     else:
         cohort_s = None
 
     if args.date is not None:
-        date_s = pd.read_csv(args.date, sep='\t', index_col=0, header=None, squeeze=True)
+        date_s = pd.read_csv(args.date, sep='\t', index_col=0, header=None).squeeze('columns')
         assert metrics_df.index.isin(date_s.index).all()
     else:
         date_s = None

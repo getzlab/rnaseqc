@@ -24,9 +24,9 @@ def main(args):
     if args.tpm is not None:
         cell.append("tpm_df = qtl.io.read_gct('{}')".format(args.tpm))
     if args.cohort is not None:
-        cell.append("cohort_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None, squeeze=True)".format(args.cohort))
+        cell.append("cohort_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None).squeeze('columns')".format(args.cohort))
     if args.date is not None:
-        cell.append("date_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None, squeeze=True)".format(args.date))
+        cell.append("date_s = pd.read_csv('{}', sep='\\t', index_col=0, header=None).squeeze('columns')".format(args.date))
     if args.insert_size is not None:
         cell.append("insertsize_df = pd.read_csv('{}', sep='\\t', index_col=0)".format(args.insert_size))
     nb.add_code_cell(cell)

@@ -70,7 +70,7 @@ def combine_distributions(path_dict):
     """Aggregate single-sample insert sizes distributions."""
     distr_df = []
     for k,sample_id in enumerate(sorted(path_dict), 1):
-        distr_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0, squeeze=True).rename(sample_id))
+        distr_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0).squeeze('columns').rename(sample_id))
     distr_df = pd.concat(distr_df, axis=1).fillna(0).astype(np.int32)
     return distr_df
 
