@@ -148,6 +148,8 @@ namespace rnaseqc {
     {
         if (size <= 0) // Couldn't decide if it would make sense to just report a median of 0. This seemed safer
             throw std::range_error("Cannot compute median of an empty list");
+        else if (size == 1)
+            return *iterator;
         for (unsigned long midpoint = (size - 1) / 2; midpoint > 0; --midpoint) ++iterator;
         if (size % 2)
         {

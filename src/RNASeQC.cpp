@@ -475,23 +475,8 @@ int main(int argc, char* argv[])
 
         //3'/5' coverage ratio calculations
         double ratioAvg = 0.0, ratioMedDev = 0.0, ratioMedian = 0.0, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
-        if (ratios.size())
+        if (ratios.size() > 1)
         {
-//            vector<double> ratioDeviations;
-//            sortContainer(ratios);
-//            ratioMedian = computeMedian(ratios.size(), ratios.begin());
-//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-//            {
-//                ratioAvg += (*ratio)/static_cast<double>(ratios.size());
-//                ratioDeviations.push_back(fabs((*ratio) - ratioMedian));
-//            }
-//            sortContainer(ratioDeviations);
-//            ratioMedDev = computeMedian(ratioDeviations.size(), ratioDeviations.begin()) * MAD_FACTOR;
-//            for (auto ratio = ratios.begin(); ratio != ratios.end(); ++ratio)
-//            {
-//                ratioStd += pow((*ratio) - ratioAvg, 2.0) / static_cast<double>(ratios.size());
-//            }
-//            ratioStd = pow(ratioStd, 0.5); //compute the standard deviation
             statsTuple ratio_stats = getStatistics(ratios);
             ratioAvg = std::get<StatIdx::avg>(ratio_stats);
             ratioMedian = std::get<StatIdx::med>(ratio_stats);
@@ -506,7 +491,7 @@ int main(int argc, char* argv[])
             else
             {
                 index = ceil(index);
-                ratio25 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index)])/2.0;
+                ratio25 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index + 1)]) / 2.0;
             }
             index = .75 * ratios.size();
             if (index > floor(index))
@@ -517,7 +502,7 @@ int main(int argc, char* argv[])
             else
             {
                 index = ceil(index);
-                ratio75 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index)])/2.0;
+                ratio75 = (ratios[static_cast<int>(index)] + ratios[static_cast<int>(index + 1)]) / 2.0;
             }
         }
         //exon coverage report generation
