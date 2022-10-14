@@ -27,7 +27,7 @@ jobs:
     - name: Install Deps
       run: brew install boost zlib curl samtools bzip2 xz python@3.9
     - name: Pip install
-      run: sudo python3 -m pip install --user --upgrade pip setuptools && sudo python3 -m pip install --user numpy && sudo python3 -m pip install --user -e ./python
+      run: sudo python3.9 -m pip install --user --upgrade pip setuptools && sudo python3.9 -m pip install --user numpy && sudo python3.9 -m pip install --user -e ./python
     - name: make
       run: >
         export ZLIB_PATH=$(ls /usr/local/Cellar/zlib/*/lib/libz.a)
