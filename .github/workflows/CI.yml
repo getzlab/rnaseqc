@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - actions-fix
   pull_request:
     branches:
       - master
