@@ -173,7 +173,7 @@ def metrics(metric_s, cohort_s=None, cohort_order=None, cohort_colors=None, date
 
     # plot density
     if plot_density:
-        sns.kdeplot(y=metric_s, ax=dax, legend=False, shade=True, lw=1.5)
+        sns.kdeplot(y=metric_s, ax=dax, legend=False, fill=True, lw=1.5)
         dax.set_ylabel(None)
         qtl.plot.format_plot(dax, fontsize=fontsize, hide=['top', 'right', 'bottom'])
         plt.setp(dax.get_yticklabels(), visible=False)
