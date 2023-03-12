@@ -44,7 +44,7 @@ def combine_gcts(path_dict, verbose=True):
 def write_gct(df, gct_file, float_format='%.6g', compresslevel=6):
     """Write pd.DataFrame to GCT format"""
 
-    assert df.index.name=='Name' and df.columns[0]=='Description'
+    assert df.index.name == 'Name' and df.columns[0] == 'Description'
 
     if gct_file.endswith('.gct.gz'):
         opener = gzip.open(gct_file, 'wt', compresslevel=compresslevel)
@@ -60,7 +60,7 @@ def combine_metrics(path_dict):
     """Aggregate single-sample metrics files."""
     metrics_df = []
     for k,sample_id in enumerate(sorted(path_dict), 1):
-        metrics_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0).astype(np.float32))
+        metrics_df.append(pd.read_csv(path_dict[sample_id], sep='\t', index_col=0, dtype=str))
     metrics_df = pd.concat(metrics_df, axis=1).T
     metrics_df.index.name = 'sample_id'
     return metrics_df
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     if len(metrics_files) > 0:
         print('Aggregating metrics')
         metrics_df = combine_metrics(metrics_files)
-        metrics_df.to_csv(os.path.join(args.output_dir, f'{args.prefix}.metrics.txt.gz'), sep='\t', float_format='%.6g')
+        metrics_df.to_csv(os.path.join(args.output_dir, f'{args.prefix}.metrics.txt.gz'), sep='\t')
 
     if len(insertsize_files) > 0:
         print('Aggregating insert size distributions')
