@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
                         if (alignment.DuplicateFlag()) counter.increment("Mapped Duplicate Reads");
                         else counter.increment("Mapped Unique Reads");
                         //check length against max read length
-                        unsigned int alignmentSize = alignment.PositionEnd() - alignment.Position();
+                        unsigned int alignmentSize = alignment.Length();
                         if (LegacyMode.Get() && alignmentSize > LEGACY_MAX_READ_LENGTH) continue;
                         if (!readLength) current_chrom = chromosomeMap(sequences[alignment.ChrID()].Name);
                         if (alignmentSize > readLength) readLength = alignment.Length();
