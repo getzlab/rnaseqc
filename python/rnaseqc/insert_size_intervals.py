@@ -54,7 +54,7 @@ def parse_intervals(annot, mappability_bw, output_dir, prefix, min_length=1000, 
         exon_coords = []
         for g in annot.chr_genes[c]:
             for t in g.transcripts:
-                if (t.type!='retained_intron') and (('tags' not in t.attributes) or len(set(t.attributes['tags']).intersection(exclude))==0):
+                if (t.type not in exclude) and (('tags' not in t.attributes) or len(set(t.attributes['tags']).intersection(exclude)) == 0):
                     for e in t.exons:
                         exon_coords.append((e.start_pos, e.end_pos))
 
@@ -66,11 +66,11 @@ def parse_intervals(annot, mappability_bw, output_dir, prefix, min_length=1000, 
     bw.close()
 
     # all intervals
-    with open(os.path.join(output_dir, '{}_geq{}bp.bed'.format(prefix, min_length)), 'w') as f:
+    with open(os.path.join(output_dir, f'{prefix}_geq{min_length}bp.bed'), 'w') as f:
         f.write('#chr\tstart\tend\n')
         for c in annot.chr_list:
             for i in range(gintervals[c].shape[0]):
-                f.write('{0:s}\t{1:d}\t{2:d}\n'.format(c, gintervals[c][i][0]-1, gintervals[c][i][1]))  # BED is 0-indexed, [..)
+                f.write(f'{c}\t{gintervals[c][i][0]-1}\t{gintervals[c][i][1]}\n')  # BED is 0-indexed, [..)
 
     # single-isoform genes
     gintervals_1iso = {}
@@ -85,11 +85,11 @@ def parse_intervals(annot, mappability_bw, output_dir, prefix, min_length=1000, 
         ec.sort(key=lambda x: (x[0],x[1]))
         gintervals_1iso[c] = np.array(ec)
 
-    with open(os.path.join(output_dir, '{}_geq{}bp_1iso.bed'.format(prefix, min_length)), 'w') as f:
+    with open(os.path.join(output_dir, f'{prefix}_geq{min_length}bp_1iso.bed'), 'w') as f:
         f.write('#chr\tstart\tend\n')
         for c in annot.chr_list:
             for i in range(gintervals_1iso[c].shape[0]):
-                f.write('{0:s}\t{1:d}\t{2:d}\n'.format(c, gintervals_1iso[c][i][0]-1, gintervals_1iso[c][i][1]))
+                f.write(f'{c}\t{gintervals_1iso[c][i][0]-1}\t{gintervals_1iso[c][i][1]}\n')
 
 
 if __name__=='__main__':
