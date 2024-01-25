@@ -352,7 +352,7 @@ def _plot_cohort_labels(ax, cohort_s, cohort_colors=None, lax=None, legend=True,
         n = len(cohort_index_dict)
         cmap = ListedColormap(plt.cm.get_cmap('Spectral', n)(np.arange(n)), 'indexed')
     else:
-        cmap = ListedColormap(np.stack(pd.Series(cohort_index_dict).sort_values().index.map(cohort_colors)))
+        cmap = ListedColormap(pd.Series(cohort_index_dict).sort_values().index.map(cohort_colors))
 
     if orientation == 'vertical':
         ax.imshow(cohort_s.map(cohort_index_dict).values.reshape(-1,1), aspect='auto', cmap=cmap)

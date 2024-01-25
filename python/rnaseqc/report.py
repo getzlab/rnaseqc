@@ -104,6 +104,7 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
         'Fragment GC Content Mean': [0, 1],
         'Average Fragment Length': None,
     }
+
     if lims is not None:
         ylim_dict.update(lims)
 
@@ -124,8 +125,11 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
     # distributions for selected/key metrics
     for k,metric in enumerate(metrics_list, 1):
         if metric in metrics_df and not (metrics_df[metric] == 0).all():
-            ylim = [0,1]
-            metrics(metrics_df[metric], ylim=ylim_dict[metric],
+            if metric == 'Duplicate Rate of Mapped' and 'Duplicate Rate of Mapped, excluding Globins' in metrics_df:
+                metric_s = metrics_df['Duplicate Rate of Mapped, excluding Globins'].rename('Duplicate Rate of Mapped')
+            else:
+                metric_s = metrics_df[metric]
+            metrics(metric_s, ylim=ylim_dict[metric],
                          threshold=threshold_dict.get(metric, None),
                          threshold_dir=threshold_dir_dict.get(metric, None),
                          outlier_method=outlier_method,
@@ -135,7 +139,8 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
 
     # genes detected vs bias and duplication rate
     if "Median 3' bias" in metrics_df:
-        detection_bias(metrics_df, bias_metric="Median 3' bias", c='Duplicate Rate of Mapped')
+        c = 'Duplicate Rate of Mapped, excluding Globins' if 'Duplicate Rate of Mapped, excluding Globins' in metrics_df else 'Duplicate Rate of Mapped'
+        detection_bias(metrics_df, bias_metric="Median 3' bias", c=c)
         if output_dir is not None:
             plt.savefig(os.path.join(output_dir, f'{prefix}.genes_detected_vs_median_3prime_bias.pdf'), dpi=dpi)
 
