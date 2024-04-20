@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
     metrics_df, tpm_df, cohort_s, date_s, insertsize_df = load_inputs(args)
 
-    plot_qc_figures(metrics_df, cohort_s=cohort_s, cohort_colors=None, date_s=None,
+    plot_qc_figures(metrics_df, cohort_s=cohort_s, cohort_colors=None, date_s=date_s,
                     prefix=args.prefix, output_dir=args.output_dir, dpi=args.dpi, show_legend=True,
                     ms=12, alpha=1, show_xticklabels=False, highlight_ids=None,
                     thresholds=None, insertsize_df=insertsize_df, tpm_df=tpm_df)
