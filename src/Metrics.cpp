@@ -344,7 +344,6 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
     std::vector<std::string> keys =  {
         //"Alternative Alignments",
         //"Chimeric Reads",
-        "Duplicate Reads",
         "End 1 Antisense",
         "End 2 Antisense",
         "End 1 Bases",
@@ -375,11 +374,14 @@ std::ofstream& operator<<(std::ofstream &stream, rnaseqc::Metrics &counter)
         "Split Reads",
         "Total Bases",
         "Total Mapped Pairs",
-        "Total Reads",
+        // "Total Reads",
         "Unique Mapping, Vendor QC Passed Reads",
         "Unpaired Reads"
     };
+    stream << "Total Alignments\t" << counter.get("Total Alignments") << std::endl;
     stream << "Alternative Alignments\t" << counter.get("Alternative Alignments") << std::endl;
+    stream << "Supplementary Alignments\t" << counter.get("Supplementary Alignments") << std::endl;
+    stream << "Total Reads\t" << counter.get("Total Alignments") - counter.get("Alternative Alignments") - counter.get("Supplementary Alignments") << std::endl;
     stream << "Chimeric Fragments\t";
     if (counter.get("Chimeric Fragments_tag"))
     {
