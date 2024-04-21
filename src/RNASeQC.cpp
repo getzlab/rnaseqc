@@ -22,7 +22,7 @@ using namespace args;
 using namespace rnaseqc;
 
 const string NM = "NM";
-const string VERSION = "RNASeQC 2.4.2";
+const string VERSION = "RNASeQC 2.4.3";
 const double MAD_FACTOR = 1.4826;
 const unsigned int LEGACY_MAX_READ_LENGTH = 100000u;
 const int LEGACY_SPLIT_DISTANCE = 100;
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         const unsigned int BASE_MISMATCH_THRESHOLD = baseMismatchThreshold ? baseMismatchThreshold.Get() : 6u;
         const unsigned int MAPPING_QUALITY_THRESHOLD = mappingQualityThreshold ? mappingQualityThreshold.Get() : (LegacyMode.Get() ? 4u : 255u);
         const unsigned int COVERAGE_MASK = coverageMaskSize ? coverageMaskSize.Get() : 500u;
-//        const int SPLIT_DISTANCE = 100;
+        // const int SPLIT_DISTANCE = 100;
         const int VERBOSITY = verbosity ? verbosity.Get() : 0;
         const int BIAS_OFFSET = biasOffset ? biasOffset.Get() : 0;
         const int BIAS_WINDOW = biasWindow ? biasWindow.Get() : 100;
@@ -252,6 +252,7 @@ int main(int argc, char* argv[])
                 }
                 //count metrics based on basic read data
                 if (alignment.SecondaryFlag()) counter.increment("Alternative Alignments");
+                if (alignment.SupplementaryFlag()) counter.increment("Supplementary Alignments");
                 else if (alignment.QCFailFlag()) counter.increment("Failed Vendor QC");
                 else if (alignment.MapQuality() < MAPPING_QUALITY_THRESHOLD) counter.increment("Low Mapping Quality");
                 if (alignment.SupplementaryFlag() && !(LegacyMode.Get() || readStringTag(alignment, chimeric_tag, trash)))
@@ -393,7 +394,7 @@ int main(int argc, char* argv[])
             if (VERBOSITY > 1) cout << "Average Reads/Sec: " << static_cast<double>(alignmentCount) / difftime(t2, t1) << endl;
             cout << "Estimating library complexity..." << endl;
         }
-        counter.increment("Total Reads", alignmentCount);
+        counter.increment("Total Alignments", alignmentCount);
         double duplicates = static_cast<double>(counter.get("Duplicate Pairs"));
         double unique = static_cast<double>(counter.get("Unique Fragments"));
         double numReads = duplicates + unique;
