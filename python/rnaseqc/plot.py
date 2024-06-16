@@ -513,7 +513,7 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         ix = sex_s[sex_s.isnull() & (x_s <= x_threshold) & (y_s <= y_threshold)].index
         if len(ix) > 0:
             ax.scatter(x_s[ix], y_s[ix], c=hsv_to_rgb([0.0,0,0.7]).reshape(1,-1), **args, label=f"? ({len(ix)})")
-            res_s[ix] = np.NaN
+            res_s[ix] = np.nan
 
         # matching samples
         ix = sex_s[(sex_s == 'Male') & (x_s <= x_threshold)].index
