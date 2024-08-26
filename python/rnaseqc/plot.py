@@ -590,6 +590,6 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
 
     if sex_s is not None:
         leg = ax.legend(loc='upper left', fontsize=12, handlelength=0.5, labelspacing=0.2, bbox_to_anchor=(1,1))
-        for lh in leg.legendHandles:
+        for lh in leg.legend_handles:
             lh.set_alpha(1)
         return res_s
