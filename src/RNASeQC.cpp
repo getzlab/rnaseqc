@@ -476,7 +476,7 @@ int main(int argc, char* argv[])
 
         //3'/5' coverage ratio calculations
         double ratioAvg = 0.0, ratioMedDev = 0.0, ratioMedian = 0.0, ratioStd = 0.0, ratio75 = 0.0, ratio25 = 0.0;
-        if (ratios.size() > 1)
+        if (ratios.size() > 10)
         {
             statsTuple ratio_stats = getStatistics(ratios);
             ratioAvg = std::get<StatIdx::avg>(ratio_stats);
