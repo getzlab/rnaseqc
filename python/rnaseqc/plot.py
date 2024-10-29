@@ -60,8 +60,8 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=N
 
     x = metrics_df['End 1 Mismatch Rate'].copy()
     y = metrics_df['End 2 Mismatch Rate'].copy()
-    x[x>end1_limit] = end1_limit
-    y[y>end2_limit] = end2_limit
+    x[x > end1_limit] = end1_limit
+    y[y > end2_limit] = end2_limit
 
     sorted_ix = sort_samples(metrics_df.index, cohort_s=cohort_s, cohort_order=cohort_order)
     cohorts = cohort_s.loc[sorted_ix].unique()
@@ -69,7 +69,7 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=N
         cohort_colors = get_cohort_colors(cohorts)
 
     for t in cohorts:
-        ix = cohort_s[cohort_s==t].index
+        ix = cohort_s[cohort_s == t].index
         ax.scatter(x[ix], y[ix], s=ms, edgecolor='none', label=t,
             c=[cohort_colors[t]], alpha=alpha, clip_on=False, rasterized=True)
 
@@ -79,7 +79,8 @@ def mismatch_rates(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=N
         ax.plot([0,0.02], 2*[end2_threshold], '--', color=[0.6]*3, zorder=0, lw=1, alpha=0.8)
     if end1_threshold is not None or end2_threshold is not None:
         ix = (x > end1_threshold) | (y > end2_threshold)
-        ax.scatter(x[ix], y[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
+        if any(ix):
+            ax.scatter(x[ix], y[ix], c='none', edgecolor='k', s=ms, lw=1, label=None, clip_on=False, rasterized=True)
 
     qtl.plot.format_plot(ax, fontsize=10)
     ax.set_xlim([0, end1_limit])
@@ -362,7 +363,7 @@ def _plot_cohort_labels(ax, cohort_s, cohort_colors=None, lax=None, legend=True,
     if lax is None:
         lax = ax
     for k,i in cohort_index_dict.items():
-        lax.scatter([], [], marker='s', c=[cmap(i)], label=f'{k}')
+        lax.scatter(np.nan, np.nan, marker='s', c=[cmap(i)], label=f'{k}')
     if legend:
         lax.legend(loc='upper left', borderaxespad=None, bbox_to_anchor=(1,1), handlelength=1, title='Cohort')
 
@@ -592,4 +593,6 @@ def xy_expression(tpm_df, sex_s=None, flag_klinefelter=True, highlight_ids=None,
         leg = ax.legend(loc='upper left', fontsize=12, handlelength=0.5, labelspacing=0.2, bbox_to_anchor=(1,1))
         for lh in leg.legend_handles:
             lh.set_alpha(1)
-        return res_s
+        return ax, res_s
+    else:
+        return ax

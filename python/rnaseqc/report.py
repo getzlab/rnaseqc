@@ -115,8 +115,8 @@ def plot_qc_figures(metrics_df, cohort_s=None, cohort_order=None, cohort_colors=
     if show_legend:
         ax = qtl.plot.setup_figure(lw, lh, xspace=[0,0], yspace=[0,0])
         for c in cohort_order:
-            ax.scatter([], [], s=48, marker='s', color=cohort_colors[c], label=c)
-        ax.scatter([], [], fc='w', ec='k', lw=1, s=30, label='Outliers')
+            ax.scatter(np.nan, np.nan, s=48, marker='s', color=cohort_colors[c], label=c)
+        ax.scatter(np.nan, np.nan, fc='w', ec='k', lw=1, s=30, label='Outliers')
         ax.legend(loc='center left', handlelength=1, ncol=legend_cols)
         plt.axis('off')
         if output_dir is not None:
