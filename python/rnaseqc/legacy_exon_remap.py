@@ -1,5 +1,5 @@
 import argparse
-from agutil import status_bar
+from tqdm import tqdm
 import subprocess
 import csv
 import shutil
@@ -10,7 +10,7 @@ def run(args):
     print("Parsing GTF")
     gtf = Annotation(args.gtf.name)
     print("Parsing GCT")
-    numRows = int(subprocess.check_output("wc -l %s" % args.gct.name, shell=True).decode().strip().split()[0]) - 3
+    numRows = int(subprocess.check_output(f"wc -l {args.gct.name}", shell=True).decode().strip().split()[0]) - 3
     header = ''.join([next(args.gct), next(args.gct)])
     reader = csv.DictReader(args.gct, delimiter='\t')
     w = tempfile.NamedTemporaryFile('w')
@@ -19,7 +19,7 @@ def run(args):
     writer.writeheader()
     current = None
     features = []
-    for line in status_bar.iter(reader, maximum=numRows):
+    for line in tqdm(reader, total=numRows):
         gene = '_'.join(line['Name'].split('_')[:-1])
         if gene != current:
             if current is not None:
@@ -88,31 +88,14 @@ def run(args):
     print("Cleaning up")
     w.flush()
     args.gct.close()
-    shutil.copyfile(
-        args.gct.name,
-        args.gct.name+'.bak'
-    )
-    shutil.copyfile(
-        w.name,
-        args.gct.name
-    )
+    shutil.copyfile(args.gct.name, args.gct.name+'.bak')
+    shutil.copyfile(w.name, args.gct.name)
 
 
 def main():
     parser = argparse.ArgumentParser('flipper')
-
-    parser.add_argument(
-        'gct',
-        type=argparse.FileType('r'),
-        help="RNA-SeQC 2 Exon reads gct file"
-    )
-
-    parser.add_argument(
-        'gtf',
-        type=argparse.FileType('r'),
-        help="Reference GTF for the exons"
-    )
-
+    parser.add_argument('gct', type=argparse.FileType('r'), help="RNA-SeQC 2 Exon reads gct file")
+    parser.add_argument('gtf', type=argparse.FileType('r'), help="Reference GTF for the exons")
     args = parser.parse_args()
     run(args)
 

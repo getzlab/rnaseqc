@@ -39,25 +39,25 @@ if __name__ == '__main__':
 
     print('['+datetime.now().strftime("%b %d %H:%M:%S")+'] Running RNA-SeQC', flush=True)
 
-    cmd = '{} {} {} {}'.format(locate_rnaseqc(), args.genes_gtf, args.bam_file, args.output_dir) \
-        + ' -s '+args.prefix \
+    cmd = f"{locate_rnaseqc()} {args.genes_gtf} {args.bam_file} {args.output_dir}" \
+        + f" -s {args.prefix}" \
         + ' -vv'
     if args.stranded is not None:
-        cmd += ' --stranded '+args.stranded
+        cmd += f" --stranded {args.stranded}"
     if args.bed is not None:
-        cmd += ' --bed '+args.bed
+        cmd += f" --bed {args.bed}"
     if args.mapping_quality is not None:
-        cmd += ' --mapping-quality {}'.format(args.mapping_quality)
+        cmd += f" --mapping-quality {args.mapping_quality}"
     if args.mismatch_threshold is not None:
-        cmd += ' --base-mismatch {}'.format(args.mismatch_threshold)
+        cmd += f" --base-mismatch {args.mismatch_threshold}"
     if args.coverage:
         cmd += ' --coverage'
-    print('  * command: "{}"'.format(cmd), flush=True)
+    print(f'  * command: "{cmd}"', flush=True)
     subprocess.check_call(cmd, shell=True)
 
     # gzip GCTs
     subprocess.check_call('gzip {0}.exon_reads.gct {0}.gene_tpm.gct {0}.gene_reads.gct {0}.gene_fragments.gct'.format(args.prefix), shell=True)
     if args.coverage:
-        subprocess.check_call('gzip {}.coverage.tsv'.format(args.prefix), shell=True)
+        subprocess.check_call(f'gzip {args.prefix}.coverage.tsv', shell=True)
 
     print('['+datetime.now().strftime("%b %d %H:%M:%S")+'] Finished RNA-SeQC', flush=True)
